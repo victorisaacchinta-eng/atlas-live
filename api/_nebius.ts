@@ -79,6 +79,8 @@ export interface ChatMessage {
 
 export function hasModel() { return !!PROVIDER; }
 
+const EXHAUSTED = new Map<string, number>();
+
 export async function chat(body: Record<string, unknown>) {
   if (!PROVIDER) throw new HttpError(503, 'No model key is set on the server (NEBIUS_API_KEY, NVIDIA_API_KEY, GEMINI_API_KEY or GROQ_API_KEY)');
   await ensureModels();
@@ -93,6 +95,9 @@ export async function chat(body: Record<string, unknown>) {
   const plan: { p: Provider; model: string }[] = [String(body.model), ...ALTS[role].filter((id) => id !== body.model)].slice(0, 6).map((model) => ({ p: PROVIDER!, model }));
   for (const other of PROVIDERS) if (other.key && other !== PROVIDER) plan.push({ p: other, model: other[role] });
   let last = '';
+  // Models that just said "quota used up" are skipped for a while (per warm instance).
+  const live = plan.filter((x) => (EXHAUSTED.get(`${x.p.id}:${x.model}`) ?? 0) < Date.now());
+  if (live.length) plan.splice(0, plan.length, ...live);
   for (let i = 0; i < plan.length; i++) {
     const { p, model } = plan[i];
     const payload: Record<string, unknown> = { ...body, model };
@@ -104,6 +109,7 @@ export async function chat(body: Record<string, unknown>) {
     });
     if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; return j; }
     last = `${p.label} ${r.status}: ${(await r.text()).replace(/\s+/g, ' ').slice(0, 300)}`;
+    if (r.status === 429) EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 15 * 60 * 1000);
     if (![404, 429, 500, 503].includes(r.status)) throw new HttpError(r.status, last);
     if (r.status !== 429 && i === 0) await new Promise((res) => setTimeout(res, 600));
   }
