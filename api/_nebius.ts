@@ -55,7 +55,8 @@ export function ensureModels() {
       for (const role of ['vision', 'agent', 'fast'] as const) {
         const env = { vision: process.env.ATLAS_VISION_MODEL, agent: process.env.ATLAS_AGENT_MODEL, fast: process.env.ATLAS_FAST_MODEL }[role];
         const ranked: string[] = [];
-        const newest = [...ids].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        const usable = ids.filter((id) => !/parse|embed|rerank|reward|safety|guard|retriev|tts|asr|ocr/i.test(id));
+        const newest = [...usable].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
         for (const re of PROVIDER.prefer![role]) for (const id of newest) if (re.test(id) && !ranked.includes(id)) ranked.push(id);
         ALTS[role] = ranked;
         if (env || ids.includes(MODELS[role])) continue;
@@ -102,6 +103,9 @@ export async function chat(body: Record<string, unknown>) {
     const { p, model } = plan[i];
     const payload: Record<string, unknown> = { ...body, model };
     if (p.id !== 'gemini') delete payload.reasoning_effort;
+    // Nemotron 3.x reasons at length by default (minutes on long JSON); ATLAS needs fast, structured
+    // answers, so thinking is off unless a caller asks for it. NIM / vLLM read chat_template_kwargs.
+    if ((p.id === 'nvidia' || p.id === 'nebius') && payload.chat_template_kwargs === undefined) payload.chat_template_kwargs = { enable_thinking: false };
     const r = await fetch(`${p.base}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` },
