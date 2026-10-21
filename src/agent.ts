@@ -26,7 +26,7 @@ const history: { role: 'user' | 'assistant'; content: string }[] = [];
 
 export async function ask(question: string, ctx: AgentContext) {
   ui.log(question, 'you');
-  const thinking = ui.log('nemotron is looking it up', 'sys');
+  const thinking = ui.log('ATLAS is thinking', 'sys');
   setAgent('busy');
   try {
     const r = await fetch('/api/ask', {

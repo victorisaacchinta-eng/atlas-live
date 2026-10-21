@@ -305,7 +305,7 @@ async function runScan(image: string) {
   captureBtn.disabled = true;
   const step = (t: string) => { scanStatus.textContent = t; };
   try {
-    step('nemotron is identifying the object');
+    step('identifying the object');
     ui.log('scan captured', 'sys');
     const [scan] = await Promise.all([identify(image)]);
     if (scan) {

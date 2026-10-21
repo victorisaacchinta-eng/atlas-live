@@ -15,7 +15,7 @@ export const ui = {
     const list = $('log');
     const li = document.createElement('li');
     li.className = kind;
-    const prefix = kind === 'you' ? 'you › ' : kind === 'tool' ? 'nemotron › ' : kind === 'answer' ? '' : '· ';
+    const prefix = kind === 'you' ? 'you › ' : kind === 'tool' ? 'atlas › ' : kind === 'answer' ? '' : '· ';
     li.textContent = prefix + text;
     list.appendChild(li);
     while (list.children.length > 7) list.firstElementChild?.remove();
