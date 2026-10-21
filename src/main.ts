@@ -194,9 +194,22 @@ const agentCtx = {
   focused: () => stage.model?.focused ?? -1,
   focusPart,
   setExplode,
+  mode: () => (earthActive ? 'earth' : 'object') as 'earth' | 'object',
+  flyTo: (place: string) => {
+    const q = place.toLowerCase();
+    const head = q.split(',')[0].trim();
+    const preset = LANDMARKS.find((l) => q.includes(l.name.toLowerCase()) || (head.length >= 5 && l.name.toLowerCase().includes(head)));
+    if (preset) selectLandmark(preset); else searchPlace(place);
+  },
+  setLens: (l: string) => { if (LENSES.some((x) => x.id === l)) setLens(l as Lens); },
+  orbit: (speed: number) => {
+    stage.controls.autoRotate = speed !== 0;
+    stage.orbitSpeed = THREE.MathUtils.clamp(speed, -3, 3) * 0.35;
+  },
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
+const askHint = () => (earthActive ? 'Ask ATLAS: "take me to Big Ben, thermal"' : 'Ask about this machine');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -214,7 +227,7 @@ mic.addEventListener('click', () => {
     (t) => { askInput.value = t; },
     () => {
       mic.setAttribute('aria-pressed', 'false');
-      askInput.placeholder = 'Ask about this machine';
+      askInput.placeholder = askHint();
       stopListening = null;
       const q = askInput.value.trim();
       if (q) { askInput.value = ''; ask(q, agentCtx); }
@@ -460,6 +473,19 @@ function setLens(l: Lens) {
   document.body.dataset.lens = l;
   stage.earth.setLook(l === 'hologram' ? 'hologram' : 'photo');
   stage.lens.set(earthActive ? l : 'photo');
+  if (earthActive) shareState(currentLandmark);
+}
+
+/** The URL carries the place and lens, so a shared link lands on exactly this view. */
+function shareState(l: Landmark | null) {
+  const u = new URL(location.href);
+  for (const k of ['place', 'at', 'lens']) u.searchParams.delete(k);
+  if (l) {
+    if (LANDMARKS.includes(l)) u.searchParams.set('place', l.id);
+    else u.searchParams.set('at', `${l.lat.toFixed(5)},${l.lon.toFixed(5)},${l.name}`);
+    if (lens !== 'photo') u.searchParams.set('lens', lens);
+  }
+  history.replaceState(null, '', u);
 }
 setLens('photo');
 window.addEventListener('keydown', (e) => {
@@ -489,8 +515,8 @@ async function enterPlaces() {
     if (!place) intro.hidden = true;
     return;
   }
-  if (!currentLandmark) selectLandmark(LANDMARKS[0]);
-  else { earthOn(); }
+  if (!earthStarted) selectLandmark(currentLandmark ?? LANDMARKS[0]);
+  else earthOn();
 }
 
 function earthOn() {
@@ -499,6 +525,7 @@ function earthOn() {
   document.body.classList.add('earth');
   stage.setEarth(true);
   stage.lens.set(lens);
+  askInput.placeholder = askHint();
   ($('labels') as HTMLElement).hidden = true;
   sunBox.hidden = true;
 }
@@ -511,6 +538,8 @@ function exitEarth() {
   document.body.classList.remove('earth');
   stage.setEarth(false);
   stage.lens.set('photo');
+  askInput.placeholder = askHint();
+  shareState(null);
   ($('labels') as HTMLElement).hidden = false;
   placeTag.hidden = true;
   if (state.entry) { setTitle(state.entry.title); $('model-kind').textContent = state.entry.kind; $('credit').textContent = `Model: ${state.entry.credit} · ${state.entry.licence}`; }
@@ -577,6 +606,7 @@ async function selectLandmark(l: Landmark) {
       }, () => { originLL = to; dive(height); });
     });
   }
+  shareState(l);
   loadFacts(l);
 }
 
@@ -632,3 +662,17 @@ stage.onFrame = (dt, t) => {
   placeTag.style.left = `${s.x}px`;
   placeTag.style.top = `${s.y}px`;
 };
+
+// Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
+{
+  const q = new URLSearchParams(location.search);
+  const id = q.get('place'), at = q.get('at'), l0 = q.get('lens');
+  if (l0 && LENSES.some((x) => x.id === l0)) setLens(l0 as Lens);
+  const preset = id ? LANDMARKS.find((l) => l.id === id) : undefined;
+  let target: Landmark | undefined = preset;
+  if (!target && at) {
+    const [la, lo, ...name] = at.split(',');
+    if (Number.isFinite(+la) && Number.isFinite(+lo)) target = { id: 'shared', name: name.join(',') || 'Shared place', city: `${(+la).toFixed(3)}, ${(+lo).toFixed(3)}`, lat: +la, lon: +lo, view: 450, lift: 20 };
+  }
+  if (target) { currentLandmark = target; setMode('places'); }
+}

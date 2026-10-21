@@ -47,6 +47,8 @@ export class Stage {
   /** Real-world 3D places (Google Photorealistic 3D Tiles). Active only in Earth mode. */
   readonly earth: EarthView;
   earthOn = false;
+  /** Base auto-orbit speed in Earth mode (OrbitControls units); the agent can change it. */
+  orbitSpeed = 0.35;
   /** A scripted camera move in Earth mode. `step` receives eased-free progress 0..1. */
   private flight: { t: number; dur: number; step: (k: number) => void; done?: () => void } | null = null;
   /** The point the current landing is aimed at; ground corrections move it. */
@@ -250,7 +252,7 @@ export class Stage {
         }
       } else {
         // A hand swipe speeds up the orbit, then it settles back to a slow turn.
-        this.controls.autoRotateSpeed = 0.35 + this.spin * 25;
+        this.controls.autoRotateSpeed = this.orbitSpeed + this.spin * 25;
         this.controls.update();
         this.guardClearance(dt);
       }
