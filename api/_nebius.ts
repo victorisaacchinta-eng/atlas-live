@@ -21,7 +21,7 @@ const PROVIDERS: Provider[] = [
   { id: 'nvidia', label: 'NVIDIA API catalog', base: 'https://integrate.api.nvidia.com/v1', key: process.env.NVIDIA_API_KEY,
     vision: 'nvidia/nemotron-3.5-super-vl', agent: 'nvidia/nemotron-3-super-120b-a12b', fast: 'nvidia/nemotron-3-nano-30b-a3b', prefer: NEMOTRON_PREFER },
   { id: 'gemini', label: 'Gemini', base: 'https://generativelanguage.googleapis.com/v1beta/openai', key: process.env.GEMINI_API_KEY,
-    vision: 'gemini-3-flash-preview', agent: 'gemini-3-flash-preview', fast: 'gemini-3-flash-preview', prefer: { vision: GEMINI_PREFER, agent: GEMINI_PREFER, fast: GEMINI_PREFER } },
+    vision: 'gemini-flash-latest', agent: 'gemini-flash-latest', fast: 'gemini-flash-lite-latest', prefer: { vision: GEMINI_PREFER, agent: GEMINI_PREFER, fast: GEMINI_PREFER } },
   { id: 'groq', label: 'Groq', base: 'https://api.groq.com/openai/v1', key: process.env.GROQ_API_KEY,
     vision: 'meta-llama/llama-4-scout-17b-16e-instruct', agent: 'openai/gpt-oss-120b', fast: 'openai/gpt-oss-20b' },
 ];
