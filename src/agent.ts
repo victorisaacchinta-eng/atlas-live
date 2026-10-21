@@ -10,6 +10,7 @@ export interface AgentContext {
   flyTo?: (place: string) => void;
   setLens?: (lens: string) => void;
   orbit?: (speed: number) => void;
+  isolate?: (on: boolean) => void;
 }
 
 interface AskReply {
@@ -43,6 +44,7 @@ export async function ask(question: string, ctx: AgentContext) {
       if (a.name === 'fly_to' && a.args.place) ctx.flyTo?.(String(a.args.place));
       if (a.name === 'set_lens' && a.args.lens) ctx.setLens?.(String(a.args.lens));
       if (a.name === 'orbit') ctx.orbit?.(Number(a.args.speed) || 0);
+      if (a.name === 'isolate') ctx.isolate?.(a.args.on !== false);
     }
     ui.log(j.answer, 'answer');
     if (ctx.focused() >= 0) { ui.setCardBody(j.answer); ui.setSources(j.sources); }

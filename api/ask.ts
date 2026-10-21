@@ -59,6 +59,14 @@ const EARTH_TOOLS = [
       parameters: { type: 'object', properties: { speed: { type: 'number', minimum: -3, maximum: 3 } }, required: ['speed'] },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'isolate',
+      description: 'Cut the landmark out of the surrounding city so it floats alone as a 3D object (on: true), or put the city back (on: false).',
+      parameters: { type: 'object', properties: { on: { type: 'boolean' } }, required: ['on'] },
+    },
+  },
   SCENE_TOOLS[2],
 ];
 
@@ -82,7 +90,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
     const partList = parts.map((p, i) => `${i + 1}. ${p}`).join('\n');
     const system = earth ? `You are ATLAS, a guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
 Rules:
-- When the viewer asks to go somewhere, call fly_to with a specific place name. When they ask to see it differently, call set_lens. When they ask to circle, spin or stop, call orbit.
+- When the viewer asks to go somewhere, call fly_to with a specific place name. When they ask to see it differently, call set_lens. When they ask to circle, spin or stop, call orbit. When they want the landmark on its own, call isolate.
 - Before stating any fact, number or date, call web_search. Only state what the results support. Moving the camera needs no search.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
 - Only say you did something if you called the tool for it.` : `You are ATLAS, a guide inside a hologram of a real machine: ${machine}.

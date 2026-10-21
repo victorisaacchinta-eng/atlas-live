@@ -12,6 +12,8 @@ export interface Landmark {
   lon: number;
   view: number;
   lift: number;
+  /** Half-width in metres of the block cut out by Isolate (default: 0.45 × view). */
+  iso?: number;
 }
 
 export const LANDMARKS: Landmark[] = [

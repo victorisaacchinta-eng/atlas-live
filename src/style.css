@@ -190,6 +190,11 @@ body.mode-places .intro.waiting { display: none; }
 
 .look { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); }
 .look-btn { background: transparent; border: 0; min-height: 40px; padding: 4px 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; }
+.iso-btn { background: transparent; border: 1px solid var(--line); min-height: 36px; padding: 0 10px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.iso-btn .lk { font-size: 9px; color: var(--signal); }
+.iso-btn:hover { color: var(--bone); }
+.iso-btn[aria-pressed="true"] { background: var(--panel); color: var(--panel-text); }
+.iso-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; }
 .look-btn .lk { font-size: 9px; color: var(--signal); letter-spacing: 0; }
 .look-btn:hover { color: var(--bone); }
 .look-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; }

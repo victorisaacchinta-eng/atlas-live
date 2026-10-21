@@ -202,6 +202,7 @@ const agentCtx = {
     if (preset) selectLandmark(preset); else searchPlace(place);
   },
   setLens: (l: string) => { if (LENSES.some((x) => x.id === l)) setLens(l as Lens); },
+  isolate: (on: boolean) => setIsolate(on),
   orbit: (speed: number) => {
     stage.controls.autoRotate = speed !== 0;
     stage.orbitSpeed = THREE.MathUtils.clamp(speed, -3, 3) * 0.35;
@@ -488,12 +489,29 @@ function shareState(l: Landmark | null) {
   history.replaceState(null, '', u);
 }
 setLens('photo');
+
+// Isolate: cut the landmark out of the city so it floats on the stage as an object.
+let isolate = false;
+const isoBtn = document.getElementById('iso-btn')!;
+function applyIsolate() {
+  const l = currentLandmark;
+  const on = isolate && earthActive && !!l && !stage.flying && stage.earth.ground !== null;
+  stage.setIsolate(on ? (l!.iso ?? l!.view * 0.45) : 0, stage.earth.ground ?? 0);
+}
+function setIsolate(on: boolean) {
+  isolate = on;
+  isoBtn.setAttribute('aria-pressed', String(on));
+  applyIsolate();
+  if (on && earthActive) ui.log('isolated: drag to turn it, scroll to zoom', 'sys');
+}
+isoBtn.addEventListener('click', () => setIsolate(!isolate));
 window.addEventListener('keydown', (e) => {
   if (!earthActive || e.metaKey || e.ctrlKey || e.altKey) return;
   const el = e.target as HTMLElement | null;
   if (el?.closest?.('input, textarea, [contenteditable]')) return;
   const hit = LENSES.find((x) => x.key === e.key);
   if (hit) { setLens(hit.id); e.preventDefault(); }
+  if (e.key === 'i' || e.key === 'I') { setIsolate(!isolate); e.preventDefault(); }
 });
 
 async function getEarthAuth(): Promise<EarthAuth | null> {
@@ -559,6 +577,7 @@ async function selectLandmark(l: Landmark) {
   placeStatus.textContent = `streaming ${l.name} in 3D`;
   ui.log(`flying to ${l.name}`, 'sys');
   placeTag.hidden = true;
+  stage.setIsolate(0, 0);
   const look = lens === 'hologram' ? 'hologram' : 'photo';
   // Where the camera lands. Ground readings move it (the dive reads it every frame).
   const land = new THREE.Vector3(0, l.lift, 0);
@@ -575,7 +594,7 @@ async function selectLandmark(l: Landmark) {
     land.set(0, (predicted ?? 0) + l.lift, 0);
     if (predicted !== null) stage.earth.predictGround(predicted);
     arrived = true;
-    stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => { placeStatus.textContent = ''; });
+    stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => { placeStatus.textContent = ''; applyIsolate(); });
   };
   stage.earth.onGround = (y) => {
     if (currentLandmark !== l || !arrived) return;

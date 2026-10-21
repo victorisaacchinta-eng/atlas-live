@@ -18,6 +18,7 @@ export type EarthLook = 'photo' | 'hologram';
 const DRACO = 'https://www.gstatic.com/draco/versioned/decoders/1.5.7/';
 
 const holoVertex = /* glsl */ `
+  #include <clipping_planes_pars_vertex>
   varying vec2 vUv;
   varying vec3 vWorld;
   varying vec3 vView;
@@ -25,9 +26,10 @@ const holoVertex = /* glsl */ `
     vUv = uv;
     vec4 w = modelMatrix * vec4(position, 1.0);
     vWorld = w.xyz;
-    vec4 mv = viewMatrix * w;
-    vView = mv.xyz;
-    gl_Position = projectionMatrix * mv;
+    vec4 mvPosition = viewMatrix * w;
+    vView = mvPosition.xyz;
+    #include <clipping_planes_vertex>
+    gl_Position = projectionMatrix * mvPosition;
   }
 `;
 const holoFragment = /* glsl */ `
@@ -42,7 +44,9 @@ const holoFragment = /* glsl */ `
   varying vec2 vUv;
   varying vec3 vWorld;
   varying vec3 vView;
+  #include <clipping_planes_pars_fragment>
   void main() {
+    #include <clipping_planes_fragment>
     // Photogrammetry has no reliable normals; rebuild a face normal from screen derivatives.
     vec3 n = normalize(cross(dFdx(vView), dFdy(vView)));
     float facing = abs(dot(n, normalize(-vView)));
@@ -177,6 +181,7 @@ export class EarthView {
         },
         vertexShader: holoVertex,
         fragmentShader: holoFragment,
+        clipping: true,
       });
       this.holoMats.set(base, holo);
     }

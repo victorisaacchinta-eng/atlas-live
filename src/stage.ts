@@ -118,6 +118,7 @@ export class Stage {
     this.controls.autoRotateSpeed = 0.35;
     this.controls.zoomSpeed = on ? 1.4 : 1;
     this.floor = -Infinity;
+    if (!on) this.setIsolate(0, 0);
     if (!on) { this.earth.stop(); this.camera.position.set(4.4, 2.6, 5.6); this.controls.target.set(0, 0.95, 0); this.flight = null; this.landing = null; }
   }
 
@@ -156,7 +157,7 @@ export class Stage {
    * Direction the camera approaches a landmark from. In this frame +z is north and -x is east,
    * so this sits south-south-east of the target, looking north: north is up on screen.
    */
-  approach = new THREE.Vector3(-0.3, 0.55, -0.78).normalize();
+  approach = new THREE.Vector3(-0.3, 0.42, -0.86).normalize();
 
   /** Straight up, nudged a hair toward `d` so a top-down view keeps a defined, north-up heading. */
   static topDir(d: THREE.Vector3) {
@@ -204,6 +205,29 @@ export class Stage {
       this.camera.position.copy(from).addScaledVector(up, e);
       this.controls.target.copy(fromT).addScaledVector(up, e);
     });
+  }
+
+  /**
+   * Isolate: cut a square block of the world around the landmark so it floats on the stage like
+   * an architect's diorama. Done with clipping planes at draw time; nothing is extracted or kept.
+   */
+  private isoPlanes = [new THREE.Plane(), new THREE.Plane(), new THREE.Plane(), new THREE.Plane()];
+  private isoFrame: THREE.LineLoop | null = null;
+  isolated = 0;
+  setIsolate(half: number, groundY: number) {
+    this.isolated = half;
+    if (this.isoFrame) { this.scene.remove(this.isoFrame); this.isoFrame.geometry.dispose(); this.isoFrame = null; }
+    if (!half) { this.renderer.clippingPlanes = []; return; }
+    this.isoPlanes[0].set(new THREE.Vector3(-1, 0, 0), half);
+    this.isoPlanes[1].set(new THREE.Vector3(1, 0, 0), half);
+    this.isoPlanes[2].set(new THREE.Vector3(0, 0, -1), half);
+    this.isoPlanes[3].set(new THREE.Vector3(0, 0, 1), half);
+    this.renderer.clippingPlanes = this.isoPlanes;
+    const y = groundY + 0.5;
+    const pts = [[-half, -half], [half, -half], [half, half], [-half, half]].map(([x, z]) => new THREE.Vector3(x, y, z));
+    this.isoFrame = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: new THREE.Color(theme.accent), transparent: true, opacity: 0.9 }));
+    this.isoFrame.renderOrder = 10;
+    this.scene.add(this.isoFrame);
   }
 
   /** Keep a sensible depth range from street level to orbit. */
@@ -282,6 +306,7 @@ export class Stage {
         f.t = Math.min(1, f.t + dt / f.dur);
         f.step(f.t);
         this.guardClearance(dt);
+        this.camera.lookAt(this.controls.target);
         if (f.t >= 1) {
           this.flight = null;
           this.controls.enabled = true;
