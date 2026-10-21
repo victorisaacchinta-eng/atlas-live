@@ -19,7 +19,7 @@ const PROVIDERS: Provider[] = [
   { id: 'nebius', label: 'Nebius Token Factory', base: process.env.TOKEN_FACTORY_URL || 'https://api.tokenfactory.nebius.com/v1', key: process.env.NEBIUS_API_KEY,
     vision: 'nvidia/Nemotron-3.5-Super-VL', agent: 'nvidia/nemotron-3-super-120b-a12b', fast: 'nvidia/Nemotron-3-Nano-30B-A3B', prefer: NEMOTRON_PREFER },
   { id: 'nvidia', label: 'NVIDIA API catalog', base: 'https://integrate.api.nvidia.com/v1', key: process.env.NVIDIA_API_KEY,
-    vision: 'nvidia/nemotron-3.5-super-vl', agent: 'nvidia/nemotron-3-super-120b-a12b', fast: 'nvidia/nemotron-3-nano-30b-a3b', prefer: NEMOTRON_PREFER },
+    vision: 'nvidia/nemotron-3.5-super-vl-120b-a12b', agent: 'nvidia/nemotron-3.5-super-vl-120b-a12b', fast: 'nvidia/nemotron-3.5-lightning-30b-a3b', prefer: NEMOTRON_PREFER },
   { id: 'gemini', label: 'Gemini', base: 'https://generativelanguage.googleapis.com/v1beta/openai', key: process.env.GEMINI_API_KEY,
     vision: 'gemini-flash-latest', agent: 'gemini-flash-latest', fast: 'gemini-flash-lite-latest', prefer: { vision: GEMINI_PREFER, agent: GEMINI_PREFER, fast: GEMINI_PREFER } },
   { id: 'groq', label: 'Groq', base: 'https://api.groq.com/openai/v1', key: process.env.GROQ_API_KEY,
