@@ -244,7 +244,8 @@ function clean(parts: Part[], zone?: string): Part[] {
 }
 
 function slug(s: string) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'part'; }
-function dedupe(rs: TavilyResult[]) { const seen = new Set<string>(); return rs.filter((r) => !seen.has(r.url) && seen.add(r.url)); }
+const SOCIAL = /(instagram|facebook|tiktok|pinterest|twitter|x)\.com|youtube\.com|reddit\.com/i;
+function dedupe(rs: TavilyResult[]) { const seen = new Set<string>(); return rs.filter((r) => !SOCIAL.test(new URL(r.url).hostname) && !seen.has(r.url) && seen.add(r.url)); }
 
 const UA = { 'User-Agent': 'ATLAS-Live/1.0 (https://atlas-live-xi.vercel.app; hackathon demo)' };
 
@@ -257,7 +258,10 @@ async function referencePhoto(subject: string) {
     const sum = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, '_'))}`, { headers: UA, signal: AbortSignal.timeout(5000) }).then((r) => r.json());
     const thumb: string | undefined = sum?.thumbnail?.source;
     if (!thumb) return null;
-    return { image: thumb.replace(/\/\d+px-/, '/800px-'), page: sum?.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`, title };
+    // Wikimedia serves fixed thumbnail widths (and never upscales): use the original if it is modest.
+    const orig = sum?.originalimage as { source?: string; width?: number } | undefined;
+    const image = orig?.source && (orig.width ?? 9999) <= 1600 ? orig.source : thumb.replace(/\/\d+px-/, '/960px-');
+    return { image, page: sum?.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`, title };
   } catch { return null; }
 }
 

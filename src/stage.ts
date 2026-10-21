@@ -312,6 +312,7 @@ export class Stage {
     const h = Math.round(width * 0.75);
     const rt = new THREE.WebGLRenderTarget(width, h, { samples: 4 });
     rt.texture.colorSpace = THREE.SRGBColorSpace;
+    (this.model as { finishReveal?: () => void } | null)?.finishReveal?.();
     const pad = this.pad.visible, motes = this.motes.visible, rotY = this.pivot.rotation.y;
     this.pad.visible = false; this.motes.visible = false; this.pivot.rotation.y = 0;
     this.renderer.setRenderTarget(rt);

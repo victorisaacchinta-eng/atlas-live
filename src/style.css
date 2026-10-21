@@ -210,6 +210,9 @@ body.mode-places .intro.waiting { display: none; }
 .build-ref figcaption { display: flex; justify-content: space-between; padding: 6px 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .build-ref a { color: var(--bone); }
 body.mode-build .log { max-height: 46px; }
+body.mode-build .intro { top: auto; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); left: auto; right: max(24px, env(safe-area-inset-right, 0px)); width: min(400px, 38vw); text-align: right; align-items: flex-end; }
+body.mode-build .intro .hints, body.mode-build .rescan { display: none; }
+@media (max-width: 760px) { body.mode-build .intro { display: none; } .build-panel { top: 132px; bottom: auto; max-height: 50vh; } }
 .iso-btn { background: transparent; border: 1px solid var(--line); min-height: 36px; padding: 0 10px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .iso-btn .lk { font-size: 9px; color: var(--signal); }
 .iso-btn:hover { color: var(--bone); }

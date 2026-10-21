@@ -152,6 +152,9 @@ export class HoloModel implements Hologram {
     return hit ? (hit.object.userData.partIndex as number) : -1;
   }
 
+  /** Skip the reveal sweep (used before taking a still for the critic). */
+  finishReveal() { this.reveal = 1e4; this.update(0, 0); }
+
   setHot(i: number) { this.hot = i; }
   setFocus(i: number) { this.focus = i; }
   get focused() { return this.focus; }
