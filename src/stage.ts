@@ -116,6 +116,15 @@ export class Stage {
     this.fly = { from, to, fromT: fromHigh ? target.clone() : this.controls.target.clone(), toT: target.clone(), t: 0, dur: this.reducedMotion ? 0.01 : 3.2 };
   }
 
+  /** The ground turned out higher or lower than first measured: move the whole view by dy, smoothly. */
+  shiftGround(dy: number) {
+    const up = new THREE.Vector3(0, dy, 0);
+    if (this.fly) { this.fly.to.add(up); this.fly.toT.add(up); return; }
+    const to = this.camera.position.clone().add(up);
+    const toT = this.controls.target.clone().add(up);
+    this.fly = { from: this.camera.position.clone(), to, fromT: this.controls.target.clone(), toT, t: 0, dur: this.reducedMotion ? 0.01 : 1.4 };
+  }
+
   private resize() {
     const w = this.host.clientWidth, h = this.host.clientHeight;
     if (!w || !h) return;

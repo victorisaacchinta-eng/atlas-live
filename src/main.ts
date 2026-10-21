@@ -507,10 +507,13 @@ async function selectLandmark(l: Landmark) {
   // Hold high above until the ground is known, then drop in.
   stage.camera.position.set(l.view * 0.5, 2600 + l.view * 3, l.view * 0.5);
   stage.controls.target.set(0, 0, 0);
-  stage.earth.onGround = (y) => {
+  let landed: number | null = null;
+  stage.earth.onGround = (y, first) => {
     if (currentLandmark !== l) return;
     placeStatus.textContent = '';
-    stage.flyTo(new THREE.Vector3(0, y + l.lift, 0), l.view, true);
+    if (first || landed === null) stage.flyTo(new THREE.Vector3(0, y + l.lift, 0), l.view, true);
+    else stage.shiftGround(y - landed);
+    landed = y;
   };
   stage.earth.onAttribution = (html) => { $('credit').innerHTML = html; };
   loadFacts(l);

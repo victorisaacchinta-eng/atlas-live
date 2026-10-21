@@ -75,9 +75,12 @@ export class EarthView {
   private renderer: THREE.WebGLRenderer;
   /** Ground height (local y) under the origin, found by ray once tiles arrive. */
   ground: number | null = null;
-  onGround: ((y: number) => void) | null = null;
+  /** Called each time the measured ground moves; `first` is true for the first reading after a move. */
+  onGround: ((y: number, first: boolean) => void) | null = null;
   onAttribution: ((html: string) => void) | null = null;
   private groundProbe = 0;
+  private lastProbe = -1;
+  private isEarth = true;
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer) {
     this.camera = camera;
@@ -108,16 +111,21 @@ export class EarthView {
     tiles.addEventListener('tiles-load-end', () => this.emitAttribution());
     this.group.add(tiles.group);
     this.tiles = tiles;
+    this.isEarth = auth.kind !== 'url';
+    this.resetGround();
+  }
+
+  private resetGround() {
     this.ground = null;
     this.groundProbe = 0;
+    this.lastProbe = -1;
   }
 
   /** Move to another place without rebuilding the renderer. */
   goTo(lat: number, lon: number) {
     if (!this.reorient || !this.tiles) return;
     this.reorient.transformLatLonHeightToOrigin(lat * THREE.MathUtils.DEG2RAD, lon * THREE.MathUtils.DEG2RAD, 0);
-    this.ground = null;
-    this.groundProbe = 0;
+    this.resetGround();
   }
 
   setLook(look: EarthLook) {
@@ -169,16 +177,32 @@ export class EarthView {
     this.tiles.setResolutionFromRenderer(this.camera, this.renderer);
     this.tiles.update();
     this.groundProbe += dt;
-    if (this.ground === null && Math.floor(this.groundProbe * 4) !== Math.floor((this.groundProbe - dt) * 4)) this.probeGround();
-    // No ground under the origin after a few seconds (sparse data, or a non-Earth tileset): fall back to the data's bounds.
-    if (this.ground === null && this.groundProbe > 5) {
-      const box = new THREE.Box3();
-      if (this.tiles.getBoundingBox(box)) {
-        box.applyMatrix4(this.tiles.group.matrixWorld);
-        this.ground = box.min.y;
-        this.onGround?.(box.min.y);
+    // Coarse tiles arrive first and can sit hundreds of metres off the real surface, so keep
+    // measuring while sharper tiles stream in (first 15 s, or while anything is still downloading).
+    const stats = (this.tiles as unknown as { stats?: { downloading?: number; parsing?: number } }).stats;
+    const busy = !!stats && ((stats.downloading ?? 0) + (stats.parsing ?? 0)) > 0;
+    const tick = Math.floor(this.groundProbe * 4);
+    if (tick !== this.lastProbe && (this.ground === null || this.groundProbe < 15 || (busy && this.groundProbe < 40))) {
+      this.lastProbe = tick;
+      this.probeGround();
+    }
+    if (this.ground === null && this.groundProbe > 6) {
+      if (this.isEarth) {
+        // Nothing under the landmark yet: assume the ellipsoid and let later probes correct it.
+        this.setGround(0);
+      } else {
+        // A non-Earth sample tileset: fall back to the data's bounds.
+        const box = new THREE.Box3();
+        if (this.tiles.getBoundingBox(box)) { box.applyMatrix4(this.tiles.group.matrixWorld); this.setGround(box.min.y); }
       }
     }
+  }
+
+  private setGround(y: number) {
+    const first = this.ground === null;
+    if (!first && Math.abs(y - this.ground!) < 2) return;
+    this.ground = y;
+    this.onGround?.(y, first);
   }
 
   /** Cast a ray straight down through the origin to find the real ground height. */
@@ -187,7 +211,7 @@ export class EarthView {
     const ray = new THREE.Raycaster(new THREE.Vector3(0, 9000, 0), new THREE.Vector3(0, -1, 0), 0, 20000);
     (ray as unknown as { firstHitOnly: boolean }).firstHitOnly = true;
     const hit = ray.intersectObject(this.tiles.group, true)[0];
-    if (hit) { this.ground = hit.point.y; this.onGround?.(hit.point.y); }
+    if (hit) this.setGround(hit.point.y);
   }
 
   private emitAttribution() {
