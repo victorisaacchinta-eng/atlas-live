@@ -8,6 +8,7 @@ import { dust, projectorPad } from './hologram';
 import { theme } from './theme';
 import type { Hologram } from './model';
 import { EarthView } from './earth';
+import { lensPass } from './lens';
 
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
@@ -41,6 +42,8 @@ export class Stage {
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   private host: HTMLElement;
+  /** Screen-space sensor lens (thermal, night, riso). */
+  readonly lens = lensPass();
   /** Real-world 3D places (Google Photorealistic 3D Tiles). Active only in Earth mode. */
   readonly earth: EarthView;
   earthOn = false;
@@ -78,6 +81,7 @@ export class Stage {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.32, 0.62);
     if (theme.glow && !new URLSearchParams(location.search).has('nobloom')) this.composer.addPass(this.bloom);
+    this.composer.addPass(this.lens.pass);
     this.composer.addPass(new OutputPass());
 
     new ResizeObserver(() => this.resize()).observe(host);
@@ -201,6 +205,7 @@ export class Stage {
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
     this.bloom.setSize(w, h);
+    this.lens.resize(w, h);
     this.camera.aspect = w / h;
     // Keep the model framed on narrow screens.
     this.camera.fov = w / h < 0.8 ? 46 : 32;
@@ -261,6 +266,7 @@ export class Stage {
       this.camera.position.copy(this.controls.target).add(off);
       this.controls.update();
     }
+    this.lens.tick(t);
     this.onFrame?.(dt, t);
     this.composer.render();
   }

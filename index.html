@@ -59,10 +59,7 @@
         <input id="place-input" placeholder="Any place on Earth, e.g. Golconda Fort" />
         <button type="submit" class="send">Go</button>
       </form>
-      <div class="look" role="group" aria-label="Look">
-        <button type="button" class="look-btn is-on" data-look="photo" aria-pressed="true">Photo</button>
-        <button type="button" class="look-btn" data-look="hologram" aria-pressed="false">Hologram</button>
-      </div>
+      <div class="look" id="lenses" role="group" aria-label="Lens (keys 1 to 5)"></div>
       <ol class="landmarks" id="landmarks"></ol>
       <p class="scan-status" id="place-status" aria-live="polite"></p>
     </section>

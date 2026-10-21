@@ -188,8 +188,11 @@ body.mode-scan .rescan { display: inline-flex; }
 .sun p { margin: 0; font-variant-numeric: tabular-nums; }
 body.mode-places .intro.waiting { display: none; }
 
-.look { display: flex; border: 1px solid var(--line); align-self: flex-start; }
-.look-btn { background: transparent; border: 0; min-height: 36px; padding: 0 14px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.look { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); }
+.look-btn { background: transparent; border: 0; min-height: 40px; padding: 4px 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; }
+.look-btn .lk { font-size: 9px; color: var(--signal); letter-spacing: 0; }
+.look-btn:hover { color: var(--bone); }
+.look-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; }
 .look-btn + .look-btn { border-left: 1px solid var(--line); }
 .look-btn.is-on { background: var(--panel); color: var(--panel-text); }
 .landmarks { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-content: start; scrollbar-width: thin; }

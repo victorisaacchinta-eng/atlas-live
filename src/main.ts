@@ -15,6 +15,7 @@ import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
 import type { EarthAuth } from './earth';
+import { LENSES, type Lens } from './lens';
 
 applyCss(theme);
 
@@ -438,11 +439,36 @@ for (const l of LANDMARKS) {
   landmarkList.appendChild(li);
 }
 
-document.querySelectorAll<HTMLButtonElement>('.look-btn').forEach((b) => b.addEventListener('click', () => {
-  const look = b.dataset.look as 'photo' | 'hologram';
-  document.querySelectorAll<HTMLButtonElement>('.look-btn').forEach((x) => { x.classList.toggle('is-on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-  stage.earth.setLook(look);
-}));
+// Lenses: the same world through a different sensor. Keys 1 to 5 while in Places.
+let lens: Lens = 'photo';
+const lensBox = document.getElementById('lenses')!;
+for (const l of LENSES) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'look-btn';
+  b.dataset.lens = l.id;
+  b.title = `${l.label} (key ${l.key})`;
+  b.innerHTML = `<span class="lk"></span>`;
+  b.firstElementChild!.textContent = l.key;
+  b.append(l.label);
+  b.addEventListener('click', () => setLens(l.id));
+  lensBox.appendChild(b);
+}
+function setLens(l: Lens) {
+  lens = l;
+  lensBox.querySelectorAll<HTMLButtonElement>('.look-btn').forEach((x) => { const on = x.dataset.lens === l; x.classList.toggle('is-on', on); x.setAttribute('aria-pressed', String(on)); });
+  document.body.dataset.lens = l;
+  stage.earth.setLook(l === 'hologram' ? 'hologram' : 'photo');
+  stage.lens.set(earthActive ? l : 'photo');
+}
+setLens('photo');
+window.addEventListener('keydown', (e) => {
+  if (!earthActive || e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = e.target as HTMLElement;
+  if (el.closest('input, textarea, [contenteditable]')) return;
+  const hit = LENSES.find((x) => x.key === e.key);
+  if (hit) { setLens(hit.id); e.preventDefault(); }
+});
 
 async function getEarthAuth(): Promise<EarthAuth | null> {
   if (earthAuth !== undefined) return earthAuth;
@@ -472,6 +498,7 @@ function earthOn() {
   earthActive = true;
   document.body.classList.add('earth');
   stage.setEarth(true);
+  stage.lens.set(lens);
   ($('labels') as HTMLElement).hidden = true;
   sunBox.hidden = true;
 }
@@ -483,6 +510,7 @@ function exitEarth() {
   originLL = null;
   document.body.classList.remove('earth');
   stage.setEarth(false);
+  stage.lens.set('photo');
   ($('labels') as HTMLElement).hidden = false;
   placeTag.hidden = true;
   if (state.entry) { setTitle(state.entry.title); $('model-kind').textContent = state.entry.kind; $('credit').textContent = `Model: ${state.entry.credit} · ${state.entry.licence}`; }
@@ -502,7 +530,7 @@ async function selectLandmark(l: Landmark) {
   placeStatus.textContent = `streaming ${l.name} in 3D`;
   ui.log(`flying to ${l.name}`, 'sys');
   placeTag.hidden = true;
-  const look = (document.querySelector('.look-btn.is-on') as HTMLElement)?.dataset.look as 'photo' | 'hologram' || 'photo';
+  const look = lens === 'hologram' ? 'hologram' : 'photo';
   // Where the camera lands. Ground readings move it (the dive reads it every frame).
   const land = new THREE.Vector3(0, l.lift, 0);
   // Ground readings only count once the globe is turned to this landmark.
