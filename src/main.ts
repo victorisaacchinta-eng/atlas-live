@@ -617,7 +617,13 @@ async function showReconstruction(l: Landmark) {
   setTitle(l.name);
   $('model-kind').textContent = sp.photos ? `Reconstructed from ${sp.photos} public photos` : 'Photo reconstruction';
   $('parts-n').textContent = '1';
-  $('credit').textContent = sp.credit === 'preview' ? 'Preview splat' : `Gaussian splat trained by ATLAS · ${sp.credit}`;
+  const credit = $('credit');
+  credit.textContent = sp.credit === 'preview' ? 'Preview splat' : `Gaussian splat trained by ATLAS from ${sp.credit} · `;
+  if (sp.credit !== 'preview') {
+    const a = document.createElement('a');
+    a.href = sp.url.replace(/\.splat$/, '.credits.json'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'photo credits';
+    credit.appendChild(a);
+  }
   placeStatus.textContent = 'loading the reconstruction';
   ui.log(`loading the photo reconstruction of ${l.name}`, 'sys');
   updateReconBtn();
@@ -681,7 +687,9 @@ async function selectLandmark(l: Landmark) {
     if (predicted !== null) stage.earth.predictGround(predicted);
     arrived = true;
     stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => {
-      placeStatus.textContent = l.lowDetail ? `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.` : '';
+      placeStatus.textContent = !l.lowDetail ? ''
+        : splatFor(l) ? `Google’s 3D is coarse at ${l.name}. Press R for ATLAS’s reconstruction from ${l.splat?.photos ?? 'public'} photos, or B to build a model you can take apart.`
+        : `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.`;
       applyIsolate();
     });
   };

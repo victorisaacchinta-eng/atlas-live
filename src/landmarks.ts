@@ -31,7 +31,8 @@ export const LANDMARKS: Landmark[] = [
   { group: 'Wonders', id: 'chichen-itza', name: 'Chichén Itzá', city: 'Yucatán, Mexico', lat: 20.68299, lon: -88.568642, view: 360, lift: 15 },
   { group: 'Wonders', id: 'petra', name: 'Petra Treasury', city: "Ma'an, Jordan", lat: 30.3220755, lon: 35.4515251, view: 260, lift: 20 },
   { group: 'Wonders', id: 'pyramids', name: 'Great Pyramid of Giza', city: 'Giza, Egypt', lat: 29.979165, lon: 31.134213, view: 760, lift: 50 },
-  { group: 'Wonders', id: 'taj', name: 'Taj Mahal', city: 'Agra, India', lat: 27.175007, lon: 78.042101, view: 480, lift: 30, lowDetail: true },
+  { group: 'Wonders', id: 'taj', name: 'Taj Mahal', city: 'Agra, India', lat: 27.175007, lon: 78.042101, view: 480, lift: 30, lowDetail: true,
+    splat: { url: '/splats/taj.splat', credit: '176 Wikimedia Commons photos (CC BY-SA and others)', photos: 176 } },
   // Icons with the crispest capture.
   { group: 'Icons', id: 'eiffel', name: 'Eiffel Tower', city: 'Paris, France', lat: 48.85826, lon: 2.294501, view: 720, lift: 140 },
   { group: 'Icons', id: 'liberty', name: 'Statue of Liberty', city: 'New York, USA', lat: 40.689253, lon: -74.044548, view: 330, lift: 45 },

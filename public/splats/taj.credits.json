@@ -1,0 +1,1415 @@
+{
+ "landmark": "taj",
+ "photos": 176,
+ "splats": 43319,
+ "sources": [
+  {
+   "title": "File:Taj Mahal, Agra, Uttar Pradesh, India 2012.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_Uttar_Pradesh,_India_2012.jpg",
+   "author": "WestportWiki",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0000.jpg"
+  },
+  {
+   "title": "File:Taj Mahal N-UP-A28-a.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_N-UP-A28-a.jpg",
+   "author": "Asitjain",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0001.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in the morning 2023.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_the_morning_2023.jpg",
+   "author": "Shivansh2401",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0002.jpg"
+  },
+  {
+   "title": "File:Taj Mahal side view 1.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_side_view_1.jpg",
+   "author": "Rangan Datta Wiki",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0003.jpg"
+  },
+  {
+   "title": "File:Beautiful Taj Mahal.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Beautiful_Taj_Mahal.jpg",
+   "author": "Dineshsinghdec",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0004.jpg"
+  },
+  {
+   "title": "File:Gezicht op de achterzijde van de Taj Mahal in Agra Agra-Taj-Mahal back view (titel op object), RP-F-F02434.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_de_achterzijde_van_de_Taj_Mahal_in_Agra_Agra-Taj-Mahal_back_view_(titel_op_object),_RP-F-F02434.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0005.jpg"
+  },
+  {
+   "title": "File:Toegangspoort tot de Taj Mahal in Agra Agra-exterior of Entrancegate to Taj-Mahal (titel op object), RP-F-F02435.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Toegangspoort_tot_de_Taj_Mahal_in_Agra_Agra-exterior_of_Entrancegate_to_Taj-Mahal_(titel_op_object),_RP-F-F02435.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0006.jpg"
+  },
+  {
+   "title": "File:Gezicht op de Taj Mahal in Agra, gezien vanaf de Yamuna Agra-Taj-Mahal seen from river Gumna (titel op object), RP-F-F02431.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_de_Taj_Mahal_in_Agra,_gezien_vanaf_de_Yamuna_Agra-Taj-Mahal_seen_from_river_Gumna_(titel_op_object),_RP-F-F02431.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0007.jpg"
+  },
+  {
+   "title": "File:Gezicht op de Taj Mahal vanaf de zijkant in Agra Agra-Taj-Mahal side view (titel op object), RP-F-F02433.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_de_Taj_Mahal_vanaf_de_zijkant_in_Agra_Agra-Taj-Mahal_side_view_(titel_op_object),_RP-F-F02433.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0009.jpg"
+  },
+  {
+   "title": "File:Gezicht op de Taj Mahal in Agra Agra-Taj-Mahal front view (titel op object), RP-F-F02432.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_de_Taj_Mahal_in_Agra_Agra-Taj-Mahal_front_view_(titel_op_object),_RP-F-F02432.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0010.jpg"
+  },
+  {
+   "title": "File:Taj Mahal-60.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal-60.jpg",
+   "author": "Immanuelle",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0011.jpg"
+  },
+  {
+   "title": "File:Taj Mahal side view 2.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_side_view_2.jpg",
+   "author": "Rangan Datta Wiki",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0012.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra (36473087024).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra_(36473087024).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0013.jpg"
+  },
+  {
+   "title": "File:Taj Mahal LCCN2001704599.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_LCCN2001704599.jpg",
+   "author": "Frank and Frances Carpenter Collection",
+   "license": "Public domain",
+   "licenseUrl": "",
+   "file": "0014.jpg"
+  },
+  {
+   "title": "File:Taj Mahal view from the entry gate.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_view_from_the_entry_gate.jpg",
+   "author": "Rahultalreja11",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0015.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India3.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India3.jpg",
+   "author": "Mustang Joe",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0016.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 10.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_10.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0017.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 12.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_12.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0018.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 26.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_26.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0019.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 06.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_06.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0020.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 04.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_04.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0021.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 08.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_08.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0022.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 05.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_05.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0023.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in 2019.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_2019.jpg",
+   "author": "Buiobuione",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0026.jpg"
+  },
+  {
+   "title": "File:Taj Mahal by anurag.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_by_anurag.jpg",
+   "author": "Anuragtripathi",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0028.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India 2.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_2.jpg",
+   "author": "Mr. Debapriya Hore",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0029.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra DSC 0356.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_DSC_0356.jpg",
+   "author": "Ranjithsiji",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0032.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 02.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_02.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0033.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra Uttar Pradesh-02.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_Uttar_Pradesh-02.jpg",
+   "author": "Buiobuione",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0034.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra Uttar Pradesh-03.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_Uttar_Pradesh-03.jpg",
+   "author": "Buiobuione",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0035.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 03.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_03.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0036.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 01.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_01.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0037.jpg"
+  },
+  {
+   "title": "File:View of Taj Mahal, Agra.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:View_of_Taj_Mahal,_Agra.jpg",
+   "author": "Rohit Sharma",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0038.jpg"
+  },
+  {
+   "title": "File:Tourim Taj Mahal Agra India 9.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Tourim_Taj_Mahal_Agra_India_9.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0040.jpg"
+  },
+  {
+   "title": "File:Taj Mahal on a bright sunny day.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_on_a_bright_sunny_day.jpg",
+   "author": "Sourabhdotrai",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0043.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 28.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_28.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0044.jpg"
+  },
+  {
+   "title": "File:Gezicht op Taj Mahal, RP-F-00-5347-54.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_Taj_Mahal,_RP-F-00-5347-54.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0045.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 14.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_14.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0046.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra Uttar Pradesh-01.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_Uttar_Pradesh-01.jpg",
+   "author": "Buiobuione",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0048.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (1).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(1).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0049.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (2).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(2).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0050.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (4).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(4).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0051.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (8).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(8).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0052.jpg"
+  },
+  {
+   "title": "File:Gezicht op de Taj Mahal in India, RP-F-F80436.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Gezicht_op_de_Taj_Mahal_in_India,_RP-F-F80436.jpg",
+   "author": "Rijksmuseum",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0053.jpg"
+  },
+  {
+   "title": "File:20191204 Jawab, Taj Mahal, Agra 0657 6562.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Jawab,_Taj_Mahal,_Agra_0657_6562.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0054.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 09.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_09.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0055.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-View from the Mughal garden reflecting pond-20131019.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-View_from_the_Mughal_garden_reflecting_pond-20131019.jpg",
+   "author": "Daniel VILLAFRUELA",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0058.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (7).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(7).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0060.jpg"
+  },
+  {
+   "title": "File:Taj Mahal(Sunset), Agra, India.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal(Sunset),_Agra,_India.jpg",
+   "author": "Prabhat Chandra",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0061.jpg"
+  },
+  {
+   "title": "File:Sun reflection on YamunaJi ,with Taj Mahal-2.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Sun_reflection_on_YamunaJi_,with_Taj_Mahal-2.jpg",
+   "author": "Prabhat Chandra",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0062.jpg"
+  },
+  {
+   "title": "File:Early birds at the Taj Mahal.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Early_birds_at_the_Taj_Mahal.jpg",
+   "author": "Ramya M",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0063.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in the last Sun-ray.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_the_last_Sun-ray.jpg",
+   "author": "A Ghosh 2020",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0064.jpg"
+  },
+  {
+   "title": "File:Divergence of Taj.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Divergence_of_Taj.jpg",
+   "author": "Sudipta Maulik",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0065.jpg"
+  },
+  {
+   "title": "File:TAJ MAHAL MINARET AGRA UP.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:TAJ_MAHAL_MINARET_AGRA_UP.jpg",
+   "author": "Fyzasl",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0068.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 2025 07.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_2025_07.jpg",
+   "author": "Philip Nalangan",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0069.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0622 6533 DxO.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0622_6533_DxO.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0070.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2018.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2018.jpg",
+   "author": "Almbauer",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0072.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-51-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-51-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0074.jpg"
+  },
+  {
+   "title": "File:Taj Mahal India 2.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_India_2.jpg",
+   "author": "Itsmesushilpokharel",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0076.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-35-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-35-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0077.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-45-Suedostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-45-Suedostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0078.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-53-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-53-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0079.jpg"
+  },
+  {
+   "title": "File:Taj Mahal India 1.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_India_1.jpg",
+   "author": "Itsmesushilpokharel",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0080.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-11c-Kuppel hinter Galerie-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-11c-Kuppel_hinter_Galerie-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0081.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-31-Yamuna-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-31-Yamuna-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0083.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-37-Ostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-37-Ostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0084.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-61-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-61-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0086.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2018-01-02zz.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2018-01-02zz.jpg",
+   "author": "Rabe!",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0087.jpg"
+  },
+  {
+   "title": "File:The front view of the damage being done to the Taj Mahal by pollution.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:The_front_view_of_the_damage_being_done_to_the_Taj_Mahal_by_pollution.jpg",
+   "author": "Nut.sack321",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0088.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-52-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-52-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0090.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-60-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-60-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0091.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-44-Ostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-44-Ostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0092.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-54-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-54-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0093.jpg"
+  },
+  {
+   "title": "File:Taj Mahal \u00b7 Agra (8508173122).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_%C2%B7_Agra_(8508173122).jpg",
+   "author": "Seba Della y Sole Bossio from Cordoba, Argentina",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0096.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 15.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_15.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0098.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 17.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_17.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0099.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 18.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_18.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0100.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 19.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_19.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0101.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 20.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_20.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0102.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 22.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_22.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0103.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 23.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_23.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0104.jpg"
+  },
+  {
+   "title": "File:Taj Mahal of Agra in Uttar Pradesh 24.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_of_Agra_in_Uttar_Pradesh_24.jpg",
+   "author": "SuvadipSanyal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0105.jpg"
+  },
+  {
+   "title": "File:Taj Mahal (22593938713).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_(22593938713).jpg",
+   "author": "Gary Todd from Xinzheng, China",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0106.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (3).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(3).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0107.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (6).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(6).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0109.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0721 6575 DxO.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0721_6575_DxO.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0110.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-42-Suedwestminarett-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-42-Suedwestminarett-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0111.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-58-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-58-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0113.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra India 1.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_India_1.jpg",
+   "author": "Fitindia",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0114.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (9).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(9).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0115.jpg"
+  },
+  {
+   "title": "File:The Taj Mahal main building.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Taj_Mahal_main_building.jpg",
+   "author": "Matthew T Rader",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0117.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0636 6548.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0636_6548.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0118.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-07-aussen-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-07-aussen-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0119.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Agra - 11840507015.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Agra_-_11840507015.jpg",
+   "author": "Piyush Kumar",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0120.jpg"
+  },
+  {
+   "title": "File:Taj Mahal from Dusheera Ghat.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_from_Dusheera_Ghat.jpg",
+   "author": "Dr. Sakshi Baijal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0121.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-28-Moschee-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-28-Moschee-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0122.jpg"
+  },
+  {
+   "title": "File:Aks The Reflection Taj Mahal.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Aks_The_Reflection_Taj_Mahal.jpg",
+   "author": "Antrix3",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0123.jpg"
+  },
+  {
+   "title": "File:Taj Mahal striaght view 1.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_striaght_view_1.jpg",
+   "author": "Rangan Datta Wiki",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0124.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0623 6541 DxO.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0623_6541_DxO.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0125.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0641 6555.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0641_6555.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0126.jpg"
+  },
+  {
+   "title": "File:The Taj Mahal, Agra Photography.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Taj_Mahal,_Agra_Photography.jpg",
+   "author": "Fastestfaraz1",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0127.jpg"
+  },
+  {
+   "title": "File:Taj Mahal.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal.jpg",
+   "author": "Steve Evans from Bangalore, India",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0128.jpg"
+  },
+  {
+   "title": "File:Taj Mahal front view with trees.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_front_view_with_trees.jpg",
+   "author": "Srividya Bharadwaj",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0129.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Jawab 2.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Jawab_2.jpg",
+   "author": "Shantanulale",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0130.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Main Gate From Down.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Main_Gate_From_Down.JPG",
+   "author": "pchandra191",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0131.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0657 6563 DxO.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0657_6563_DxO.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0133.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-49-Suedostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-49-Suedostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0134.jpg"
+  },
+  {
+   "title": "File:Taj mahal (32368664245).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_mahal_(32368664245).jpg",
+   "author": "Gisela Giardino from Buenos Aires, Argentina",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0135.jpg"
+  },
+  {
+   "title": "File:The Taj Mahal from Mosque.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Taj_Mahal_from_Mosque.jpg",
+   "author": "Tushar Rai",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0137.jpg"
+  },
+  {
+   "title": "File:A corner from Taj Mahal delight to the eyes..jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:A_corner_from_Taj_Mahal_delight_to_the_eyes..jpg",
+   "author": "Photowalikanya",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0138.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-36-Ostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-36-Ostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0139.jpg"
+  },
+  {
+   "title": "File:Taj mahal B&W.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_mahal_B%26W.jpg",
+   "author": "Photubaaz",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0141.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-24-Moschee-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-24-Moschee-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0142.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Mosque A.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Mosque_A.jpg",
+   "author": "Rangan Datta Wiki",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0144.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-26-Moschee-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-26-Moschee-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0145.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-20-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-20-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0146.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-40-Nordostminarett-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-40-Nordostminarett-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0147.jpg"
+  },
+  {
+   "title": "File:Taj Mahal from below.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_from_below.jpg",
+   "author": "flowcomm",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0148.jpg"
+  },
+  {
+   "title": "File:Taj Mahal from front (8128820535).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_from_front_(8128820535).jpg",
+   "author": "flowcomm",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0149.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-41-Suedwestminarett-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-41-Suedwestminarett-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0150.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-43a-Ostseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-43a-Ostseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0151.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-56-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-56-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0152.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-43b-Jawab-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-43b-Jawab-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0154.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-25-Moschee-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-25-Moschee-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0155.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in April 2016 17.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_April_2016_17.jpg",
+   "author": "Thomas Fuhrmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0156.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-04-aussen-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-04-aussen-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0159.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (5).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(5).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0160.jpg"
+  },
+  {
+   "title": "File:Taj Mahal pillar & birds.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_pillar_%26_birds.jpg",
+   "author": "flowcomm",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0161.jpg"
+  },
+  {
+   "title": "File:Taj Mahal From Mehtab Bagh (10).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_From_Mehtab_Bagh_(10).jpg",
+   "author": "Shagil Kannur",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0162.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-30-Moschee-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-30-Moschee-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0163.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 02.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_02.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0164.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 14.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_14.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0168.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 12.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_12.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0169.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 08.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_08.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0170.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 03.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_03.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0172.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Front View with Shadow in Water.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Front_View_with_Shadow_in_Water.jpg",
+   "author": "Envision Studio",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0174.jpg"
+  },
+  {
+   "title": "File:Taj Mahal View from Front Entry Gate.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_View_from_Front_Entry_Gate.jpg",
+   "author": "Envision Studio",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0175.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in Full Front View in 2013.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_Full_Front_View_in_2013.jpg",
+   "author": "Envision Studio",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0176.jpg"
+  },
+  {
+   "title": "File:Taj Mahal from bottom view.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_from_bottom_view.JPG",
+   "author": "Sivaramakrishna",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0178.jpg"
+  },
+  {
+   "title": "File:Taj Mahal from the back.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_from_the_back.jpg",
+   "author": "Vidhi Grover",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0179.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-21-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-21-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0180.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-64-Suedwest mit Jawab-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-64-Suedwest_mit_Jawab-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0182.jpg"
+  },
+  {
+   "title": "File:TAJ MAHAL-AGRA-UTTAR PRADESH- DSC002.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:TAJ_MAHAL-AGRA-UTTAR_PRADESH-_DSC002.jpg",
+   "author": "Mdnkhanmuz",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0183.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-19-Suedseite-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-19-Suedseite-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0184.jpg"
+  },
+  {
+   "title": "File:Taj Mahal -Agra -Uttar Pradesh 001.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_-Agra_-Uttar_Pradesh_001.jpg",
+   "author": "Agyapal01",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0185.jpg"
+  },
+  {
+   "title": "File:Beautiful Taj Mahal with sunset.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Beautiful_Taj_Mahal_with_sunset.jpg",
+   "author": "Shreyag626",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0187.jpg"
+  },
+  {
+   "title": "File:Agra-Taj Mahal-05-aussen-2018-gje.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Agra-Taj_Mahal-05-aussen-2018-gje.jpg",
+   "author": "Gerd Eichmann",
+   "license": "CC BY 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+   "file": "0188.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 1, Agra.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_1,_Agra.jpg",
+   "author": "Sachin Ghai",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0189.jpg"
+  },
+  {
+   "title": "File:20191204 Mosque, Taj Mahal, Agra 0650 6557.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Mosque,_Taj_Mahal,_Agra_0650_6557.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0190.jpg"
+  },
+  {
+   "title": "File:TAJ MAHAL AGRA UP.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:TAJ_MAHAL_AGRA_UP.jpg",
+   "author": "Fyzasl",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0191.jpg"
+  },
+  {
+   "title": "File:Taj mahal from distance.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_mahal_from_distance.jpg",
+   "author": "Naadan balak",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0192.jpg"
+  },
+  {
+   "title": "File:Taj Mahal frontal.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_frontal.jpg",
+   "author": "Marsmux",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0193.jpg"
+  },
+  {
+   "title": "File:Taj Mahal frontal with garden.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_frontal_with_garden.jpg",
+   "author": "Marsmux",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0194.jpg"
+  },
+  {
+   "title": "File:Taj Mahal sideview west.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_sideview_west.jpg",
+   "author": "Marsmux",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0195.jpg"
+  },
+  {
+   "title": "File:Reflection of love (taj mahal).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Reflection_of_love_(taj_mahal).jpg",
+   "author": "Shalabhs Srivastava",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0196.jpg"
+  },
+  {
+   "title": "File:Taj Mahal gateway and gardens, India, 2013-03 (11551780873).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_gateway_and_gardens,_India,_2013-03_(11551780873).jpg",
+   "author": "Edmund Gall",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0197.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 2011 07.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_2011_07.JPG",
+   "author": "Vetra",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0198.jpg"
+  },
+  {
+   "title": "File:Taj mahal,Agra,india.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_mahal,Agra,india.jpg",
+   "author": "Rana neog",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0200.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal Agra 0647 6556.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal_Agra_0647_6556.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0202.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in winter 08.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_winter_08.jpg",
+   "author": "Darshanavenugopal",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0203.jpg"
+  },
+  {
+   "title": "File:Taj Mahal 20180908 111855.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_20180908_111855.jpg",
+   "author": "Vengolis",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0204.jpg"
+  },
+  {
+   "title": "File:Taj Mahal Tomb at sunrise.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_Tomb_at_sunrise.JPG",
+   "author": "MarcBW",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "file": "0205.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21002742778).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21002742778).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0206.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21003829709).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21003829709).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0207.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21198543251).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21198543251).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0208.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21003919989).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21003919989).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0209.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21164491516).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21164491516).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0210.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21180397972).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21180397972).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0211.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21180461582).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21180461582).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0212.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21190631445).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21190631445).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0213.jpg"
+  },
+  {
+   "title": "File:Taj Mahal, Agra, India (21003943059).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_(21003943059).jpg",
+   "author": "Aleksandr Zykov from Russia",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+   "file": "0214.jpg"
+  },
+  {
+   "title": "File:Taj Mahal south gate (4570447625).jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_south_gate_(4570447625).jpg",
+   "author": "Jon Connell from Cambridge, UK",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "file": "0215.jpg"
+  },
+  {
+   "title": "File:20191204 Taj Mahal, Agra 0702 6568.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:20191204_Taj_Mahal,_Agra_0702_6568.jpg",
+   "author": "Jakub Ha\u0142un",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0216.jpg"
+  },
+  {
+   "title": "File:Taj Mahal March 2019.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_March_2019.jpg",
+   "author": "Kushared (Mohammed Sardar)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0217.jpg"
+  },
+  {
+   "title": "File:Taj Mahal in Taj Mahotsav.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_in_Taj_Mahotsav.jpg",
+   "author": "Imabh",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "file": "0218.jpg"
+  },
+  {
+   "title": "File:Taj Mahal closer view ind.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Taj_Mahal_closer_view_ind.jpg",
+   "author": "Zuck28",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "file": "0219.jpg"
+  }
+ ]
+}
