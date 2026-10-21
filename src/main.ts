@@ -792,8 +792,10 @@ async function runConstruct(name: string, city: string) {
     }
     built = { name: P.name || name, parts: [], model: stage.model!, sources: planned.sources, summary: P.summary };
 
-    // 2. Builders, one per zone, in parallel. Each zone appears as soon as it lands.
-    await Promise.all(P.zones.map(async (z, i) => {
+    // 2. Builders, one per zone, two at a time (free-tier rate limits). Each zone appears as soon as it lands.
+    const rows = P.zones.map((z, i) => ({ z, i }));
+    const pool = async () => { for (let next = rows.shift(); next; next = rows.shift()) await buildZone(next.z, next.i); };
+    const buildZone = async (z: Zone, i: number) => {
       const row = stepRow(`Builder ${i + 1}`, `${z.name}: ${z.parts.slice(0, 4).join(', ')}${z.parts.length > 4 ? '…' : ''}`);
       try {
         const r = await post<{ parts: BuiltPart[] }>({ step: 'build', name, plan: P, zone: z });
@@ -804,7 +806,8 @@ async function runConstruct(name: string, city: string) {
       } catch (err) {
         row.fail(`${z.name}: failed (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`);
       }
-    }));
+    };
+    await Promise.all([pool(), pool()]);
     if (!built.parts.length) throw new Error('no zone came back');
 
     // 3. Critic: compare the build with a real photo and fix what is off. Up to two rounds.
@@ -817,7 +820,7 @@ async function runConstruct(name: string, city: string) {
         const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, reference: planned.reference?.image });
         const changes = fix.replace.length + fix.add.length + fix.remove.length;
         c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`);
-        if (!changes || fix.score >= 8) break;
+        if (!changes || fix.score >= 7) break;
         built.parts = applyFixes(built.parts, fix);
         showBuilt();
       } catch (err) {

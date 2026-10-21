@@ -87,21 +87,27 @@ export async function chat(body: Record<string, unknown>) {
   // Overloaded (503), rate-limited (429) or retired (404): try the next live model for the role.
   // Gemini 3.x thinks at length by default; structured work here needs speed more than depth.
   if (PROVIDER.id === 'gemini' && body.reasoning_effort === undefined) body.reasoning_effort = 'low';
-  const role = (['agent', 'vision', 'fast'] as const).find((k) => body.model === MODELS[k]);
-  const tries = [String(body.model), ...(role ? ALTS[role].filter((id) => id !== body.model) : [])].slice(0, 3);
+  const role = (['agent', 'vision', 'fast'] as const).find((k) => body.model === MODELS[k]) ?? 'agent';
+  // Overloaded (503), rate-limited or out of quota (429), retired (404): try the next live model,
+  // then any other provider that has a key. Each model has its own quota on free tiers.
+  const plan: { p: Provider; model: string }[] = [String(body.model), ...ALTS[role].filter((id) => id !== body.model)].slice(0, 6).map((model) => ({ p: PROVIDER!, model }));
+  for (const other of PROVIDERS) if (other.key && other !== PROVIDER) plan.push({ p: other, model: other[role] });
   let last = '';
-  for (let i = 0; i < tries.length; i++) {
-    const r = await fetch(`${PROVIDER.base}/chat/completions`, {
+  for (let i = 0; i < plan.length; i++) {
+    const { p, model } = plan[i];
+    const payload: Record<string, unknown> = { ...body, model };
+    if (p.id !== 'gemini') delete payload.reasoning_effort;
+    const r = await fetch(`${p.base}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PROVIDER.key}` },
-      body: JSON.stringify({ ...body, model: tries[i] }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` },
+      body: JSON.stringify(payload),
     });
-    if (r.ok) return r.json();
-    last = `${PROVIDER.label} ${r.status}: ${(await r.text()).slice(0, 300)}`;
+    if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; return j; }
+    last = `${p.label} ${r.status}: ${(await r.text()).replace(/\s+/g, ' ').slice(0, 300)}`;
     if (![404, 429, 500, 503].includes(r.status)) throw new HttpError(r.status, last);
-    if (i === 0) await new Promise((res) => setTimeout(res, 600));
+    if (r.status !== 429 && i === 0) await new Promise((res) => setTimeout(res, 600));
   }
-  throw new HttpError(503, last);
+  throw new HttpError(503, /\b429\b/.test(last) ? `The model quota is used up for today (${last.slice(0, 120)})` : last);
 }
 
 export async function tavily(query: string, maxResults = 4) {
