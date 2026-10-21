@@ -8,7 +8,7 @@ interface Provider { id: string; label: string; base: string; key?: string; visi
 
 // Providers retire model ids (Gemini 2.5 shut down on 16 Oct 2026). When the configured id is not
 // in the provider's live model list, the first id matching these patterns, in order, is used.
-const GEMINI_PREFER = [/^gemini-3(\.\d)?-flash$/, /^gemini-3(\.\d)?-flash-preview$/, /^gemini-3(\.\d)?-flash-lite$/, /^gemini-[\d.]+-flash$/];
+const GEMINI_PREFER = [/^gemini-3(\.\d)?-flash$/, /^gemini-flash-latest$/, /^gemini-3(\.\d)?-flash-preview$/, /^gemini-flash-lite-latest$/, /^gemini-3(\.\d)?-flash-lite$/, /^gemini-[\d.]+-flash$/];
 const NEMOTRON_PREFER = {
   vision: [/nemotron.*vl/i, /vl/i],
   agent: [/nemotron.*super/i, /nemotron.*ultra/i, /nemotron/i],
@@ -36,7 +36,7 @@ export const MODELS = {
 
 const configured = { ...MODELS };
 /** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
-const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
+export const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
 let checked: Promise<void> | null = null;
 
 /**
