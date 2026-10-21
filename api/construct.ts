@@ -87,8 +87,7 @@ Reply with JSON only:
     { role: 'system', content: system },
     { role: 'user', content: `Structure: ${subject}\n\nResearch:\n${research || '(no results; rely on well-known proportions and mark estimates)'}` },
   ];
-  const reply = await chat({ model: MODELS.agent, messages, temperature: 0.2, max_tokens: 2500 });
-  const p = extractJson<Plan>(reply.choices?.[0]?.message?.content || '');
+  const p = await jsonChat<Plan>(MODELS.agent, messages, 3000);
   if (!Array.isArray(p.zones) || !p.zones.length) throw new HttpError(502, 'The planner returned no zones');
   p.zones = p.zones.slice(0, 5).map((z, i) => ({ ...z, id: slug(z.id || z.name || `zone_${i + 1}`), parts: (z.parts || []).slice(0, 8) }));
   return {
@@ -112,8 +111,7 @@ Reply with JSON only: {"parts": [ ...parts for your zone... ]}`;
     { role: 'system', content: system },
     { role: 'user', content: `Your zone: ${zone.name}\nBrief: ${zone.brief}\nBounding box: ${JSON.stringify(zone.box)}\nParts to build: ${zone.parts.join(', ')}` },
   ];
-  const reply = await chat({ model: MODELS.agent, messages, temperature: 0.3, max_tokens: 4000 });
-  const out = extractJson<{ parts: Part[] }>(reply.choices?.[0]?.message?.content || '');
+  const out = await jsonChat<{ parts: Part[] }>(MODELS.agent, messages, 6000, 0.3);
   return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.agent };
 }
 
@@ -133,8 +131,7 @@ async function critique(name: string, b: Body) {
 Return at most 6 fixes, the ones that most improve the likeness. Fix by replacing whole parts (same id), adding new parts, or removing parts.
 ${GRAMMAR}
 Reply with JSON only: {"score": 0-10 likeness now, "issues": ["short, specific"], "replace": [part, ...], "add": [part, ...], "remove": ["part_id", ...]}`;
-  const reply = await chat({ model: MODELS.vision, messages: [{ role: 'system', content: system }, { role: 'user', content }], temperature: 0.2, max_tokens: 4000 });
-  const c = extractJson<{ score?: number; issues?: string[]; replace?: Part[]; add?: Part[]; remove?: string[] }>(reply.choices?.[0]?.message?.content || '');
+  const c = await jsonChat<{ score?: number; issues?: string[]; replace?: Part[]; add?: Part[]; remove?: string[] }>(MODELS.vision, [{ role: 'system', content: system }, { role: 'user', content }], 6000);
   return {
     score: Math.max(0, Math.min(10, Number(c.score) || 0)),
     issues: (c.issues || []).slice(0, 6).map((s) => String(s).slice(0, 200)),
@@ -146,6 +143,72 @@ Reply with JSON only: {"score": 0-10 likeness now, "issues": ["short, specific"]
 }
 
 // ---------- helpers ----------
+/**
+ * Ask for JSON and get JSON. Uses the provider's JSON mode when it has one, repairs the usual
+ * slips (comments, trailing commas, a reply cut off mid-object) and retries once.
+ */
+async function jsonChat<T>(model: string, messages: ChatMessage[], max_tokens: number, temperature = 0.2): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let reply;
+    try {
+      reply = await chat({ model, messages, temperature, max_tokens, response_format: { type: 'json_object' } });
+    } catch (err) {
+      // Some providers reject response_format; ask again without it.
+      if (err instanceof HttpError && err.status === 400) reply = await chat({ model, messages, temperature, max_tokens });
+      else throw err;
+    }
+    const text = String(reply.choices?.[0]?.message?.content || '');
+    try { return extractJson<T>(text); } catch (err) {
+      lastErr = err;
+      try { return JSON.parse(repairJson(text)) as T; } catch (err2) { lastErr = err2; }
+    }
+  }
+  throw new HttpError(502, `The model's JSON could not be read (${lastErr instanceof Error ? lastErr.message.slice(0, 80) : 'parse error'})`);
+}
+
+function repairJson(text: string) {
+  let t = text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```(json)?/g, '');
+  const start = t.indexOf('{');
+  if (start < 0) throw new Error('no JSON object');
+  t = t.slice(start);
+  // Drop comments outside strings, and trailing commas.
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (inStr) { out += c; if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; out += c; continue; }
+    if (c === '/' && t[i + 1] === '/') { while (i < t.length && t[i] !== '\n') i++; continue; }
+    out += c;
+  }
+  out = out.replace(/,\s*([}\]])/g, '$1');
+  // Insert a missing comma between a value and the next key or element ("} {", "] [", "\"a\" \"b\"", number then quote).
+  out = out.replace(/([}\]"\d])(\s*\n\s*)(["{\[])/g, (m, a, ws, b) => `${a},${ws}${b}`);
+  // Close whatever a cut-off reply left open.
+  const stack: string[] = [];
+  inStr = false; esc = false;
+  let lastSafe = 0;
+  for (let i = 0; i < out.length; i++) {
+    const c = out[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') { stack.pop(); if (!stack.length) return out.slice(0, i + 1); lastSafe = i + 1; }
+    else if (c === ',') lastSafe = i;
+  }
+  let cut = out.slice(0, lastSafe).replace(/,\s*$/, '');
+  const open: string[] = [];
+  inStr = false; esc = false;
+  for (const c of cut) {
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{' || c === '[') open.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') open.pop();
+  }
+  cut += open.reverse().join('');
+  return cut;
+}
+
 const TYPES = new Set(['box', 'cylinder', 'cone', 'dome', 'onion', 'sphere', 'arch', 'gable', 'pyramid', 'spire', 'torus']);
 const num = (v: unknown, lo: number, hi: number, d: number) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
 const vec = (v: unknown, d: number[]) => (Array.isArray(v) && v.length >= 3 ? v.slice(0, 3).map((x, i) => num(x, -MAX.dim, MAX.dim, d[i])) : d);
