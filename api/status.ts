@@ -1,7 +1,8 @@
-import { PROVIDER, MODELS } from './_nebius.js';
+import { PROVIDER, MODELS, ensureModels } from './_nebius.js';
 
 /** Tells the UI which model provider is live, so the header never claims a model that isn't running. */
-export default function handler(_req: unknown, res: { status: (n: number) => { json: (b: unknown) => void } }) {
+export default async function handler(_req: unknown, res: { status: (n: number) => { json: (b: unknown) => void } }) {
+  await ensureModels();
   res.status(200).json({
     provider: PROVIDER?.id || null,
     label: PROVIDER?.label || null,
