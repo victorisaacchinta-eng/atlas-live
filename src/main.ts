@@ -490,8 +490,8 @@ function shareState(l: Landmark | null) {
 setLens('photo');
 window.addEventListener('keydown', (e) => {
   if (!earthActive || e.metaKey || e.ctrlKey || e.altKey) return;
-  const el = e.target as HTMLElement;
-  if (el.closest('input, textarea, [contenteditable]')) return;
+  const el = e.target as HTMLElement | null;
+  if (el?.closest?.('input, textarea, [contenteditable]')) return;
   const hit = LENSES.find((x) => x.key === e.key);
   if (hit) { setLens(hit.id); e.preventDefault(); }
 });
@@ -592,7 +592,7 @@ async function selectLandmark(l: Landmark) {
     stage.holdTopDown(ORBIT);
     originLL = { lat: l.lat, lon: l.lon };
     // Show the whole planet for a beat while the globe streams in, then fall.
-    stage.run(1.8, () => stage.holdTopDown(ORBIT), () => whenPredicted(() => dive(ORBIT)));
+    stage.holdUntil(ORBIT, () => stage.earth.visibleTiles > 4, 1.4, 6, () => whenPredicted(() => dive(ORBIT)));
   } else {
     // A satellite pass: climb, turn the globe under the camera along the great circle, dive.
     const from = originLL, to = { lat: l.lat, lon: l.lon };

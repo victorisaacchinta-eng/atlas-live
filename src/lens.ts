@@ -85,10 +85,11 @@ const frag = /* glsl */ `
     } else {
       // Riso: cream paper, a blue screen for the shadows, a fluoro pink screen for warm light,
       // printed slightly out of register like a real two-drum print.
-      float l = luma(src);
-      float warm = clamp((src.r - src.b) * 1.8 + 0.15, 0.0, 1.0);
-      float blue = screen(px + vec2(1.2, -0.8), 0.26, 6.0, pow(1.0 - l, 1.2));
-      float pink = screen(px, 1.31, 6.0, warm * (0.35 + l * 0.65));
+      // Stretch contrast first so the print keeps the city's structure.
+      float l = smoothstep(0.12, 0.78, luma(src));
+      float warm = clamp((src.r - src.b) * 2.2, 0.0, 1.0) * smoothstep(0.35, 0.9, l);
+      float blue = screen(px + vec2(1.4, -1.0), 0.26, 7.5, pow(1.0 - l, 1.7) * 0.92);
+      float pink = screen(px, 1.31, 7.5, warm * 0.75);
       col = uPaper;
       col = mix(col, col * uInkA, blue);
       col = mix(col, col * uInkB, pink * 0.85);

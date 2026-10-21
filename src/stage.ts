@@ -145,7 +145,7 @@ export class Stage {
       // Linger on the globe, fall fast through the empty kilometres, settle over the rooftops.
       const e = 0.5 - 0.5 * Math.cos(Math.PI * Math.pow(k, 0.85));
       const dist = Math.exp(l0 + (l1 - l0) * e);
-      const tilt = THREE.MathUtils.smoothstep(k, 0.5, 1);
+      const tilt = THREE.MathUtils.smoothstep(k, 0.62, 1);
       dir.copy(top).lerp(end, tilt).normalize();
       this.camera.position.copy(target).addScaledVector(dir, dist);
       this.controls.target.copy(target);
@@ -161,6 +161,16 @@ export class Stage {
   /** Straight up, nudged a hair toward `d` so a top-down view keeps a defined, north-up heading. */
   static topDir(d: THREE.Vector3) {
     return new THREE.Vector3(d.x * 1e-3, 1, d.z * 1e-3).normalize();
+  }
+
+  /** Hold top-down at `height` until `ready()` (after at least `min` s, at most `max` s). */
+  holdUntil(height: number, ready: () => boolean, min: number, max: number, done: () => void) {
+    const total = this.reducedMotion ? 0.001 : max;
+    this.run(total, (k) => {
+      this.holdTopDown(height);
+      if (this.flight && k * total >= min && ready()) this.flight.t = 1;
+    }, done);
+    if (this.flight) this.flight.dur = total;
   }
 
   /** Hold the camera top-down `height` metres above the origin, north up. */

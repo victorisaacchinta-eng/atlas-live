@@ -56,8 +56,11 @@ const holoFragment = /* glsl */ `
     float contour = 1.0 - smoothstep(0.0, w, min(f, 1.0 - f));
     // A slow scan sweeping upwards.
     float scan = smoothstep(0.985, 1.0, sin(h * 0.05 - uTime * 0.8) * 0.5 + 0.5);
-    vec3 col = mix(uGround, uInk, clamp(lum * 0.75 + rim * 0.45, 0.0, 1.0));
-    col = mix(col, uInk, contour * 0.35);
+    // Deep blueprint ground, paper-white light, pink survey contours (every 5th one heavier).
+    float tone = smoothstep(0.08, 0.75, lum);
+    vec3 col = mix(uGround * 0.55, uInk, clamp(tone * 0.85 + rim * 0.35, 0.0, 1.0));
+    float major = 1.0 - smoothstep(0.0, w * 1.6, min(fract(h / (uSpacing * 5.0)), 1.0 - fract(h / (uSpacing * 5.0))) * 5.0);
+    col = mix(col, uAccent, contour * 0.28 + major * 0.5);
     col = mix(col, uAccent, scan * 0.6);
     gl_FragColor = vec4(col, 1.0);
   }
@@ -202,6 +205,11 @@ export class EarthView {
       const box = new THREE.Box3();
       if (this.tiles.getBoundingBox(box)) { box.applyMatrix4(this.tiles.group.matrixWorld); this.setGround(box.min.y); }
     }
+  }
+
+  /** How many tiles are on screen right now. */
+  get visibleTiles() {
+    return (this.tiles as unknown as { visibleTiles?: Set<unknown> } | null)?.visibleTiles?.size ?? 0;
   }
 
   /** Seed the ground with a prediction (elevation + geoid); live tile readings correct it. */
