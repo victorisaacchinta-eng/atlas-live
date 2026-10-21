@@ -85,6 +85,8 @@ export async function chat(body: Record<string, unknown>) {
   // Callers pass the id they read earlier; map a retired id to its live replacement.
   for (const role of ['vision', 'agent', 'fast'] as const) if (body.model === configured[role]) body.model = MODELS[role];
   // Overloaded (503), rate-limited (429) or retired (404): try the next live model for the role.
+  // Gemini 3.x thinks at length by default; structured work here needs speed more than depth.
+  if (PROVIDER.id === 'gemini' && body.reasoning_effort === undefined) body.reasoning_effort = 'low';
   const role = (['agent', 'vision', 'fast'] as const).find((k) => body.model === MODELS[k]);
   const tries = [String(body.model), ...(role ? ALTS[role].filter((id) => id !== body.model) : [])].slice(0, 3);
   let last = '';

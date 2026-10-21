@@ -68,14 +68,16 @@ export default async function handler(req: { method: string; body: Body }, res: 
 
 // ---------- plan: research + zoning ----------
 async function plan(name: string, city: string) {
+  const t0 = Date.now();
   const subject = city ? `${name}, ${city}` : name;
   const [dims, form, ref] = await Promise.all([
     tavily(`${subject} architecture dimensions height width metres`, 4).catch(() => ({ results: [] as TavilyResult[] })),
     tavily(`${subject} architectural features floor plan structure description`, 4).catch(() => ({ results: [] as TavilyResult[] })),
     referencePhoto(subject),
   ]);
-  const results = dedupe([...dims.results, ...form.results]).slice(0, 7);
-  const research = results.map((r, i) => `[${i + 1}] ${r.title}\n${r.content.slice(0, 900)}`).join('\n\n');
+  const tResearch = Date.now() - t0;
+  const results = dedupe([...dims.results, ...form.results]).slice(0, 6);
+  const research = results.map((r, i) => `[${i + 1}] ${r.title}\n${r.content.slice(0, 700)}`).join('\n\n');
 
   const system = `You are the lead architect in a team that builds a faithful, explodable 3D model of a real structure out of simple shapes.
 From the research, plan the build. Split the structure into 3 to 5 zones that builders can work on in parallel without overlapping (for example: base and plinth, main body, roof and domes, towers, gateways). Give each zone an axis-aligned bounding box in metres and the named parts it must contain (2 to 7 parts per zone, 10 to 24 parts in total). Parts should be the pieces a curious person would want to pull apart and ask about.
@@ -95,6 +97,7 @@ Reply with JSON only:
     sources: results.map((r) => ({ title: r.title, url: r.url })),
     reference: ref,
     model: MODELS.agent,
+    ms: { research: tResearch, plan: Date.now() - t0 - tResearch },
   };
 }
 
