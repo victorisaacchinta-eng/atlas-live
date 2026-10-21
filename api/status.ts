@@ -1,4 +1,4 @@
-import { PROVIDER, MODELS, ALTS, ensureModels } from './_nebius.js';
+import { PROVIDER, MODELS, ALTS, LIVE_IDS, ensureModels } from './_nebius.js';
 
 /** Tells the UI which model provider is live, so the header never claims a model that isn't running. */
 export default async function handler(_req: unknown, res: { status: (n: number) => { json: (b: unknown) => void } }) {
@@ -8,7 +8,9 @@ export default async function handler(_req: unknown, res: { status: (n: number) 
     label: PROVIDER?.label || null,
     agent: PROVIDER ? MODELS.agent : null,
     vision: PROVIDER ? MODELS.vision : null,
+    fast: PROVIDER ? MODELS.fast : null,
     fallbacks: PROVIDER ? ALTS.agent.slice(0, 6) : [],
+    listed: LIVE_IDS,
     search: !!process.env.TAVILY_API_KEY,
     // Map tokens are browser-side by design (the tiles stream straight to the viewer).
     // Restrict them to the site's URL in the Cesium ion / Google Cloud console.

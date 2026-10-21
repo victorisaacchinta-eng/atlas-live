@@ -12,7 +12,7 @@ const GEMINI_PREFER = [/^gemini-3(\.\d)?-flash$/, /^gemini-flash-latest$/, /^gem
 const NEMOTRON_PREFER = {
   vision: [/nemotron.*vl/i, /vl/i],
   agent: [/nemotron.*super/i, /nemotron.*ultra/i, /nemotron/i],
-  fast: [/nemotron.*nano/i, /nemotron/i],
+  fast: [/nemotron.*lightning/i, /nemotron.*nano/i, /nemotron/i],
 };
 
 const PROVIDERS: Provider[] = [
@@ -36,6 +36,8 @@ export const MODELS = {
 
 const configured = { ...MODELS };
 /** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
+/** Model ids the provider lists right now (Nemotron / Gemini only), for /api/status. */
+export const LIVE_IDS: string[] = [];
 export const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
 let checked: Promise<void> | null = null;
 
@@ -51,6 +53,7 @@ export function ensureModels() {
       if (!r.ok) return;
       const j = (await r.json()) as { data?: { id: string }[] };
       const ids = (j.data || []).map((m) => m.id.replace(/^models\//, ''));
+      LIVE_IDS.splice(0, LIVE_IDS.length, ...ids.filter((id) => /nemotron|gemini/i.test(id)).slice(0, 60));
       if (!ids.length) return;
       for (const role of ['vision', 'agent', 'fast'] as const) {
         const env = { vision: process.env.ATLAS_VISION_MODEL, agent: process.env.ATLAS_AGENT_MODEL, fast: process.env.ATLAS_FAST_MODEL }[role];
