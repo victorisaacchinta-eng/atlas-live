@@ -128,6 +128,7 @@ export class EarthView {
   }
 
   private resetGround() {
+    this.predicted = null;
     this.ground = null;
     this.groundProbe = 0;
     this.lastProbe = -1;
@@ -220,7 +221,9 @@ export class EarthView {
   /** Seed the ground with a prediction (elevation + geoid); live tile readings correct it. */
   predictGround(y: number) {
     this.ground = y;
+    this.predicted = y;
   }
+  private predicted: number | null = null;
 
   private setGround(y: number) {
     const first = this.ground === null;
@@ -234,9 +237,26 @@ export class EarthView {
    * Coarse tiles (geometric error in the hundreds of metres) can sit far above or below the true
    * surface, so only trust hits on tiles detailed enough; after 10 s take the best we have.
    */
+  /**
+   * The landmark itself sits at the origin, so a single ray there lands on its roof (the top of
+   * the Eiffel Tower, not the Champ de Mars). Sample a ring around it and keep the lowest hit:
+   * that is street level. A prediction from the elevation model bounds it, so a river or a
+   * cutting does not drag it too far down.
+   */
   private probeGround() {
-    const y = this.sample(0, 0, this.groundProbe > 10);
-    if (y !== null) this.setGround(y);
+    const coarse = this.groundProbe > 10;
+    const ys: number[] = [];
+    const c = this.sample(0, 0, coarse);
+    if (c !== null) ys.push(c);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const y = this.sample(Math.cos(a) * 90, Math.sin(a) * 90, coarse);
+      if (y !== null) ys.push(y);
+    }
+    if (ys.length < 3) return;
+    let y = Math.min(...ys);
+    if (this.predicted !== null) y = THREE.MathUtils.clamp(y, this.predicted - 60, this.predicted + 60);
+    this.setGround(y);
   }
 
   /** Height of the detailed surface at local (x, z), or null when no detailed tile is there yet. */
