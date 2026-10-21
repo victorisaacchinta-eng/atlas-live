@@ -50,6 +50,9 @@ async function loadEntry(e: LibraryEntry) {
   ui.log(`loading ${e.title.toLowerCase()}`, 'sys');
   try {
     const m = await HoloModel.load(e.url);
+    // Opened straight into another mode (a ?place= link, say): don't let a late library model take over.
+    // Library loads it again on entry.
+    if (mode !== 'library') { shelf.querySelectorAll('button').forEach((b) => b.classList.remove('is-on')); return; }
     state.entry = e;
     stage.setModel(m);
     stage.frame('object');
