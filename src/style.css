@@ -209,7 +209,8 @@ body.earth .credit { max-width: 60vw; }
 .credit a { color: inherit; }
 .credit .attr-logo { height: 14px; vertical-align: middle; margin-right: 6px; filter: brightness(0) invert(1); opacity: .85; }
 .place-tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--bone); text-shadow: 0 1px 6px rgba(0,0,0,.6); }
-.place-tag::after { content: ""; width: 1px; height: 46px; background: var(--signal); }
+.place-tag::after { content: ""; width: 1px; height: var(--stem, 46px); background: var(--signal); }
+.place-tag::before { content: ""; position: absolute; bottom: -3px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--signal); order: 2; }
 @media (max-width: 760px) {
   .place-panel { top: 132px; bottom: auto; max-height: 46vh; }
   body.earth .intro { display: none; }

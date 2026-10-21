@@ -134,18 +134,36 @@ export class Stage {
    */
   dive(target: THREE.Vector3, radius: number, fromDistance: number, dur = 6.5, done?: () => void) {
     this.landing = target;
-    const up = new THREE.Vector3(0, 1, 0);
-    const end = new THREE.Vector3(0.62, 0.55, 0.56).normalize();
+    const end = this.approach.clone();
+    const top = Stage.topDir(end);
     const l0 = Math.log(Math.max(fromDistance, radius)), l1 = Math.log(radius);
     const dir = new THREE.Vector3();
     this.run(dur, (k) => {
-      const e = 1 - Math.pow(1 - k, 2.6);
+      // Linger on the globe, fall fast through the empty kilometres, settle over the rooftops.
+      const e = 0.5 - 0.5 * Math.cos(Math.PI * Math.pow(k, 0.85));
       const dist = Math.exp(l0 + (l1 - l0) * e);
-      const tilt = THREE.MathUtils.smoothstep(k, 0.45, 1);
-      dir.copy(up).lerp(end, tilt).normalize();
+      const tilt = THREE.MathUtils.smoothstep(k, 0.5, 1);
+      dir.copy(top).lerp(end, tilt).normalize();
       this.camera.position.copy(target).addScaledVector(dir, dist);
       this.controls.target.copy(target);
     }, done);
+  }
+
+  /**
+   * Direction the camera approaches a landmark from. In this frame +z is north and -x is east,
+   * so this sits south-south-east of the target, looking north: north is up on screen.
+   */
+  approach = new THREE.Vector3(-0.3, 0.55, -0.78).normalize();
+
+  /** Straight up, nudged a hair toward `d` so a top-down view keeps a defined, north-up heading. */
+  static topDir(d: THREE.Vector3) {
+    return new THREE.Vector3(d.x * 1e-3, 1, d.z * 1e-3).normalize();
+  }
+
+  /** Hold the camera top-down `height` metres above the origin, north up. */
+  holdTopDown(height: number) {
+    this.camera.position.copy(Stage.topDir(this.approach)).multiplyScalar(height);
+    this.controls.target.set(0, 0, 0);
   }
 
   /** Climb straight up above the current target to `height` metres, levelling to top-down. */
@@ -153,7 +171,7 @@ export class Stage {
     const target = this.controls.target.clone();
     const off = this.camera.position.clone().sub(target);
     const l0 = Math.log(Math.max(off.length(), 1)), l1 = Math.log(height);
-    const dir0 = off.normalize(), up = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3();
+    const dir0 = off.normalize(), up = Stage.topDir(this.approach), dir = new THREE.Vector3();
     this.run(dur, (k) => {
       const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       dir.copy(dir0).lerp(up, THREE.MathUtils.smoothstep(k, 0, 0.6)).normalize();

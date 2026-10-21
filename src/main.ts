@@ -570,7 +570,7 @@ async function selectLandmark(l: Landmark) {
     land.set(0, l.lift, 0);
     landed = null;
     arrived = true;
-    stage.dive(land, l.view, from, from > 1e6 ? 7.5 : 5.5, () => { placeStatus.textContent = ''; });
+    stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => { placeStatus.textContent = ''; });
   };
   stage.earth.onGround = (y) => {
     if (currentLandmark !== l || !arrived) return;
@@ -584,10 +584,10 @@ async function selectLandmark(l: Landmark) {
     stage.earth.start(auth, l.lat, l.lon);
     stage.earth.setLook(look);
     earthStarted = true;
-    stage.camera.position.set(0, ORBIT, 0);
-    stage.controls.target.set(0, 0, 0);
+    stage.holdTopDown(ORBIT);
     originLL = { lat: l.lat, lon: l.lon };
-    dive(ORBIT);
+    // Show the whole planet for a beat while the globe streams in, then fall.
+    stage.run(1.8, () => stage.holdTopDown(ORBIT), () => dive(ORBIT));
   } else {
     // A satellite pass: climb, turn the globe under the camera along the great circle, dive.
     const from = originLL, to = { lat: l.lat, lon: l.lon };
@@ -601,8 +601,7 @@ async function selectLandmark(l: Landmark) {
         slerpUnit(a, b, angle, e, v);
         const ll = vecToLl(v);
         stage.earth.setOrigin(ll.lat, ll.lon);
-        stage.controls.target.set(0, 0, 0);
-        stage.camera.position.set(0, height, 0);
+        stage.holdTopDown(height);
       }, () => { originLL = to; dive(height); });
     });
   }
@@ -655,12 +654,17 @@ const prevFrame = stage.onFrame;
 stage.onFrame = (dt, t) => {
   prevFrame?.(dt, t);
   if (!earthActive || !currentLandmark || stage.earth.ground === null) { placeTag.hidden = true; return; }
-  const s = stage.project(new THREE.Vector3(0, stage.earth.ground + currentLandmark.lift * 1.7, 0));
-  if (!s) { placeTag.hidden = true; return; }
+  // The label floats above the landmark; its stem runs down to the ground point.
+  const g = stage.earth.ground;
+  const base = stage.project(new THREE.Vector3(0, g, 0));
+  const top = stage.project(new THREE.Vector3(0, g + Math.max(currentLandmark.lift * 2.2, 40), 0));
+  if (!base || !top) { placeTag.hidden = true; return; }
   placeTag.hidden = false;
-  placeTag.textContent = currentLandmark.name;
-  placeTag.style.left = `${s.x}px`;
-  placeTag.style.top = `${s.y}px`;
+  if (placeTag.textContent !== currentLandmark.name) placeTag.textContent = currentLandmark.name;
+  const stem = THREE.MathUtils.clamp(base.y - top.y, 24, 220);
+  placeTag.style.setProperty('--stem', `${stem}px`);
+  placeTag.style.left = `${base.x}px`;
+  placeTag.style.top = `${base.y}px`;
 };
 
 // Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
