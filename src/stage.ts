@@ -54,6 +54,8 @@ export class Stage {
   /** The point the current landing is aimed at; ground corrections move it. */
   private landing: THREE.Vector3 | null = null;
   private clearanceTimer = 0;
+  /** Lowest the eye may go right now: measured surface under the camera plus clearance. */
+  private floor = -Infinity;
 
   constructor(host: HTMLElement) {
     this.host = host;
@@ -115,6 +117,7 @@ export class Stage {
     this.controls.autoRotate = on && !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.35;
     this.controls.zoomSpeed = on ? 1.4 : 1;
+    this.floor = -Infinity;
     if (!on) { this.earth.stop(); this.camera.position.set(4.4, 2.6, 5.6); this.controls.target.set(0, 0.95, 0); this.flight = null; this.landing = null; }
   }
 
@@ -206,17 +209,22 @@ export class Stage {
     }
   }
 
-  /** Never leave the eye inside a hill or a building: lift it to a minimum clearance. */
+  /**
+   * Never leave the eye inside a hill or a building. Every 0.4 s sample the surface under the
+   * camera (and fall back to the landmark's ground); every frame, hold the eye above that floor.
+   * This runs during scripted moves too, since a dive can outrun the tiles.
+   */
   private guardClearance(dt: number) {
-    this.clearanceTimer += dt;
-    if (this.clearanceTimer < 0.4) return;
-    this.clearanceTimer = 0;
     const p = this.camera.position;
-    if (p.y - (this.earth.ground ?? 0) > 3000) return;
-    const h = this.earth.heightAt(p.x, p.z);
-    if (h === null) return;
-    const need = h + 25 - p.y;
-    if (need > 1) p.y += need;
+    const g = this.earth.ground;
+    this.clearanceTimer += dt;
+    if (this.clearanceTimer >= 0.4) {
+      this.clearanceTimer = 0;
+      const near = p.y - (g ?? 0) < 4000;
+      const h = near ? this.earth.heightAt(p.x, p.z) : null;
+      this.floor = Math.max(h ?? -Infinity, g ?? -Infinity) + 25;
+    }
+    if (p.y < this.floor) p.y = this.floor;
   }
 
   private resize() {
@@ -263,6 +271,7 @@ export class Stage {
         const f = this.flight;
         f.t = Math.min(1, f.t + dt / f.dur);
         f.step(f.t);
+        this.guardClearance(dt);
         if (f.t >= 1) {
           this.flight = null;
           this.controls.enabled = true;

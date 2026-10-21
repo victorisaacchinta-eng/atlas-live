@@ -565,10 +565,15 @@ async function selectLandmark(l: Landmark) {
   // Ground readings only count once the globe is turned to this landmark.
   let arrived = false;
   let landed: number | null = null;
+  // Predict the ground before the tiles arrive (elevation above sea level + geoid).
+  let predicted: number | null = null;
+  const prediction = fetch(`/api/elevation?lat=${l.lat}&lon=${l.lon}`).then((r) => r.json()).then((j) => { if (Number.isFinite(j.ellipsoid)) predicted = j.ellipsoid; }).catch(() => {});
+  const whenPredicted = (go: () => void) => Promise.race([prediction, new Promise((r) => setTimeout(r, 2500))]).then(() => { if (currentLandmark === l) go(); });
   const dive = (from: number) => {
     stage.earth.goTo(l.lat, l.lon);
-    land.set(0, l.lift, 0);
-    landed = null;
+    landed = predicted;
+    land.set(0, (predicted ?? 0) + l.lift, 0);
+    if (predicted !== null) stage.earth.predictGround(predicted);
     arrived = true;
     stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => { placeStatus.textContent = ''; });
   };
@@ -587,7 +592,7 @@ async function selectLandmark(l: Landmark) {
     stage.holdTopDown(ORBIT);
     originLL = { lat: l.lat, lon: l.lon };
     // Show the whole planet for a beat while the globe streams in, then fall.
-    stage.run(1.8, () => stage.holdTopDown(ORBIT), () => dive(ORBIT));
+    stage.run(1.8, () => stage.holdTopDown(ORBIT), () => whenPredicted(() => dive(ORBIT)));
   } else {
     // A satellite pass: climb, turn the globe under the camera along the great circle, dive.
     const from = originLL, to = { lat: l.lat, lon: l.lon };
@@ -602,7 +607,7 @@ async function selectLandmark(l: Landmark) {
         const ll = vecToLl(v);
         stage.earth.setOrigin(ll.lat, ll.lon);
         stage.holdTopDown(height);
-      }, () => { originLL = to; dive(height); });
+      }, () => { originLL = to; whenPredicted(() => dive(height)); });
     });
   }
   shareState(l);

@@ -204,6 +204,11 @@ export class EarthView {
     }
   }
 
+  /** Seed the ground with a prediction (elevation + geoid); live tile readings correct it. */
+  predictGround(y: number) {
+    this.ground = y;
+  }
+
   private setGround(y: number) {
     const first = this.ground === null;
     if (!first && Math.abs(y - this.ground!) < 2) return;
