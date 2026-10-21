@@ -17,7 +17,7 @@ export interface Landmark {
   /** Google's photoreal 3D is coarse here (much of India, for example): offer Build or a reconstruction. */
   lowDetail?: boolean;
   /** A Gaussian splat reconstructed from public photos, shown when Google's 3D is weak. */
-  splat?: { url: string; credit: string; photos: number };
+  splat?: { url: string; credit: string; photos: number; rot?: [number, number, number] };
   /** Group heading in the preset list. */
   group?: 'Wonders' | 'Icons' | 'India';
 }

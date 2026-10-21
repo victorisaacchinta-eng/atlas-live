@@ -14,7 +14,7 @@
     "@gltf-transform/functions": "^4.1.1",
     "@types/node": "^22.10.2",
     "@types/suncalc": "^1.9.2",
-    "@types/three": "^0.170.0",
+    "@types/three": "^0.185.0",
     "@vercel/node": "^5.3.24",
     "draco3dgltf": "^1.5.7",
     "meshoptimizer": "^0.22.0",
@@ -28,9 +28,10 @@
     "@fontsource/monaspace-krypton": "^5.3.0",
     "@huggingface/transformers": "^4.3.1",
     "@mediapipe/tasks-vision": "^0.10.14",
+    "@sparkjsdev/spark": "^2.3.1",
     "3d-tiles-renderer": "^0.5.3",
     "egm96-universal": "^1.1.1",
     "suncalc": "^1.9.0",
-    "three": "^0.170.0"
+    "three": "^0.185.1"
   }
 }

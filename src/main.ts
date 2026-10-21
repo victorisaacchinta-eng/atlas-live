@@ -17,6 +17,7 @@ import { LANDMARKS, type Landmark } from './landmarks';
 import type { EarthAuth } from './earth';
 import { LENSES, type Lens } from './lens';
 import { toHologram, applyFixes, type BuiltPart } from './construct';
+import { loadSplat, disposeSplat } from './splat';
 
 applyCss(theme);
 
@@ -263,7 +264,7 @@ function setMode(m: Mode) {
   if (m === 'library' && state.entry === null) loadEntry(LIBRARY[0]);
   if (m === 'library' && (scanned || built) && state.entry) { const e = state.entry; state.entry = null; loadEntry(e); }
   if (m !== 'places' && sunLine) { stage.pivot.remove(sunLine); sunLine.geometry.dispose(); sunLine = null; }
-  if (m !== 'places') exitEarth();
+  if (m !== 'places') { leaveReconstruction(); exitEarth(); }
   placePanel.hidden = m !== 'places';
   sunBox.hidden = m !== 'places' || !place || earthActive;
   if (m === 'places') enterPlaces();
@@ -584,14 +585,73 @@ function exitEarth() {
   ($('labels') as HTMLElement).hidden = false;
   placeTag.hidden = true;
   if (state.entry) { setTitle(state.entry.title); $('model-kind').textContent = state.entry.kind; $('credit').textContent = `Model: ${state.entry.credit} · ${state.entry.licence}`; }
-  else if (!scanned && mode !== 'build') loadEntry(LIBRARY[0]);
+  else if (!scanned && mode !== 'build' && !recon) loadEntry(LIBRARY[0]);
 }
 
+// ---------- photo reconstructions (Gaussian splats) ----------
+let recon: { l: Landmark; root: THREE.Group | null } | null = null;
+const reconBtn = document.getElementById('recon-btn') as HTMLButtonElement;
+const splatOverride = new URLSearchParams(location.search).get('splat');
+function splatFor(l: Landmark | null) {
+  if (!l) return null;
+  if (splatOverride) return { url: splatOverride, credit: 'preview', photos: 0, rot: undefined as [number, number, number] | undefined };
+  return l.splat ?? null;
+}
+function updateReconBtn() {
+  const sp = splatFor(currentLandmark);
+  reconBtn.hidden = !sp;
+  if (sp) reconBtn.lastChild!.textContent = recon ? 'Back to Google 3D' : `Photo reconstruction${sp.photos ? ` · ${sp.photos} photos` : ''}`;
+}
+async function showReconstruction(l: Landmark) {
+  const sp = splatFor(l);
+  if (!sp) return;
+  recon = { l, root: null };
+  exitEarth();
+  document.body.classList.add('recon');
+  stage.setModel(null);
+  stage.frame('object');
+  intro.hidden = false;
+  setTitle(l.name);
+  $('model-kind').textContent = sp.photos ? `Reconstructed from ${sp.photos} public photos` : 'Photo reconstruction';
+  $('parts-n').textContent = '1';
+  $('credit').textContent = sp.credit === 'preview' ? 'Preview splat' : `Gaussian splat trained by ATLAS · ${sp.credit}`;
+  placeStatus.textContent = 'loading the reconstruction';
+  ui.log(`loading the photo reconstruction of ${l.name}`, 'sys');
+  updateReconBtn();
+  try {
+    const root = await loadSplat(stage.scene, stage.renderer, { url: sp.url, rot: sp.rot });
+    if (recon?.l !== l) { disposeSplat(root); return; }
+    recon.root = root;
+    stage.pivot.add(root);
+    placeStatus.textContent = 'Drag to turn it, scroll to zoom. Press R to go back to Google 3D.';
+  } catch (err) {
+    placeStatus.textContent = `Could not load the reconstruction (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`;
+  }
+}
+function leaveReconstruction() {
+  if (!recon) return;
+  disposeSplat(recon.root);
+  recon = null;
+  document.body.classList.remove('recon');
+  updateReconBtn();
+}
+reconBtn.addEventListener('click', () => {
+  if (!currentLandmark) return;
+  if (recon) { const l = recon.l; leaveReconstruction(); earthStarted = false; originLL = null; selectLandmark(l); }
+  else showReconstruction(currentLandmark);
+});
+window.addEventListener('keydown', (e) => {
+  if (mode !== 'places' || e.metaKey || e.ctrlKey || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
+  if ((e.key === 'r' || e.key === 'R') && splatFor(currentLandmark)) reconBtn.click();
+});
+
 async function selectLandmark(l: Landmark) {
+  if (recon) { leaveReconstruction(); earthStarted = false; originLL = null; }
   landmarkList.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === l.id));
   const auth = await getEarthAuth();
   if (!auth) { loadPlace(`${l.name}, ${l.city}`); return; }
   currentLandmark = l;
+  updateReconBtn();
   earthOn();
   ui.closeCard();
   intro.hidden = false;
