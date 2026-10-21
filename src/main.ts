@@ -480,6 +480,7 @@ function exitEarth() {
   if (!earthActive) return;
   earthActive = false;
   earthStarted = false;
+  originLL = null;
   document.body.classList.remove('earth');
   stage.setEarth(false);
   ($('labels') as HTMLElement).hidden = false;
@@ -501,22 +502,69 @@ async function selectLandmark(l: Landmark) {
   placeStatus.textContent = `streaming ${l.name} in 3D`;
   ui.log(`flying to ${l.name}`, 'sys');
   placeTag.hidden = true;
-  if (!earthStarted) { stage.earth.start(auth, l.lat, l.lon); earthStarted = true; }
-  else stage.earth.goTo(l.lat, l.lon);
-  stage.earth.setLook((document.querySelector('.look-btn.is-on') as HTMLElement)?.dataset.look as 'photo' | 'hologram' || 'photo');
-  // Hold high above until the ground is known, then drop in.
-  stage.camera.position.set(l.view * 0.5, 2600 + l.view * 3, l.view * 0.5);
-  stage.controls.target.set(0, 0, 0);
+  const look = (document.querySelector('.look-btn.is-on') as HTMLElement)?.dataset.look as 'photo' | 'hologram' || 'photo';
+  // Where the camera lands. Ground readings move it (the dive reads it every frame).
+  const land = new THREE.Vector3(0, l.lift, 0);
+  // Ground readings only count once the globe is turned to this landmark.
+  let arrived = false;
   let landed: number | null = null;
-  stage.earth.onGround = (y, first) => {
-    if (currentLandmark !== l) return;
-    placeStatus.textContent = '';
-    if (first || landed === null) stage.flyTo(new THREE.Vector3(0, y + l.lift, 0), l.view, true);
-    else stage.shiftGround(y - landed);
+  const dive = (from: number) => {
+    stage.earth.goTo(l.lat, l.lon);
+    land.set(0, l.lift, 0);
+    landed = null;
+    arrived = true;
+    stage.dive(land, l.view, from, from > 1e6 ? 7.5 : 5.5, () => { placeStatus.textContent = ''; });
+  };
+  stage.earth.onGround = (y) => {
+    if (currentLandmark !== l || !arrived) return;
+    stage.shiftGround(y - (landed ?? 0));
     landed = y;
   };
   stage.earth.onAttribution = (html) => { $('credit').innerHTML = html; };
+
+  if (!earthStarted || !originLL) {
+    // First arrival: start on the whole planet, then fall in.
+    stage.earth.start(auth, l.lat, l.lon);
+    stage.earth.setLook(look);
+    earthStarted = true;
+    stage.camera.position.set(0, ORBIT, 0);
+    stage.controls.target.set(0, 0, 0);
+    originLL = { lat: l.lat, lon: l.lon };
+    dive(ORBIT);
+  } else {
+    // A satellite pass: climb, turn the globe under the camera along the great circle, dive.
+    const from = originLL, to = { lat: l.lat, lon: l.lon };
+    const a = llToVec(from.lat, from.lon), b = llToVec(to.lat, to.lon);
+    const angle = a.angleTo(b);
+    const height = THREE.MathUtils.clamp(angle * 6.371e6 * 1.3, 40000, ORBIT);
+    stage.rise(height, angle < 0.002 ? 0.6 : 2.2, () => {
+      const v = new THREE.Vector3();
+      stage.run(THREE.MathUtils.clamp(1 + angle * 1.6, 1, 4), (k) => {
+        const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        slerpUnit(a, b, angle, e, v);
+        const ll = vecToLl(v);
+        stage.earth.setOrigin(ll.lat, ll.lon);
+        stage.controls.target.set(0, 0, 0);
+        stage.camera.position.set(0, height, 0);
+      }, () => { originLL = to; dive(height); });
+    });
+  }
   loadFacts(l);
+}
+
+const ORBIT = 1.25e7;
+let originLL: { lat: number; lon: number } | null = null;
+function llToVec(lat: number, lon: number) {
+  const la = lat * THREE.MathUtils.DEG2RAD, lo = lon * THREE.MathUtils.DEG2RAD;
+  return new THREE.Vector3(Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo));
+}
+function vecToLl(v: THREE.Vector3) {
+  return { lat: Math.asin(THREE.MathUtils.clamp(v.y, -1, 1)) * THREE.MathUtils.RAD2DEG, lon: Math.atan2(v.z, v.x) * THREE.MathUtils.RAD2DEG };
+}
+function slerpUnit(a: THREE.Vector3, b: THREE.Vector3, angle: number, t: number, out: THREE.Vector3) {
+  if (angle < 1e-6) return out.copy(b);
+  const s = Math.sin(angle);
+  return out.copy(a).multiplyScalar(Math.sin((1 - t) * angle) / s).addScaledVector(b, Math.sin(t * angle) / s).normalize();
 }
 
 async function loadFacts(l: Landmark) {

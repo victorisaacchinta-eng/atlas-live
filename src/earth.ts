@@ -128,9 +128,15 @@ export class EarthView {
 
   /** Move to another place without rebuilding the renderer. */
   goTo(lat: number, lon: number) {
-    if (!this.reorient || !this.tiles) return;
-    this.reorient.transformLatLonHeightToOrigin(lat * THREE.MathUtils.DEG2RAD, lon * THREE.MathUtils.DEG2RAD, 0);
+    if (!this.setOrigin(lat, lon)) return;
     this.resetGround();
+  }
+
+  /** Put (lat, lon) under the origin, keeping the current ground reading. Cheap enough to call every frame. */
+  setOrigin(lat: number, lon: number) {
+    if (!this.reorient || !this.tiles) return false;
+    this.reorient.transformLatLonHeightToOrigin(lat * THREE.MathUtils.DEG2RAD, lon * THREE.MathUtils.DEG2RAD, 0);
+    return true;
   }
 
   setLook(look: EarthLook) {
@@ -211,8 +217,18 @@ export class EarthView {
    * surface, so only trust hits on tiles detailed enough; after 10 s take the best we have.
    */
   private probeGround() {
-    if (!this.tiles) return;
-    const ray = new THREE.Raycaster(new THREE.Vector3(0, 9000, 0), new THREE.Vector3(0, -1, 0), 0, 30000);
+    const y = this.sample(0, 0, this.groundProbe > 10);
+    if (y !== null) this.setGround(y);
+  }
+
+  /** Height of the detailed surface at local (x, z), or null when no detailed tile is there yet. */
+  heightAt(x: number, z: number) {
+    return this.sample(x, z, false);
+  }
+
+  private sample(x: number, z: number, acceptCoarse: boolean): number | null {
+    if (!this.tiles) return null;
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, 9000, z), new THREE.Vector3(0, -1, 0), 0, 30000);
     const hits = ray.intersectObject(this.tiles.group, true);
     let best: { y: number; err: number } | null = null;
     for (const h of hits) {
@@ -220,9 +236,8 @@ export class EarthView {
       while (o) { const v = this.tileError.get(o); if (v !== undefined) { err = v; break; } o = o.parent; }
       if (!best || err < best.err - 1e-6) best = { y: h.point.y, err };
     }
-    if (!best) return;
-    const trusted = !this.isEarth || best.err <= 80 || this.groundProbe > 10;
-    if (trusted) this.setGround(best.y);
+    if (!best) return null;
+    return !this.isEarth || best.err <= 80 || acceptCoarse ? best.y : null;
   }
 
   private emitAttribution() {

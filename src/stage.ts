@@ -44,7 +44,11 @@ export class Stage {
   /** Real-world 3D places (Google Photorealistic 3D Tiles). Active only in Earth mode. */
   readonly earth: EarthView;
   earthOn = false;
-  private fly: { from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t: number; dur: number } | null = null;
+  /** A scripted camera move in Earth mode. `step` receives eased-free progress 0..1. */
+  private flight: { t: number; dur: number; step: (k: number) => void; done?: () => void } | null = null;
+  /** The point the current landing is aimed at; ground corrections move it. */
+  private landing: THREE.Vector3 | null = null;
+  private clearanceTimer = 0;
 
   constructor(host: HTMLElement) {
     this.host = host;
@@ -99,30 +103,96 @@ export class Stage {
     this.camera.far = on ? 60000 : 200;
     this.camera.updateProjectionMatrix();
     this.controls.minDistance = on ? 40 : 2.2;
-    this.controls.maxDistance = on ? 8000 : 14;
+    // In Earth mode you can zoom all the way back out to orbit.
+    this.controls.maxDistance = on ? 2.2e7 : 14;
     this.controls.maxPolarAngle = Math.PI * (on ? 0.47 : 0.52);
     this.controls.autoRotate = on && !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.35;
     this.controls.zoomSpeed = on ? 1.4 : 1;
-    if (!on) { this.earth.stop(); this.camera.position.set(4.4, 2.6, 5.6); this.controls.target.set(0, 0.95, 0); this.fly = null; }
+    if (!on) { this.earth.stop(); this.camera.position.set(4.4, 2.6, 5.6); this.controls.target.set(0, 0.95, 0); this.flight = null; this.landing = null; }
   }
 
-  /** Glide the camera to orbit a point at a given radius, arriving from high above like a satellite drop. */
-  flyTo(target: THREE.Vector3, radius: number, fromHigh = true) {
-    const dir = new THREE.Vector3(0.62, 0.55, 0.56).normalize();
-    const to = target.clone().addScaledVector(dir, radius);
-    const from = fromHigh ? target.clone().add(new THREE.Vector3(radius * 0.4, radius * 6, radius * 0.4)) : this.camera.position.clone();
-    this.camera.position.copy(from);
-    this.fly = { from, to, fromT: fromHigh ? target.clone() : this.controls.target.clone(), toT: target.clone(), t: 0, dur: this.reducedMotion ? 0.01 : 3.2 };
+  get flying() { return this.flight !== null; }
+
+  /** Run a scripted move. A new move replaces the one in progress. */
+  run(dur: number, step: (k: number) => void, done?: () => void) {
+    this.flight = { t: 0, dur: this.reducedMotion ? 0.001 : dur, step, done };
+    this.controls.enabled = false;
   }
 
-  /** The ground turned out higher or lower than first measured: move the whole view by dy, smoothly. */
+  /**
+   * Fall from `fromDistance` metres straight above `target` to an oblique orbit of `radius`.
+   * Distance eases in log space, so the drop reads like a satellite dive: fast through the
+   * empty kilometres, slow over the rooftops. The view tilts from top-down only near the end.
+   * `target` is held by reference, so ground corrections during the dive move the landing.
+   */
+  dive(target: THREE.Vector3, radius: number, fromDistance: number, dur = 6.5, done?: () => void) {
+    this.landing = target;
+    const up = new THREE.Vector3(0, 1, 0);
+    const end = new THREE.Vector3(0.62, 0.55, 0.56).normalize();
+    const l0 = Math.log(Math.max(fromDistance, radius)), l1 = Math.log(radius);
+    const dir = new THREE.Vector3();
+    this.run(dur, (k) => {
+      const e = 1 - Math.pow(1 - k, 2.6);
+      const dist = Math.exp(l0 + (l1 - l0) * e);
+      const tilt = THREE.MathUtils.smoothstep(k, 0.45, 1);
+      dir.copy(up).lerp(end, tilt).normalize();
+      this.camera.position.copy(target).addScaledVector(dir, dist);
+      this.controls.target.copy(target);
+    }, done);
+  }
+
+  /** Climb straight up above the current target to `height` metres, levelling to top-down. */
+  rise(height: number, dur = 2.2, done?: () => void) {
+    const target = this.controls.target.clone();
+    const off = this.camera.position.clone().sub(target);
+    const l0 = Math.log(Math.max(off.length(), 1)), l1 = Math.log(height);
+    const dir0 = off.normalize(), up = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3();
+    this.run(dur, (k) => {
+      const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      dir.copy(dir0).lerp(up, THREE.MathUtils.smoothstep(k, 0, 0.6)).normalize();
+      this.camera.position.copy(target).addScaledVector(dir, Math.exp(l0 + (l1 - l0) * e));
+      this.controls.target.copy(target);
+    }, done);
+  }
+
+  /** The ground under the landing turned out higher or lower than first measured. */
   shiftGround(dy: number) {
+    if (this.landing) this.landing.y += dy;
+    if (this.flight) return; // the move in progress reads the landing point every frame
+    const from = this.camera.position.clone(), fromT = this.controls.target.clone();
     const up = new THREE.Vector3(0, dy, 0);
-    if (this.fly) { this.fly.to.add(up); this.fly.toT.add(up); return; }
-    const to = this.camera.position.clone().add(up);
-    const toT = this.controls.target.clone().add(up);
-    this.fly = { from: this.camera.position.clone(), to, fromT: this.controls.target.clone(), toT, t: 0, dur: this.reducedMotion ? 0.01 : 1.4 };
+    this.run(1.2, (k) => {
+      const e = 1 - Math.pow(1 - k, 3);
+      this.camera.position.copy(from).addScaledVector(up, e);
+      this.controls.target.copy(fromT).addScaledVector(up, e);
+    });
+  }
+
+  /** Keep a sensible depth range from street level to orbit. */
+  private fitDepth() {
+    const ground = this.earth.ground ?? 0;
+    const alt = Math.max(1, this.camera.position.y - ground);
+    const near = THREE.MathUtils.clamp(alt * 0.01, 1, 1e5);
+    const far = Math.max(60000, alt * 2.5 + Math.sqrt(2 * 6.371e6 * alt) * 1.5);
+    if (Math.abs(near - this.camera.near) / this.camera.near > 0.05 || Math.abs(far - this.camera.far) / this.camera.far > 0.05) {
+      this.camera.near = near;
+      this.camera.far = far;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /** Never leave the eye inside a hill or a building: lift it to a minimum clearance. */
+  private guardClearance(dt: number) {
+    this.clearanceTimer += dt;
+    if (this.clearanceTimer < 0.4) return;
+    this.clearanceTimer = 0;
+    const p = this.camera.position;
+    if (p.y - (this.earth.ground ?? 0) > 3000) return;
+    const h = this.earth.heightAt(p.x, p.z);
+    if (h === null) return;
+    const need = h + 25 - p.y;
+    if (need > 1) p.y += need;
   }
 
   private resize() {
@@ -164,16 +234,22 @@ export class Stage {
     if (sweep) sweep.rotation.y -= dt * 0.9 * motion;
     this.motes.rotation.y += dt * 0.01 * motion;
     if (this.earthOn) {
-      if (this.fly) {
-        this.fly.t += dt / this.fly.dur;
-        const k = this.fly.t >= 1 ? 1 : 1 - Math.pow(1 - this.fly.t, 3);
-        this.camera.position.lerpVectors(this.fly.from, this.fly.to, k);
-        this.controls.target.lerpVectors(this.fly.fromT, this.fly.toT, k);
-        if (this.fly.t >= 1) this.fly = null;
+      if (this.flight) {
+        const f = this.flight;
+        f.t = Math.min(1, f.t + dt / f.dur);
+        f.step(f.t);
+        if (f.t >= 1) {
+          this.flight = null;
+          this.controls.enabled = true;
+          f.done?.();
+        }
+      } else {
+        // A hand swipe speeds up the orbit, then it settles back to a slow turn.
+        this.controls.autoRotateSpeed = 0.35 + this.spin * 25;
+        this.controls.update();
+        this.guardClearance(dt);
       }
-      // A hand swipe speeds up the orbit, then it settles back to a slow turn.
-      this.controls.autoRotateSpeed = 0.35 + this.spin * 25;
-      this.controls.update();
+      this.fitDepth();
       this.earth.update(dt);
     } else {
       this.model?.update(dt, t);
