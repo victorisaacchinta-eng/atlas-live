@@ -18,6 +18,7 @@
         <button type="button" class="mode is-on" data-mode="library" aria-pressed="true">Library</button>
         <button type="button" class="mode" data-mode="scan" aria-pressed="false">Scan</button>
         <button type="button" class="mode" data-mode="places" aria-pressed="false">Places</button>
+        <button type="button" class="mode" data-mode="build" aria-pressed="false">Build</button>
       </nav>
       <div class="status">
         <button type="button" id="hands-btn" class="chip" aria-pressed="false"><span class="dot"></span><span id="hands-label">Use hands</span></button>
@@ -52,6 +53,22 @@
       <p class="scan-status" id="scan-status" aria-live="polite"></p>
     </section>
 
+    <section class="build-panel" id="build-panel" hidden aria-label="Build a model">
+      <p class="eyebrow">Build</p>
+      <p class="scan-lede">Name any structure. A researcher reads up on it, an architect splits it into zones, builders model each zone in parallel, and a critic checks the result against a real photo. Then pull it apart.</p>
+      <form id="build-form" class="ask place-ask" autocomplete="off">
+        <label class="visually-hidden" for="build-input">Structure to build</label>
+        <input id="build-input" placeholder="e.g. Charminar, Hyderabad" />
+        <button type="submit" class="send">Build</button>
+      </form>
+      <div class="build-picks" id="build-picks"></div>
+      <ol class="build-steps" id="build-steps" aria-live="polite"></ol>
+      <figure class="build-ref" id="build-ref" hidden>
+        <img id="build-ref-img" alt="" />
+        <figcaption><span>Reference photo</span> <a id="build-ref-link" target="_blank" rel="noopener">Wikipedia</a></figcaption>
+      </figure>
+    </section>
+
     <section class="place-panel" id="place-panel" hidden aria-label="Explore a place">
       <p class="eyebrow">Places</p>
       <form id="place-form" class="ask place-ask" autocomplete="off">
@@ -60,7 +77,10 @@
         <button type="submit" class="send">Go</button>
       </form>
       <div class="look" id="lenses" role="group" aria-label="Lens (keys 1 to 5)"></div>
-      <button type="button" id="iso-btn" class="iso-btn" aria-pressed="false" title="Cut the landmark out of the city (key I)"><span class="lk">I</span>Isolate landmark</button>
+      <div class="place-actions">
+        <button type="button" id="iso-btn" class="iso-btn" aria-pressed="false" title="Cut the landmark out of the city (key I)"><span class="lk">I</span>Isolate</button>
+        <button type="button" id="build-this" class="iso-btn" title="Agents build a model of this landmark you can take apart (key B)"><span class="lk">B</span>Build a model to take apart</button>
+      </div>
       <ol class="landmarks" id="landmarks"></ol>
       <p class="scan-status" id="place-status" aria-live="polite"></p>
     </section>

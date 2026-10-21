@@ -157,7 +157,9 @@ export class HoloModel implements Hologram {
   get focused() { return this.focus; }
 
   update(dt: number, time: number) {
+    // Sweep up once; after that reveal everything, so exploded parts above the old top still show.
     if (this.reveal < this.revealTop) this.reveal += dt * 1.6;
+    else this.reveal = 1e4;
     const e = easeInOut(this.explode);
     for (const p of this.parts) {
       const isFocus = p.index === this.focus;

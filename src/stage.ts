@@ -293,6 +293,43 @@ export class Stage {
     this.camera.updateProjectionMatrix();
   }
 
+  /**
+   * A still of the current model from a fixed front-left three-quarter view, for the Construct
+   * critic. Renders one frame off the normal camera, reads it back, then restores the view.
+   */
+  snapshot(width = 768): string {
+    const cam = this.camera.clone();
+    const box = new THREE.Box3().setFromObject(this.pivot);
+    const size = box.getSize(new THREE.Vector3());
+    const c = box.getCenter(new THREE.Vector3());
+    const dist = Math.max(size.x, size.y, size.z) * 2.1 + 0.5;
+    cam.clearViewOffset();
+    cam.aspect = 4 / 3;
+    cam.fov = 32;
+    cam.position.copy(c).add(new THREE.Vector3(-0.62, 0.38, -0.68).normalize().multiplyScalar(dist));
+    cam.lookAt(c);
+    cam.updateProjectionMatrix();
+    const h = Math.round(width * 0.75);
+    const rt = new THREE.WebGLRenderTarget(width, h, { samples: 4 });
+    rt.texture.colorSpace = THREE.SRGBColorSpace;
+    const pad = this.pad.visible, motes = this.motes.visible, rotY = this.pivot.rotation.y;
+    this.pad.visible = false; this.motes.visible = false; this.pivot.rotation.y = 0;
+    this.renderer.setRenderTarget(rt);
+    this.renderer.render(this.scene, cam);
+    const px = new Uint8Array(width * h * 4);
+    this.renderer.readRenderTargetPixels(rt, 0, 0, width, h, px);
+    this.renderer.setRenderTarget(null);
+    this.pad.visible = pad; this.motes.visible = motes; this.pivot.rotation.y = rotY;
+    rt.dispose();
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    const img = ctx.createImageData(width, h);
+    for (let y = 0; y < h; y++) img.data.set(px.subarray((h - 1 - y) * width * 4, (h - y) * width * 4), y * width * 4);
+    ctx.putImageData(img, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.85);
+  }
+
   /** Screen position (CSS px) of a world point, or null when behind the camera. */
   project(p: THREE.Vector3): { x: number; y: number } | null {
     const v = p.clone().project(this.camera);

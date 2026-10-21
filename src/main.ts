@@ -16,6 +16,7 @@ import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
 import type { EarthAuth } from './earth';
 import { LENSES, type Lens } from './lens';
+import { toHologram, applyFixes, type BuiltPart } from './construct';
 
 applyCss(theme);
 
@@ -189,7 +190,7 @@ export { gestures };
 
 // ---------- ask (text + voice) ----------
 const agentCtx = {
-  machine: () => (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
+  machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model ATLAS built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
   parts: () => earthActive ? [] : stage.model?.parts.map((p) => p.name) || [],
   focused: () => stage.model?.focused ?? -1,
   focusPart,
@@ -239,7 +240,7 @@ mic.addEventListener('click', () => {
 
 
 // ---------- modes ----------
-type Mode = 'library' | 'scan' | 'places';
+type Mode = 'library' | 'scan' | 'places' | 'build';
 let mode: Mode = 'library';
 export const currentMode = () => mode;
 const scanPanel = document.getElementById('scan-panel') as HTMLElement;
@@ -256,9 +257,11 @@ function setMode(m: Mode) {
   });
   shelf.hidden = m !== 'library';
   scanPanel.hidden = m !== 'scan' || scanned;
-  intro.hidden = m === 'scan' && !scanned;
+  intro.hidden = (m === 'scan' && !scanned) || (m === 'build' && !built);
+  buildPanel.hidden = m !== 'build';
+  if (m === 'build' && built && stage.model !== built.model) showBuilt();
   if (m === 'library' && state.entry === null) loadEntry(LIBRARY[0]);
-  if (m === 'library' && scanned && state.entry) { const e = state.entry; state.entry = null; loadEntry(e); }
+  if (m === 'library' && (scanned || built) && state.entry) { const e = state.entry; state.entry = null; loadEntry(e); }
   if (m !== 'places' && sunLine) { stage.pivot.remove(sunLine); sunLine.geometry.dispose(); sunLine = null; }
   if (m !== 'places') exitEarth();
   placePanel.hidden = m !== 'places';
@@ -345,6 +348,10 @@ export function partRole(i: number) {
     const name = stage.model?.parts[i]?.name || '';
     const f = place.facts.find((x) => x.name.toLowerCase() === name.toLowerCase());
     return f ? f.fact.replace(/\.$/, '') : '';
+  }
+  if (mode === 'build' && built) {
+    const id = (stage.model?.parts[i] as { id?: string } | undefined)?.id;
+    return built.parts.find((p) => p.id === id)?.role.replace(/\.$/, '') || '';
   }
   return scanned ? scanRoles[i] || '' : '';
 }
@@ -567,7 +574,7 @@ function exitEarth() {
   ($('labels') as HTMLElement).hidden = false;
   placeTag.hidden = true;
   if (state.entry) { setTitle(state.entry.title); $('model-kind').textContent = state.entry.kind; $('credit').textContent = `Model: ${state.entry.credit} · ${state.entry.licence}`; }
-  else if (!scanned) loadEntry(LIBRARY[0]);
+  else if (!scanned && mode !== 'build') loadEntry(LIBRARY[0]);
 }
 
 async function selectLandmark(l: Landmark) {
@@ -696,6 +703,141 @@ stage.onFrame = (dt, t) => {
   placeTag.style.left = `${base.x}px`;
   placeTag.style.top = `${base.y}px`;
 };
+
+// ---------- build: agents construct a model you can take apart ----------
+const buildPanel = document.getElementById('build-panel') as HTMLElement;
+const buildSteps = document.getElementById('build-steps') as HTMLOListElement;
+const buildRef = document.getElementById('build-ref') as HTMLElement;
+let built: { name: string; parts: BuiltPart[]; model: Hologram; sources: { title: string; url: string }[]; summary: string } | null = null;
+let building = false;
+
+for (const n of ['Charminar', 'Taj Mahal', 'Eiffel Tower', 'Big Ben', 'Colosseum', 'Golden Gate Bridge']) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = n;
+  b.addEventListener('click', () => { const l = LANDMARKS.find((x) => x.name === n); runConstruct(n, l?.city || ''); });
+  document.getElementById('build-picks')!.appendChild(b);
+}
+document.getElementById('build-form')!.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const v = (document.getElementById('build-input') as HTMLInputElement).value.trim();
+  if (v) runConstruct(v, '');
+});
+document.getElementById('build-this')!.addEventListener('click', () => { if (currentLandmark) runConstruct(currentLandmark.name, currentLandmark.city); });
+window.addEventListener('keydown', (e) => {
+  if (!earthActive || !currentLandmark || e.metaKey || e.ctrlKey || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
+  if (e.key === 'b' || e.key === 'B') runConstruct(currentLandmark.name, currentLandmark.city);
+});
+
+function stepRow(who: string, text: string, cls = 'run') {
+  const li = document.createElement('li');
+  li.className = cls;
+  li.innerHTML = '<span class="who"></span><span class="what"></span>';
+  li.querySelector('.who')!.textContent = who;
+  li.querySelector('.what')!.textContent = text;
+  buildSteps.appendChild(li);
+  li.scrollIntoView({ block: 'nearest' });
+  return {
+    done(t?: string) { li.className = 'done'; if (t) li.querySelector('.what')!.textContent = t; },
+    fail(t: string) { li.className = 'bad'; li.querySelector('.what')!.textContent = t; },
+  };
+}
+
+async function post<T>(body: Record<string, unknown>): Promise<T> {
+  const r = await fetch('/api/construct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  return j as T;
+}
+
+function showBuilt() {
+  if (!built) return;
+  const m = toHologram(built.parts);
+  built.model = m;
+  stage.setModel(m);
+  stage.frame('object');
+  state.entry = null;
+  labels.rebuild(m);
+  intro.hidden = false;
+  setTitle(built.name);
+  $('model-kind').textContent = 'Built by ATLAS agents';
+  $('parts-n').textContent = String(m.parts.length);
+  $('credit').textContent = `Model built live from cited research · ${built.sources.length} sources`;
+}
+
+async function runConstruct(name: string, city: string) {
+  if (building) return;
+  building = true;
+  if (mode !== 'build') setMode('build');
+  (document.getElementById('build-input') as HTMLInputElement).value = city ? `${name}, ${city}` : name;
+  buildSteps.replaceChildren();
+  buildRef.hidden = true;
+  ui.closeCard();
+  ui.log(`building ${name}`, 'sys');
+  try {
+    // 1. Research and plan.
+    const s1 = stepRow('Research', `Reading up on ${name}: dimensions, plan, features`);
+    type Zone = { id: string; name: string; brief: string; box: unknown; parts: string[] };
+    type PlanRes = { plan: { name: string; summary: string; height_m: number; footprint_m: number[]; zones: Zone[]; facts: { text: string }[] }; sources: { title: string; url: string }[]; reference: { image: string; page: string; title: string } | null };
+    const planned = await post<PlanRes>({ step: 'plan', name, city });
+    const P = planned.plan;
+    s1.done(`${planned.sources.length} sources. ${P.height_m ? `About ${Math.round(P.height_m)} m tall` : ''}${P.footprint_m?.length ? `, ${Math.round(P.footprint_m[0])} × ${Math.round(P.footprint_m[1])} m footprint` : ''}.`);
+    stepRow('Architect', `${P.zones.length} zones: ${P.zones.map((z) => z.name).join(', ')}`, 'done');
+    if (planned.reference) {
+      (document.getElementById('build-ref-img') as HTMLImageElement).src = planned.reference.image;
+      (document.getElementById('build-ref-img') as HTMLImageElement).alt = `Photo of ${planned.reference.title}`;
+      const a = document.getElementById('build-ref-link') as HTMLAnchorElement;
+      a.href = planned.reference.page; a.textContent = 'Wikipedia';
+      buildRef.hidden = false;
+    }
+    built = { name: P.name || name, parts: [], model: stage.model!, sources: planned.sources, summary: P.summary };
+
+    // 2. Builders, one per zone, in parallel. Each zone appears as soon as it lands.
+    await Promise.all(P.zones.map(async (z, i) => {
+      const row = stepRow(`Builder ${i + 1}`, `${z.name}: ${z.parts.slice(0, 4).join(', ')}${z.parts.length > 4 ? '…' : ''}`);
+      try {
+        const r = await post<{ parts: BuiltPart[] }>({ step: 'build', name, plan: P, zone: z });
+        if (!built) return;
+        built.parts.push(...r.parts);
+        row.done(`${z.name}: ${r.parts.length} parts`);
+        showBuilt();
+      } catch (err) {
+        row.fail(`${z.name}: failed (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`);
+      }
+    }));
+    if (!built.parts.length) throw new Error('no zone came back');
+
+    // 3. Critic: compare the build with a real photo and fix what is off. Up to two rounds.
+    for (let round = 1; round <= 2; round++) {
+      setExplode(0);
+      await new Promise((r) => setTimeout(r, 700));
+      const shot = stage.snapshot();
+      const c = stepRow('Critic', round === 1 ? 'Comparing the build with the reference photo' : 'Checking the fixes');
+      try {
+        const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, reference: planned.reference?.image });
+        const changes = fix.replace.length + fix.add.length + fix.remove.length;
+        c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`);
+        if (!changes || fix.score >= 8) break;
+        built.parts = applyFixes(built.parts, fix);
+        showBuilt();
+      } catch (err) {
+        c.fail(`Critic unavailable (${err instanceof Error ? err.message.slice(0, 60) : 'error'})`);
+        break;
+      }
+    }
+
+    stepRow('Done', `${built.parts.length} parts. Pull it apart with the slider, an open palm, or ask about any part.`, 'done');
+    ui.log(`${built.name}: ${built.parts.length} parts built`, 'sys');
+    ui.openCard({ index: 1, total: 1, title: built.name, body: built.summary || '', sources: built.sources.slice(0, 4) });
+    $('card-index').textContent = 'BUILT BY ATLAS';
+    setTimeout(() => setExplode(0.55), 900);
+  } catch (err) {
+    stepRow('Stopped', err instanceof Error ? err.message.slice(0, 160) : String(err), 'bad');
+    ui.log(`build failed: ${err instanceof Error ? err.message.slice(0, 100) : err}`, 'hot');
+  } finally {
+    building = false;
+  }
+}
 
 // Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
 {
