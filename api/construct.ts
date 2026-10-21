@@ -32,7 +32,7 @@ Repeats (optional, on any primitive, keep the JSON short):
 - "ring": {"n": count, "r": radius} - n copies on a circle of that radius around the primitive's "at" point, each turned to face outward
 - "row": {"n": count, "step": [dx, dy, dz]} - n copies, each shifted by step
 - "mirror": "x" | "z" | "xz" - also place copies mirrored across x = 0 and/or z = 0
-Use real proportions from the research. Use repeats for anything repeated (columns, minarets, windows, arches, tiers). Aim for 3 to 30 primitives per part.`;
+Use real proportions from the research. Use repeats for anything repeated (columns, minarets, windows, arches, tiers). Aim for 3 to 15 primitives per part; keep the JSON compact (no comments, no extra keys).`;
 
 const MAX = { prims: 1500, count: 64, dim: 2000 };
 
@@ -45,6 +45,7 @@ interface Body {
   blueprint?: { parts: Part[] };
   render?: string;
   reference?: string;
+  combined?: boolean;
 }
 interface Zone { id: string; name: string; brief: string; box: { min: number[]; max: number[] }; parts: string[] }
 interface Plan { name: string; summary: string; height_m: number; footprint_m: number[]; style: string; zones: Zone[]; facts: { text: string; source?: number }[] }
@@ -89,14 +90,14 @@ Reply with JSON only:
     { role: 'system', content: system },
     { role: 'user', content: `Structure: ${subject}\n\nResearch:\n${research || '(no results; rely on well-known proportions and mark estimates)'}` },
   ];
-  const p = await jsonChat<Plan>(MODELS.fast, messages, 3000);
+  const p = await jsonChat<Plan>(MODELS.agent, messages, 3000);
   if (!Array.isArray(p.zones) || !p.zones.length) throw new HttpError(502, 'The planner returned no zones');
   p.zones = p.zones.slice(0, 5).map((z, i) => ({ ...z, id: slug(z.id || z.name || `zone_${i + 1}`), parts: (z.parts || []).slice(0, 8) }));
   return {
     plan: p,
     sources: results.map((r) => ({ title: r.title, url: r.url })),
     reference: ref,
-    model: MODELS.fast,
+    model: MODELS.agent,
     ms: { research: tResearch, plan: Date.now() - t0 - tResearch },
   };
 }
@@ -114,8 +115,8 @@ Reply with JSON only: {"parts": [ ...parts for your zone... ]}`;
     { role: 'system', content: system },
     { role: 'user', content: `Your zone: ${zone.name}\nBrief: ${zone.brief}\nBounding box: ${JSON.stringify(zone.box)}\nParts to build: ${zone.parts.join(', ')}` },
   ];
-  const out = await jsonChat<{ parts: Part[] }>(MODELS.fast, messages, 6000, 0.3);
-  return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.fast };
+  const out = await jsonChat<{ parts: Part[] }>(MODELS.agent, messages, 4000, 0.3);
+  return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.agent };
 }
 
 // ---------- critique: render vs reference photo ----------
@@ -123,13 +124,11 @@ async function critique(name: string, b: Body) {
   if (!b.render || !b.blueprint) throw new HttpError(400, 'render and blueprint are required');
   if (b.render.length > 3_000_000) throw new HttpError(413, 'Render too large');
   const content: ChatMessage['content'] = [
-    { type: 'text', text: `Structure: ${name}.\nThe FIRST image is the team's 3D build (flat blue-white hologram, 3/4 view from the front-left, no textures). ${b.reference ? 'The SECOND image is a real photo for reference (camera angle may differ).' : 'No reference photo was found; judge against what you know of the structure.'}\nCurrent parts (ids and primitive counts): ${b.blueprint.parts.map((p) => `${p.id}(${p.prims.length})`).join(', ')}\nFull blueprint: ${JSON.stringify(b.blueprint).slice(0, 14000)}` },
+    { type: 'text', text: `Structure: ${name}.\n${b.combined ? 'The image has two halves. LEFT: the team\'s 3D build (flat blue-white hologram, 3/4 view from the front-left, no textures). RIGHT: a real photo for reference (camera angle may differ).' : 'The image is the team\'s 3D build (flat blue-white hologram, 3/4 view from the front-left, no textures). Judge it against what you know of the real structure.'}\nCurrent parts (ids and primitive counts): ${b.blueprint.parts.map((p) => `${p.id}(${p.prims.length})`).join(', ')}\nFull blueprint: ${JSON.stringify(b.blueprint).slice(0, 14000)}` },
     { type: 'image_url', image_url: { url: b.render } },
   ];
-  if (b.reference) {
-    const img = await fetchAsDataUrl(b.reference).catch(() => null);
-    if (img) content.push({ type: 'image_url', image_url: { url: img } });
-  }
+  // One image per request: some vision endpoints (Nemotron VL on NIM) reject a second image, so the
+  // browser sends the build and the reference photo side by side in a single picture.
   const system = `You are the adversarial critic on a modelling team. Compare the build to the real structure. Look hard at silhouette, proportions (height to width), counts of repeated elements (minarets, arches, tiers, columns), dome shapes and placement. Be concrete.
 Return at most 6 fixes, the ones that most improve the likeness. Fix by replacing whole parts (same id), adding new parts, or removing parts.
 ${GRAMMAR}
@@ -265,11 +264,3 @@ async function referencePhoto(subject: string) {
   } catch { return null; }
 }
 
-async function fetchAsDataUrl(url: string) {
-  if (!/^https:\/\/upload\.wikimedia\.org\//.test(url)) throw new Error('reference must come from Wikimedia');
-  const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error(`image ${r.status}`);
-  const buf = Buffer.from(await r.arrayBuffer());
-  if (buf.length > 2_500_000) throw new Error('image too large');
-  return `data:${r.headers.get('content-type') || 'image/jpeg'};base64,${buf.toString('base64')}`;
-}

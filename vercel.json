@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "functions": { "api/*.ts": { "maxDuration": 60 } },
+  "functions": { "api/*.ts": { "maxDuration": 300 } },
   "headers": [
     { "source": "/models/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
   ]

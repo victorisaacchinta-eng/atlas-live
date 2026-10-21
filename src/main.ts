@@ -743,6 +743,25 @@ function stepRow(who: string, text: string, cls = 'run') {
   };
 }
 
+/** Build render on the left, the real photo on the right, as one picture (one image per request). */
+async function sideBySide(render: string, refUrl?: string): Promise<{ image: string; combined: boolean }> {
+  if (!refUrl) return { image: render, combined: false };
+  try {
+    const load = (src: string, cors: boolean) => new Promise<HTMLImageElement>((ok, bad) => { const i = new Image(); if (cors) i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = bad; i.src = src; });
+    const [a, b] = await Promise.all([load(render, false), load(refUrl, true)]);
+    const c = document.createElement('canvas');
+    c.width = a.width * 2; c.height = a.height;
+    const g = c.getContext('2d')!;
+    g.drawImage(a, 0, 0);
+    g.fillStyle = '#000'; g.fillRect(a.width, 0, a.width, a.height);
+    const s = Math.min(a.width / b.width, a.height / b.height);
+    g.drawImage(b, a.width + (a.width - b.width * s) / 2, (a.height - b.height * s) / 2, b.width * s, b.height * s);
+    return { image: c.toDataURL('image/jpeg', 0.85), combined: true };
+  } catch {
+    return { image: render, combined: false };
+  }
+}
+
 async function post<T>(body: Record<string, unknown>): Promise<T> {
   const r = await fetch('/api/construct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
@@ -807,17 +826,17 @@ async function runConstruct(name: string, city: string) {
         row.fail(`${z.name}: failed (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`);
       }
     };
-    await Promise.all([pool(), pool()]);
+    await Promise.all([pool(), pool(), pool()]);
     if (!built.parts.length) throw new Error('no zone came back');
 
     // 3. Critic: compare the build with a real photo and fix what is off. Up to two rounds.
     for (let round = 1; round <= 2; round++) {
       setExplode(0);
       await new Promise((r) => setTimeout(r, 700));
-      const shot = stage.snapshot();
+      const { image: shot, combined } = await sideBySide(stage.snapshot(), planned.reference?.image);
       const c = stepRow('Critic', round === 1 ? 'Comparing the build with the reference photo' : 'Checking the fixes');
       try {
-        const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, reference: planned.reference?.image });
+        const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, combined });
         const changes = fix.replace.length + fix.add.length + fix.remove.length;
         c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`);
         if (!changes || fix.score >= 7) break;
