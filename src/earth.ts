@@ -81,6 +81,8 @@ export class EarthView {
   private groundProbe = 0;
   private lastProbe = -1;
   private isEarth = true;
+  /** Detail level of each loaded tile (its geometric error in metres), keyed by the tile's scene. */
+  private tileError = new WeakMap<THREE.Object3D, number>();
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer) {
     this.camera = camera;
@@ -107,7 +109,10 @@ export class EarthView {
     tiles.errorTarget = 6;
     tiles.setCamera(this.camera);
     tiles.setResolutionFromRenderer(this.camera, this.renderer);
-    tiles.addEventListener('load-model', (e: { scene: THREE.Object3D }) => this.styleModel(e.scene));
+    tiles.addEventListener('load-model', (e: { scene: THREE.Object3D; tile?: { geometricError?: number } }) => {
+      if (typeof e.tile?.geometricError === 'number') this.tileError.set(e.scene, e.tile.geometricError);
+      this.styleModel(e.scene);
+    });
     tiles.addEventListener('tiles-load-end', () => this.emitAttribution());
     this.group.add(tiles.group);
     this.tiles = tiles;
@@ -186,15 +191,10 @@ export class EarthView {
       this.lastProbe = tick;
       this.probeGround();
     }
-    if (this.ground === null && this.groundProbe > 6) {
-      if (this.isEarth) {
-        // Nothing under the landmark yet: assume the ellipsoid and let later probes correct it.
-        this.setGround(0);
-      } else {
-        // A non-Earth sample tileset: fall back to the data's bounds.
-        const box = new THREE.Box3();
-        if (this.tiles.getBoundingBox(box)) { box.applyMatrix4(this.tiles.group.matrixWorld); this.setGround(box.min.y); }
-      }
+    if (this.ground === null && !this.isEarth && this.groundProbe > 6) {
+      // A non-Earth sample tileset: fall back to the data's bounds.
+      const box = new THREE.Box3();
+      if (this.tiles.getBoundingBox(box)) { box.applyMatrix4(this.tiles.group.matrixWorld); this.setGround(box.min.y); }
     }
   }
 
@@ -205,13 +205,24 @@ export class EarthView {
     this.onGround?.(y, first);
   }
 
-  /** Cast a ray straight down through the origin to find the real ground height. */
+  /**
+   * Cast a ray straight down through the origin to find the real ground height.
+   * Coarse tiles (geometric error in the hundreds of metres) can sit far above or below the true
+   * surface, so only trust hits on tiles detailed enough; after 10 s take the best we have.
+   */
   private probeGround() {
     if (!this.tiles) return;
-    const ray = new THREE.Raycaster(new THREE.Vector3(0, 9000, 0), new THREE.Vector3(0, -1, 0), 0, 20000);
-    (ray as unknown as { firstHitOnly: boolean }).firstHitOnly = true;
-    const hit = ray.intersectObject(this.tiles.group, true)[0];
-    if (hit) this.setGround(hit.point.y);
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 9000, 0), new THREE.Vector3(0, -1, 0), 0, 30000);
+    const hits = ray.intersectObject(this.tiles.group, true);
+    let best: { y: number; err: number } | null = null;
+    for (const h of hits) {
+      let o: THREE.Object3D | null = h.object, err = Infinity;
+      while (o) { const v = this.tileError.get(o); if (v !== undefined) { err = v; break; } o = o.parent; }
+      if (!best || err < best.err - 1e-6) best = { y: h.point.y, err };
+    }
+    if (!best) return;
+    const trusted = !this.isEarth || best.err <= 80 || this.groundProbe > 10;
+    if (trusted) this.setGround(best.y);
   }
 
   private emitAttribution() {
