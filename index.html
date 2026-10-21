@@ -56,15 +56,14 @@
       <p class="eyebrow">Places</p>
       <form id="place-form" class="ask place-ask" autocomplete="off">
         <label class="visually-hidden" for="place-input">Place name</label>
-        <input id="place-input" placeholder="Name a place, e.g. Charminar, Hyderabad" />
+        <input id="place-input" placeholder="Any place on Earth, e.g. Golconda Fort" />
         <button type="submit" class="send">Go</button>
       </form>
-      <div class="place-picks" id="place-picks">
-        <button type="button" class="btn-line" data-q="Charminar, Hyderabad">Charminar</button>
-        <button type="button" class="btn-line" data-q="Golconda Fort, Hyderabad">Golconda Fort</button>
-        <button type="button" class="btn-line" data-q="Hampi Virupaksha Temple">Hampi</button>
-        <button type="button" class="btn-line" data-q="Colosseum, Rome">Colosseum</button>
+      <div class="look" role="group" aria-label="Look">
+        <button type="button" class="look-btn is-on" data-look="photo" aria-pressed="true">Photo</button>
+        <button type="button" class="look-btn" data-look="hologram" aria-pressed="false">Hologram</button>
       </div>
+      <ol class="landmarks" id="landmarks"></ol>
       <p class="scan-status" id="place-status" aria-live="polite"></p>
     </section>
 

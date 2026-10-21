@@ -1,0 +1,162 @@
+[
+ {
+  "id": "charminar",
+  "name": "Charminar",
+  "city": "Hyderabad, India",
+  "lat": 17.361602,
+  "lon": 78.474642,
+  "osm": "Charminar, Charminar Circle, Laad Bazaar, Khilwat, Ward 49 Ghansi Baza"
+ },
+ {
+  "id": "taj",
+  "name": "Taj Mahal",
+  "city": "Agra, India",
+  "lat": 27.175007,
+  "lon": 78.042101,
+  "osm": "Taj Mahal, Taj East Gate Road, Taj Ganj, Agra, Uttar Pradesh, 282004, "
+ },
+ {
+  "id": "india-gate",
+  "name": "India Gate",
+  "city": "New Delhi, India",
+  "lat": 28.612933,
+  "lon": 77.229493,
+  "osm": "India Gate, Shahjahan Road, Pandara Park, Central Vista, New Delhi, De"
+ },
+ {
+  "id": "gateway",
+  "name": "Gateway of India",
+  "city": "Mumbai, India",
+  "lat": 18.921966,
+  "lon": 72.834566,
+  "osm": "Gateway of India, Apollo Bandar, Koli Nagar, A Ward, Mumbai Zone 1, Mu"
+ },
+ {
+  "id": "golden-gate",
+  "name": "Golden Gate Bridge",
+  "city": "San Francisco, USA",
+  "lat": 37.818292,
+  "lon": -122.478384,
+  "osm": "Golden Gate Bridge, Marin County, California, 24129, United States"
+ },
+ {
+  "id": "liberty",
+  "name": "Statue of Liberty",
+  "city": "New York, USA",
+  "lat": 40.689253,
+  "lon": -74.044548,
+  "osm": "Statue of Liberty, Flagpole Plaza, Manhattan, New York County, New Yor"
+ },
+ {
+  "id": "empire",
+  "name": "Empire State Building",
+  "city": "New York, USA",
+  "lat": 40.748442,
+  "lon": -73.985659,
+  "osm": "Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community"
+ },
+ {
+  "id": "big-ben",
+  "name": "Big Ben",
+  "city": "London, UK",
+  "lat": 51.500694,
+  "lon": -0.124575,
+  "osm": "Elizabeth Tower, Bridge Street, Westminster, Millbank, City of Westmin"
+ },
+ {
+  "id": "eiffel",
+  "name": "Eiffel Tower",
+  "city": "Paris, France",
+  "lat": 48.85826,
+  "lon": 2.294501,
+  "osm": "Eiffel Tower, 5, Avenue Anatole France, Quartier du Gros-Caillou, 7th "
+ },
+ {
+  "id": "colosseum",
+  "name": "Colosseum",
+  "city": "Rome, Italy",
+  "lat": 41.890942,
+  "lon": 12.491903,
+  "osm": "Colosseum, Celio, Municipio Roma I, Rome, Roma Capitale, Lazio, 00184,"
+ },
+ {
+  "id": "sagrada",
+  "name": "Sagrada Fam\u00edlia",
+  "city": "Barcelona, Spain",
+  "lat": 41.403505,
+  "lon": 2.174428,
+  "osm": "Basilica of the Holy Family, Carrer de Sardenya, la Sagrada Fam\u00edlia, l"
+ },
+ {
+  "id": "acropolis",
+  "name": "Acropolis",
+  "city": "Athens, Greece",
+  "lat": 37.971503,
+  "lon": 23.726618,
+  "osm": "Parthenon, \u03a0\u03b5\u03c1\u03af\u03c0\u03b1\u03c4\u03bf\u03c2 \u0391\u03ba\u03c1\u03cc\u03c0\u03bf\u03bb\u03b7\u03c2 (\u039d\u03cc\u03c4\u03b9\u03b1 \u03ba\u03bb\u03b9\u03c4\u03cd\u03c2), Anafiotika, \u03a0\u03b5\u03c4\u03c1\u03ac\u03bb\u03c9\u03bd\u03b1, "
+ },
+ {
+  "id": "hagia",
+  "name": "Hagia Sophia",
+  "city": "Istanbul, T\u00fcrkiye",
+  "lat": 41.008505,
+  "lon": 28.980011,
+  "osm": "Hagia Sophia, 1, Ayasofya Meydan\u0131, Cankurtaran Mahallesi, Istanbul, Fa"
+ },
+ {
+  "id": "burj",
+  "name": "Burj Khalifa",
+  "city": "Dubai, UAE",
+  "lat": 25.197034,
+  "lon": 55.274133,
+  "osm": "Burj Khalifa, 1, Sheikh Mohammed bin Rashid Boulevard, Burj Khalifa, D"
+ },
+ {
+  "id": "pyramids",
+  "name": "Great Pyramid of Giza",
+  "city": "Giza, Egypt",
+  "lat": 29.979165,
+  "lon": 31.134213,
+  "osm": "Great Pyramid of Giza, Abou Al Houl Al Syahi Street, Nazlet al Batran,"
+ },
+ {
+  "id": "opera",
+  "name": "Sydney Opera House",
+  "city": "Sydney, Australia",
+  "lat": -33.857198,
+  "lon": 151.215123,
+  "osm": "Sydney Opera House, 2, Macquarie Street, Quay Quarter, Sydney, New Sou"
+ },
+ {
+  "id": "tokyo-tower",
+  "name": "Tokyo Tower",
+  "city": "Tokyo, Japan",
+  "lat": 35.658449,
+  "lon": 139.745536,
+  "osm": "Tokyo Tower, Tokyo Tower Street, Shibak\u014den 4, Parc de Shiba, Minato, T"
+ },
+ {
+  "id": "marina-bay",
+  "name": "Marina Bay Sands",
+  "city": "Singapore",
+  "lat": 1.283697,
+  "lon": 103.860723,
+  "osm": "Marina Bay Sands, 10, Bayfront Avenue, Bayfront Subzone, Civic Distric"
+ },
+ {
+  "id": "petronas",
+  "name": "Petronas Towers",
+  "city": "Kuala Lumpur, Malaysia",
+  "lat": 3.157968,
+  "lon": 101.711205,
+  "osm": "Petronas Towers, Persiaran Petronas, Kuala Lumpur City Centre (KLCC), "
+ },
+ {
+  "id": "christ",
+  "name": "Christ the Redeemer",
+  "city": "Rio de Janeiro, Brazil",
+  "lat": -22.951917,
+  "lon": -43.210459,
+  "osm": "Christ the Redeemer, Estrada do Corcovado, Santa Teresa, Rio de Janeir"
+ }
+]

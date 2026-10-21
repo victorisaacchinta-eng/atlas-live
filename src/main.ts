@@ -13,6 +13,8 @@ import { GestureControl } from './gestures';
 import { ask, listen, refreshStatus } from './agent';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
+import { LANDMARKS, type Landmark } from './landmarks';
+import type { EarthAuth } from './earth';
 
 applyCss(theme);
 
@@ -186,8 +188,8 @@ export { gestures };
 
 // ---------- ask (text + voice) ----------
 const agentCtx = {
-  machine: () => state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
-  parts: () => stage.model?.parts.map((p) => p.name) || [],
+  machine: () => (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
+  parts: () => earthActive ? [] : stage.model?.parts.map((p) => p.name) || [],
   focused: () => stage.model?.focused ?? -1,
   focusPart,
   setExplode,
@@ -243,9 +245,10 @@ function setMode(m: Mode) {
   if (m === 'library' && state.entry === null) loadEntry(LIBRARY[0]);
   if (m === 'library' && scanned && state.entry) { const e = state.entry; state.entry = null; loadEntry(e); }
   if (m !== 'places' && sunLine) { stage.pivot.remove(sunLine); sunLine.geometry.dispose(); sunLine = null; }
-  placePanel.hidden = m !== 'places' || !!place;
-  sunBox.hidden = m !== 'places' || !place;
-  if (m === 'places' && !place) intro.hidden = true;
+  if (m !== 'places') exitEarth();
+  placePanel.hidden = m !== 'places';
+  sunBox.hidden = m !== 'places' || !place || earthActive;
+  if (m === 'places') enterPlaces();
 }
 
 // ---------- scan ----------
@@ -353,9 +356,8 @@ let sunLine: THREE.Line | null = null;
 (document.getElementById('place-form') as HTMLFormElement).addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = (document.getElementById('place-input') as HTMLInputElement).value.trim();
-  if (q) loadPlace(q);
+  if (q) searchPlace(q);
 });
-document.querySelectorAll<HTMLButtonElement>('#place-picks button').forEach((b) => b.addEventListener('click', () => loadPlace(b.dataset.q!)));
 
 async function loadPlace(q: string) {
   placeStatus.textContent = `finding ${q} on OpenStreetMap`;
@@ -387,7 +389,6 @@ export function showPlace(d: PlaceData) {
   labels.rebuild(model);
   ui.log(`${d.features.length} buildings, ${d.facts.length} cited facts`, 'tool');
   for (const f of d.facts.slice(0, 2)) ui.log(`${f.name}: ${f.fact}`, 'answer');
-  placePanel.hidden = true;
   intro.hidden = false;
   sunBox.hidden = false;
   updateSun();
@@ -412,3 +413,143 @@ function updateSun() {
 }
 sunInput.addEventListener('input', updateSun);
 (window as unknown as { atlasPlace: typeof showPlace }).atlasPlace = showPlace;
+
+// ---------- earth: real places in photoreal 3D ----------
+let earthAuth: EarthAuth | null | undefined;
+let earthActive = false;
+let currentLandmark: Landmark | null = null;
+let earthStarted = false;
+const landmarkList = document.getElementById('landmarks')!;
+const placeTag = document.createElement('div');
+placeTag.className = 'place-tag';
+placeTag.hidden = true;
+document.body.appendChild(placeTag);
+
+for (const l of LANDMARKS) {
+  const li = document.createElement('li');
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.id = l.id;
+  b.innerHTML = `<span class="t"></span><span class="k"></span>`;
+  b.querySelector('.t')!.textContent = l.name;
+  b.querySelector('.k')!.textContent = l.city;
+  b.addEventListener('click', () => selectLandmark(l));
+  li.appendChild(b);
+  landmarkList.appendChild(li);
+}
+
+document.querySelectorAll<HTMLButtonElement>('.look-btn').forEach((b) => b.addEventListener('click', () => {
+  const look = b.dataset.look as 'photo' | 'hologram';
+  document.querySelectorAll<HTMLButtonElement>('.look-btn').forEach((x) => { x.classList.toggle('is-on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+  stage.earth.setLook(look);
+}));
+
+async function getEarthAuth(): Promise<EarthAuth | null> {
+  if (earthAuth !== undefined) return earthAuth;
+  const debug = new URLSearchParams(location.search).get('tileset');
+  if (debug) return (earthAuth = { kind: 'url', url: debug });
+  try {
+    const j = await (await fetch('/api/status')).json();
+    earthAuth = j.earth || null;
+  } catch { earthAuth = null; }
+  return earthAuth ?? null;
+}
+
+async function enterPlaces() {
+  const auth = await getEarthAuth();
+  if (mode !== 'places') return;
+  if (!auth) {
+    placeStatus.textContent = 'Photoreal 3D needs the map token on the server. Showing OpenStreetMap builds until then.';
+    if (!place) intro.hidden = true;
+    return;
+  }
+  if (!currentLandmark) selectLandmark(LANDMARKS[0]);
+  else { earthOn(); }
+}
+
+function earthOn() {
+  if (earthActive) return;
+  earthActive = true;
+  document.body.classList.add('earth');
+  stage.setEarth(true);
+  ($('labels') as HTMLElement).hidden = true;
+  sunBox.hidden = true;
+}
+
+function exitEarth() {
+  if (!earthActive) return;
+  earthActive = false;
+  earthStarted = false;
+  document.body.classList.remove('earth');
+  stage.setEarth(false);
+  ($('labels') as HTMLElement).hidden = false;
+  placeTag.hidden = true;
+  if (state.entry) { setTitle(state.entry.title); $('model-kind').textContent = state.entry.kind; $('credit').textContent = `Model: ${state.entry.credit} · ${state.entry.licence}`; }
+  else if (!scanned) loadEntry(LIBRARY[0]);
+}
+
+async function selectLandmark(l: Landmark) {
+  landmarkList.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === l.id));
+  const auth = await getEarthAuth();
+  if (!auth) { loadPlace(`${l.name}, ${l.city}`); return; }
+  currentLandmark = l;
+  earthOn();
+  ui.closeCard();
+  intro.hidden = false;
+  setTitle(l.name);
+  $('model-kind').textContent = `${l.city} · ${l.lat.toFixed(4)}, ${l.lon.toFixed(4)}`;
+  placeStatus.textContent = `streaming ${l.name} in 3D`;
+  ui.log(`flying to ${l.name}`, 'sys');
+  placeTag.hidden = true;
+  if (!earthStarted) { stage.earth.start(auth, l.lat, l.lon); earthStarted = true; }
+  else stage.earth.goTo(l.lat, l.lon);
+  stage.earth.setLook((document.querySelector('.look-btn.is-on') as HTMLElement)?.dataset.look as 'photo' | 'hologram' || 'photo');
+  // Hold high above until the ground is known, then drop in.
+  stage.camera.position.set(l.view * 0.5, 2600 + l.view * 3, l.view * 0.5);
+  stage.controls.target.set(0, 0, 0);
+  stage.earth.onGround = (y) => {
+    if (currentLandmark !== l) return;
+    placeStatus.textContent = '';
+    stage.flyTo(new THREE.Vector3(0, y + l.lift, 0), l.view, true);
+  };
+  stage.earth.onAttribution = (html) => { $('credit').innerHTML = html; };
+  loadFacts(l);
+}
+
+async function loadFacts(l: Landmark) {
+  try {
+    const r = await fetch('/api/facts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: l.name, city: l.city }) });
+    const j = await r.json();
+    if (currentLandmark !== l || !j.facts?.length) return;
+    ui.openCard({ index: 1, total: 1, title: l.name, body: j.facts.map((f: { fact: string }) => f.fact).join(' '), sources: j.facts.map((f: { source?: { title: string; url: string } }) => f.source).filter(Boolean) });
+    $('card-index').textContent = l.city.toUpperCase();
+  } catch { /* facts are a bonus; the place still shows */ }
+}
+
+async function searchPlace(q: string) {
+  const auth = await getEarthAuth();
+  if (!auth) { loadPlace(q); return; }
+  placeStatus.textContent = `finding ${q}`;
+  try {
+    const r = await fetch('/api/geocode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
+    const g = await r.json();
+    if (!r.ok || g.error) throw new Error(g.error || 'not found');
+    const parts = String(g.name).split(',');
+    selectLandmark({ id: `q-${Date.now()}`, name: parts[0].trim(), city: parts.slice(1).join(',').trim() || q, lat: g.lat, lon: g.lon, view: 450, lift: 20 });
+  } catch (err) {
+    placeStatus.textContent = err instanceof Error ? err.message : String(err);
+  }
+}
+
+// Keep the place marker pinned over the landmark.
+const prevFrame = stage.onFrame;
+stage.onFrame = (dt, t) => {
+  prevFrame?.(dt, t);
+  if (!earthActive || !currentLandmark || stage.earth.ground === null) { placeTag.hidden = true; return; }
+  const s = stage.project(new THREE.Vector3(0, stage.earth.ground + currentLandmark.lift * 1.7, 0));
+  if (!s) { placeTag.hidden = true; return; }
+  placeTag.hidden = false;
+  placeTag.textContent = currentLandmark.name;
+  placeTag.style.left = `${s.x}px`;
+  placeTag.style.top = `${s.y}px`;
+};
