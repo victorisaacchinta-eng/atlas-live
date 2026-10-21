@@ -231,6 +231,9 @@ body.mode-build .intro .hints, body.mode-build .rescan { display: none; }
 .landmarks .t { font-size: 13.5px; font-weight: 600; line-height: 1.15; }
 .landmarks .k { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
 .landmarks button.is-on .k { color: inherit; opacity: .7; }
+.landmarks .group-head { grid-column: 1 / -1; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--signal); padding: 10px 2px 2px; }
+.landmarks .group-head:first-child { padding-top: 0; }
+.landmarks button.low .t::after { content: " ·"; color: var(--signal); }
 body.earth .intro .explode, body.earth .intro .parts-count, body.earth .intro .hints, body.earth .rescan { display: none; }
 body.earth .intro { top: auto; bottom: calc(220px + env(safe-area-inset-bottom, 0px)); left: auto; right: max(24px, env(safe-area-inset-right, 0px)); width: min(420px, 40vw); text-align: right; align-items: flex-end; }
 body.earth .credit { max-width: 60vw; }

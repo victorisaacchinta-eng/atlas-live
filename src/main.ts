@@ -447,7 +447,16 @@ placeTag.className = 'place-tag';
 placeTag.hidden = true;
 document.body.appendChild(placeTag);
 
+const GROUP_LABEL: Record<string, string> = { Wonders: 'Wonders of the world', Icons: 'Icons in sharp 3D', India: 'India · coarse Google 3D, rebuilt by ATLAS' };
+let lastGroup = '';
 for (const l of LANDMARKS) {
+  if (l.group && l.group !== lastGroup) {
+    lastGroup = l.group;
+    const h = document.createElement('li');
+    h.className = 'group-head';
+    h.textContent = GROUP_LABEL[l.group] || l.group;
+    landmarkList.appendChild(h);
+  }
   const li = document.createElement('li');
   const b = document.createElement('button');
   b.type = 'button';
@@ -455,6 +464,7 @@ for (const l of LANDMARKS) {
   b.innerHTML = `<span class="t"></span><span class="k"></span>`;
   b.querySelector('.t')!.textContent = l.name;
   b.querySelector('.k')!.textContent = l.city;
+  if (l.lowDetail) { b.classList.add('low'); b.title = 'Google’s 3D is coarse here'; }
   b.addEventListener('click', () => selectLandmark(l));
   li.appendChild(b);
   landmarkList.appendChild(li);
@@ -607,7 +617,10 @@ async function selectLandmark(l: Landmark) {
     land.set(0, (predicted ?? 0) + l.lift, 0);
     if (predicted !== null) stage.earth.predictGround(predicted);
     arrived = true;
-    stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => { placeStatus.textContent = ''; applyIsolate(); });
+    stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => {
+      placeStatus.textContent = l.lowDetail ? `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.` : '';
+      applyIsolate();
+    });
   };
   stage.earth.onGround = (y) => {
     if (currentLandmark !== l || !arrived) return;
