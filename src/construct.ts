@@ -13,7 +13,7 @@ export interface Prim {
   at: number[];
   rot?: number[];
   size?: number[];
-  r?: number; r2?: number; h?: number; tube?: number; t?: number; sides?: number;
+  r?: number; r2?: number; h?: number; tube?: number; t?: number; sides?: number; top?: number[];
   ring?: { n: number; r: number };
   row?: { n: number; step: number[] };
   mirror?: 'x' | 'z' | 'xz';
@@ -29,6 +29,19 @@ function shape(p: Prim): THREE.BufferGeometry | null {
   let g: THREE.BufferGeometry | null = null;
   switch (p.type) {
     case 'box': g = new THREE.BoxGeometry(s[0], s[1], s[2]).translate(0, s[1] / 2, 0); break;
+    case 'taper': {
+      // A square frustum: 4-sided cylinder turned 45° so its faces align with x and z, then stretched.
+      const tw = p.top?.[0] ?? s[0] * 0.5, td = p.top?.[1] ?? s[2] * 0.5;
+      const rb = Math.SQRT1_2, rt = rb * Math.max(0.01, tw / s[0]);
+      g = new THREE.CylinderGeometry(rt, rb, 1, 4, 1).rotateY(Math.PI / 4).scale(s[0], s[1], s[2]).translate(0, s[1] / 2, 0);
+      if (Math.abs(tw / s[0] - td / s[2]) > 0.02) {
+        // Different taper in x and z: move the top ring's z to match.
+        const pos = g.getAttribute('position');
+        for (let i = 0; i < pos.count; i++) if (pos.getY(i) > s[1] * 0.99) pos.setZ(i, Math.sign(pos.getZ(i)) * td / 2);
+        pos.needsUpdate = true;
+      }
+      break;
+    }
     case 'cylinder': g = new THREE.CylinderGeometry(p.r2 ?? r, r, p.h ?? 1, p.sides ?? 24).translate(0, (p.h ?? 1) / 2, 0); break;
     case 'cone': g = new THREE.ConeGeometry(r, p.h ?? 1, p.sides ?? 24).translate(0, (p.h ?? 1) / 2, 0); break;
     case 'spire': g = new THREE.ConeGeometry(r, p.h ?? r * 8, 8).translate(0, (p.h ?? r * 8) / 2, 0); break;

@@ -839,7 +839,8 @@ async function runConstruct(name: string, city: string) {
         const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, combined });
         const changes = fix.replace.length + fix.add.length + fix.remove.length;
         c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`);
-        if (!changes || fix.score >= 7) break;
+        // The score is unreliable; the issues are not. Always apply the first round's fixes.
+        if (!changes || (round > 1 && fix.score >= 7)) break;
         built.parts = applyFixes(built.parts, fix);
         showBuilt();
       } catch (err) {

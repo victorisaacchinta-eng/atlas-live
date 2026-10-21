@@ -18,6 +18,7 @@ A part is {"id": "snake_case", "name": "Readable name", "role": "one short sente
 Every primitive has "type" and "at": [x, y, z] = the centre of its BOTTOM face. Optional "rot": [rx, ry, rz] in degrees.
 Types and their sizes:
 - "box": "size": [width_x, height_y, depth_z]
+- "taper": "size": [bottom_width_x, height_y, bottom_depth_z], "top": [top_width_x, top_depth_z] - a tapering block (frustum); use it for towers, pylons, legs, plinths and obelisks that narrow upward
 - "cylinder": "r" bottom radius, "r2" top radius (optional, defaults to r), "h" height, "sides" (optional: 4, 6, 8, 12, 16, defaults to 24)
 - "cone": "r", "h", "sides" (optional)
 - "dome": "r", "h" (optional, defaults to r) - a half sphere standing on its rim
@@ -32,7 +33,7 @@ Repeats (optional, on any primitive, keep the JSON short):
 - "ring": {"n": count, "r": radius} - n copies on a circle of that radius around the primitive's "at" point, each turned to face outward
 - "row": {"n": count, "step": [dx, dy, dz]} - n copies, each shifted by step
 - "mirror": "x" | "z" | "xz" - also place copies mirrored across x = 0 and/or z = 0
-Use real proportions from the research. Use repeats for anything repeated (columns, minarets, windows, arches, tiers). Aim for 3 to 15 primitives per part; keep the JSON compact (no comments, no extra keys).`;
+Leaning members (legs, struts, buttresses): use "rot" to tilt them. Use real proportions from the research. Use repeats for anything repeated (columns, minarets, windows, arches, tiers). Aim for 3 to 15 primitives per part; keep the JSON compact (no comments, no extra keys).`;
 
 const MAX = { prims: 1500, count: 64, dim: 2000 };
 
@@ -132,7 +133,8 @@ async function critique(name: string, b: Body) {
   const system = `You are the adversarial critic on a modelling team. Compare the build to the real structure. Look hard at silhouette, proportions (height to width), counts of repeated elements (minarets, arches, tiers, columns), dome shapes and placement. Be concrete.
 Return at most 6 fixes, the ones that most improve the likeness. Fix by replacing whole parts (same id), adding new parts, or removing parts.
 ${GRAMMAR}
-Reply with JSON only: {"score": 0-10 likeness now, "issues": ["short, specific"], "replace": [part, ...], "add": [part, ...], "remove": ["part_id", ...]}`;
+Score honestly on this scale: 0 = nothing like it, 3 = right idea but wrong shape, 5 = recognisable with clear errors, 8 = close, 10 = silhouette and proportions match. If you list serious issues the score must be 5 or lower.
+Reply with JSON only: {"score": 0-10, "issues": ["short, specific"], "replace": [part, ...], "add": [part, ...], "remove": ["part_id", ...]}`;
   const c = await jsonChat<{ score?: number; issues?: string[]; replace?: Part[]; add?: Part[]; remove?: string[] }>(MODELS.vision, [{ role: 'system', content: system }, { role: 'user', content }], 6000);
   return {
     score: Math.max(0, Math.min(10, Number(c.score) || 0)),
@@ -211,7 +213,7 @@ function repairJson(text: string) {
   return cut;
 }
 
-const TYPES = new Set(['box', 'cylinder', 'cone', 'dome', 'onion', 'sphere', 'arch', 'gable', 'pyramid', 'spire', 'torus']);
+const TYPES = new Set(['taper', 'box', 'cylinder', 'cone', 'dome', 'onion', 'sphere', 'arch', 'gable', 'pyramid', 'spire', 'torus']);
 const num = (v: unknown, lo: number, hi: number, d: number) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
 const vec = (v: unknown, d: number[]) => (Array.isArray(v) && v.length >= 3 ? v.slice(0, 3).map((x, i) => num(x, -MAX.dim, MAX.dim, d[i])) : d);
 
@@ -226,6 +228,7 @@ function clean(parts: Part[], zone?: string): Part[] {
       const q: Prim = { type: String(raw.type), at: vec(raw.at, [0, 0, 0]) };
       if (raw.rot) q.rot = vec(raw.rot, [0, 0, 0]);
       if (raw.size) q.size = vec(raw.size, [1, 1, 1]).map((x) => Math.max(0.05, Math.abs(x)));
+      if (Array.isArray(raw.top)) q.top = (raw.top as unknown[]).slice(0, 2).map((x) => num(x, 0, MAX.dim, 0));
       for (const k of ['r', 'r2', 'h', 'tube', 't']) if (raw[k] !== undefined) q[k] = num(raw[k], 0.01, MAX.dim, 1);
       if (raw.sides !== undefined) q.sides = Math.round(num(raw.sides, 3, 64, 24));
       let copies = 1;
