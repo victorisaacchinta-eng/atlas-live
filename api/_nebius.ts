@@ -35,6 +35,8 @@ export const MODELS = {
 };
 
 const configured = { ...MODELS };
+/** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
+const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
 let checked: Promise<void> | null = null;
 
 /**
@@ -52,11 +54,11 @@ export function ensureModels() {
       if (!ids.length) return;
       for (const role of ['vision', 'agent', 'fast'] as const) {
         const env = { vision: process.env.ATLAS_VISION_MODEL, agent: process.env.ATLAS_AGENT_MODEL, fast: process.env.ATLAS_FAST_MODEL }[role];
+        const ranked: string[] = [];
+        for (const re of PROVIDER.prefer![role]) for (const id of ids) if (re.test(id) && !ranked.includes(id)) ranked.push(id);
+        ALTS[role] = ranked;
         if (env || ids.includes(MODELS[role])) continue;
-        for (const re of PROVIDER.prefer![role]) {
-          const hit = ids.find((id) => re.test(id));
-          if (hit) { MODELS[role] = hit; break; }
-        }
+        if (ranked[0]) MODELS[role] = ranked[0];
       }
     } catch { /* keep the configured ids */ }
   })();
@@ -81,13 +83,22 @@ export async function chat(body: Record<string, unknown>) {
   await ensureModels();
   // Callers pass the id they read earlier; map a retired id to its live replacement.
   for (const role of ['vision', 'agent', 'fast'] as const) if (body.model === configured[role]) body.model = MODELS[role];
-  const r = await fetch(`${PROVIDER.base}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PROVIDER.key}` },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new HttpError(r.status, `${PROVIDER.label} ${r.status}: ${(await r.text()).slice(0, 400)}`);
-  return r.json();
+  // Overloaded (503), rate-limited (429) or retired (404): try the next live model for the role.
+  const role = (['agent', 'vision', 'fast'] as const).find((k) => body.model === MODELS[k]);
+  const tries = [String(body.model), ...(role ? ALTS[role].filter((id) => id !== body.model) : [])].slice(0, 3);
+  let last = '';
+  for (let i = 0; i < tries.length; i++) {
+    const r = await fetch(`${PROVIDER.base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PROVIDER.key}` },
+      body: JSON.stringify({ ...body, model: tries[i] }),
+    });
+    if (r.ok) return r.json();
+    last = `${PROVIDER.label} ${r.status}: ${(await r.text()).slice(0, 300)}`;
+    if (![404, 429, 500, 503].includes(r.status)) throw new HttpError(r.status, last);
+    if (i === 0) await new Promise((res) => setTimeout(res, 600));
+  }
+  throw new HttpError(503, last);
 }
 
 export async function tavily(query: string, maxResults = 4) {
