@@ -89,14 +89,14 @@ Reply with JSON only:
     { role: 'system', content: system },
     { role: 'user', content: `Structure: ${subject}\n\nResearch:\n${research || '(no results; rely on well-known proportions and mark estimates)'}` },
   ];
-  const p = await jsonChat<Plan>(MODELS.agent, messages, 3000);
+  const p = await jsonChat<Plan>(MODELS.fast, messages, 3000);
   if (!Array.isArray(p.zones) || !p.zones.length) throw new HttpError(502, 'The planner returned no zones');
   p.zones = p.zones.slice(0, 5).map((z, i) => ({ ...z, id: slug(z.id || z.name || `zone_${i + 1}`), parts: (z.parts || []).slice(0, 8) }));
   return {
     plan: p,
     sources: results.map((r) => ({ title: r.title, url: r.url })),
     reference: ref,
-    model: MODELS.agent,
+    model: MODELS.fast,
     ms: { research: tResearch, plan: Date.now() - t0 - tResearch },
   };
 }
@@ -114,8 +114,8 @@ Reply with JSON only: {"parts": [ ...parts for your zone... ]}`;
     { role: 'system', content: system },
     { role: 'user', content: `Your zone: ${zone.name}\nBrief: ${zone.brief}\nBounding box: ${JSON.stringify(zone.box)}\nParts to build: ${zone.parts.join(', ')}` },
   ];
-  const out = await jsonChat<{ parts: Part[] }>(MODELS.agent, messages, 6000, 0.3);
-  return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.agent };
+  const out = await jsonChat<{ parts: Part[] }>(MODELS.fast, messages, 6000, 0.3);
+  return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.fast };
 }
 
 // ---------- critique: render vs reference photo ----------
