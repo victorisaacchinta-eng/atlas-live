@@ -55,7 +55,8 @@ export function ensureModels() {
       for (const role of ['vision', 'agent', 'fast'] as const) {
         const env = { vision: process.env.ATLAS_VISION_MODEL, agent: process.env.ATLAS_AGENT_MODEL, fast: process.env.ATLAS_FAST_MODEL }[role];
         const ranked: string[] = [];
-        for (const re of PROVIDER.prefer![role]) for (const id of ids) if (re.test(id) && !ranked.includes(id)) ranked.push(id);
+        const newest = [...ids].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        for (const re of PROVIDER.prefer![role]) for (const id of newest) if (re.test(id) && !ranked.includes(id)) ranked.push(id);
         ALTS[role] = ranked;
         if (env || ids.includes(MODELS[role])) continue;
         if (ranked[0]) MODELS[role] = ranked[0];
