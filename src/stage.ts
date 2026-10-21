@@ -230,6 +230,22 @@ export class Stage {
     this.scene.add(this.isoFrame);
   }
 
+  /** Glide to frame a block of half-width `half` around (0, y, 0), keeping the current heading. */
+  frameBlock(half: number, y: number) {
+    const fromP = this.camera.position.clone(), fromT = this.controls.target.clone();
+    const toT = new THREE.Vector3(0, y, 0);
+    const flat = fromP.clone().sub(fromT); flat.y = 0;
+    if (flat.lengthSq() < 1) flat.set(this.approach.x, 0, this.approach.z);
+    flat.normalize();
+    const dist = half * 3.1;
+    const toP = toT.clone().addScaledVector(flat, dist * Math.cos(0.5)).add(new THREE.Vector3(0, dist * Math.sin(0.5), 0));
+    this.run(1.6, (k) => {
+      const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      this.camera.position.lerpVectors(fromP, toP, e);
+      this.controls.target.lerpVectors(fromT, toT, e);
+    });
+  }
+
   /** Keep a sensible depth range from street level to orbit. */
   private fitDepth() {
     const ground = this.earth.ground ?? 0;

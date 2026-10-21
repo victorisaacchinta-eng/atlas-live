@@ -502,6 +502,12 @@ function setIsolate(on: boolean) {
   isolate = on;
   isoBtn.setAttribute('aria-pressed', String(on));
   applyIsolate();
+  const l = currentLandmark;
+  if (earthActive && l && stage.earth.ground !== null && !stage.flying) {
+    const g = stage.earth.ground;
+    if (on) stage.frameBlock(l.iso ?? l.view * 0.45, g + l.lift);
+    else stage.frameBlock(l.view / 3.1, g + l.lift);
+  }
   if (on && earthActive) ui.log('isolated: drag to turn it, scroll to zoom', 'sys');
 }
 isoBtn.addEventListener('click', () => setIsolate(!isolate));
