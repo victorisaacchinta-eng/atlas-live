@@ -1,4 +1,4 @@
-import { chat, tavily, extractJson, send, MODELS, HttpError, type TavilyResult } from './_nebius.js';
+import { chat, tavily, extractJson, send, MODELS, HttpError, hasModel, type TavilyResult } from './_nebius.js';
 
 /**
  * PLACES: name a real place, get its buildings as a hologram plus a few cited facts.
@@ -48,7 +48,7 @@ async function buildings(lat: number, lon: number, radius: number): Promise<Feat
 }
 
 async function facts(place: string, names: string[]) {
-  if (!process.env.NEBIUS_API_KEY) return { facts: [], model: undefined as string | undefined };
+  if (!hasModel()) return { facts: [], model: undefined as string | undefined };
   const found = await tavily(`${place} history architecture ${names.slice(0, 4).join(' ')}`, 6).catch(() => ({ results: [] as TavilyResult[] }));
   if (!found.results.length) return { facts: [], model: MODELS.fast };
   const sources = found.results.map((r, i) => `[${i}] ${r.title} (${r.url})\n${r.content.slice(0, 600)}`).join('\n\n');

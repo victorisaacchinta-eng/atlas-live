@@ -45,7 +45,7 @@ export async function ask(question: string, ctx: AgentContext) {
   } catch (err) {
     thinking.remove();
     const msg = err instanceof Error ? err.message : String(err);
-    ui.log(msg.includes('NEBIUS_API_KEY') ? 'agent offline: add the Nebius key on the server' : `agent error: ${msg.slice(0, 120)}`, 'hot');
+    ui.log(msg.includes('No model key') ? 'agent offline: no model key on the server yet' : `agent error: ${msg.slice(0, 120)}`, 'hot');
     setAgent('off');
   }
 }
@@ -97,3 +97,20 @@ export function speak(text: string) {
 }
 let muted = false;
 export function setMuted(m: boolean) { muted = m; if (m && 'speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/** Ask the server which model is live and show it honestly in the header. */
+export async function refreshStatus() {
+  const label = document.getElementById('agent-label')!;
+  const chip = document.getElementById('agent-chip')!;
+  try {
+    const r = await fetch('/api/status');
+    const j = await r.json();
+    if (!j.provider) { label.textContent = 'Model offline'; chip.title = 'No model key on the server yet'; return; }
+    const short = String(j.agent).split('/').pop() || j.agent;
+    label.textContent = short.length > 22 ? `${short.slice(0, 21)}…` : short;
+    chip.title = `${j.label}: ${j.agent} (vision ${j.vision})${j.search ? ', Tavily search on' : ''}`;
+    chip.classList.add('ok');
+  } catch {
+    label.textContent = 'Model offline';
+  }
+}

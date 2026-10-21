@@ -159,8 +159,8 @@ export class ScanModel implements Hologram {
     const bw = box[2] - box[0], bh = box[3] - box[1];
     const aspect = (bw * px.width) / (bh * px.height);
     // Longest side becomes 2.4 units, like the library models.
-    const width = aspect >= 1 ? 2.4 : 2.4 * aspect;
-    const height = aspect >= 1 ? 2.4 / aspect : 2.4;
+    const width = aspect >= 1 ? 3.0 : 3.0 * aspect;
+    const height = aspect >= 1 ? 3.0 / aspect : 3.0;
     const step = 1;
 
     for (let y = 0; y < px.height; y += step) for (let x = 0; x < px.width; x += step) {

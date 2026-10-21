@@ -25,6 +25,13 @@ export class Stage {
   /** 0..1, how far the model is exploded; the camera backs off to keep it framed. */
   framing = 0;
   private baseDistance = 7.6;
+  /** Pick how close the camera sits and how far it can tilt for each kind of hologram. */
+  frame(kind: 'object' | 'scan' | 'place') {
+    this.baseDistance = kind === 'place' ? 5.4 : kind === 'scan' ? 6.2 : 7.6;
+    this.controls.maxPolarAngle = Math.PI * (kind === 'place' ? 0.42 : 0.52);
+    this.idleSpin = kind === 'place' ? 0.05 : 0.12;
+    this.userZoomed = false;
+  }
   /** Spin applied by hands, in radians per second, decays to the idle spin. */
   spin = 0;
   idleSpin = 0.12;

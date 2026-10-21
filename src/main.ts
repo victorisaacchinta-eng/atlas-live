@@ -10,7 +10,7 @@ import { LIBRARY, type LibraryEntry } from './library';
 import { ui } from './ui';
 import { applyCss, theme } from './theme';
 import { GestureControl } from './gestures';
-import { ask, listen } from './agent';
+import { ask, listen, refreshStatus } from './agent';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 
@@ -47,6 +47,7 @@ async function loadEntry(e: LibraryEntry) {
     const m = await HoloModel.load(e.url);
     state.entry = e;
     stage.setModel(m);
+    stage.frame('object');
     setExplode(0);
     ui.closeCard();
     setTitle(e.title);
@@ -165,6 +166,7 @@ stage.onFrame = (dt) => {
 
 // ---------- boot ----------
 ui.log('ATLAS online', 'sys');
+refreshStatus();
 loadEntry(LIBRARY[0]);
 
 // Expose a small handle for the hand controller and agent modules.
@@ -296,6 +298,7 @@ async function runScan(image: string) {
     }
     const m = await ScanModel.build(image, scan, step);
     stage.setModel(m);
+    stage.frame('scan');
     stage.userZoomed = false;
     scanned = true;
     state.entry = null;
@@ -372,6 +375,7 @@ export function showPlace(d: PlaceData) {
   place = d;
   const { model, exaggeration } = buildPlace(d);
   stage.setModel(model);
+  stage.frame('place');
   stage.userZoomed = false;
   state.entry = null;
   setExplode(0);
