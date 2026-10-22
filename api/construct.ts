@@ -82,7 +82,8 @@ async function plan(name: string, city: string) {
   const research = results.map((r, i) => `[${i + 1}] ${r.title}\n${r.content.slice(0, 700)}`).join('\n\n');
 
   const system = `You are the lead architect in a team that builds a faithful, explodable 3D model of a real structure out of simple shapes.
-From the research, plan the build. Split the structure into 3 to 5 zones that builders can work on in parallel without overlapping (for example: base and plinth, main body, roof and domes, towers, gateways). Give each zone an axis-aligned bounding box in metres and the named parts it must contain (2 to 7 parts per zone, 10 to 24 parts in total). Parts should be the pieces a curious person would want to pull apart and ask about.
+From the research, plan the build. Model the main structure only: the building itself and what stands on its own base or platform. Leave out gardens, pools, outer gates, walls, courtyards, neighbouring buildings and landscaping, even when the research describes them as part of the complex; they shrink the subject to a speck. Keep the true proportions of what you do model (a dome's height against the hall below it, a tower's height against its base).
+Split the structure into 3 to 5 zones that builders can work on in parallel without overlapping (for example: base or plinth, main body, roof and domes, towers). Give each zone an axis-aligned bounding box in metres and the named parts it must contain (2 to 7 parts per zone, 10 to 24 parts in total). Parts should be the pieces a curious person would want to pull apart and ask about.
 Coordinates: y up, ground y = 0, centred on x = 0, z = 0, main front facing -z.
 Only use dimensions the research supports; when it does not give one, estimate from proportions and say "est." in the summary.
 Reply with JSON only:
