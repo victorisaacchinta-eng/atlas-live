@@ -7,7 +7,11 @@ export interface AgentContext {
   focusPart: (i: number) => void;
   setExplode: (v: number) => void;
   mode?: () => 'object' | 'earth';
-  flyTo?: (place: string) => void;
+  flyTo?: (place: string, lat?: number, lon?: number) => void;
+  layers?: () => string[];
+  globeView?: () => void;
+  showLayer?: (layer: string, on: boolean) => void;
+  buildModel?: (name: string) => void;
   setLens?: (lens: string) => void;
   orbit?: (speed: number) => void;
   isolate?: (on: boolean) => void;
@@ -32,21 +36,26 @@ export async function ask(question: string, ctx: AgentContext) {
     const r = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, mode: ctx.mode?.() ?? 'object', machine: ctx.machine(), parts: ctx.parts(), focused: ctx.focused() + 1, history }),
+      body: JSON.stringify({ question, mode: ctx.mode?.() ?? 'object', machine: ctx.machine(), parts: ctx.parts(), focused: ctx.focused() + 1, layers: ctx.layers?.() ?? [], history }),
     });
     const j = (await r.json()) as AskReply;
     thinking.remove();
     if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
-    for (const t of j.trace) ui.log(t.replace(/^(nemotron|agent) › /, ''), t.startsWith('tavily') ? 'sys' : 'tool');
+    for (const t of j.trace) ui.log(t.replace(/^(nemotron|agent) › /, ''), t.startsWith('agent') ? 'tool' : 'sys');
     for (const a of j.actions) {
       if (a.name === 'focus_part') ctx.focusPart(Number(a.args.index) - 1);
       if (a.name === 'set_explode') ctx.setExplode(Number(a.args.amount));
-      if (a.name === 'fly_to' && a.args.place) ctx.flyTo?.(String(a.args.place));
+      if (a.name === 'fly_to' && a.args.place) ctx.flyTo?.(String(a.args.place), a.args.lat as number | undefined, a.args.lon as number | undefined);
+      if (a.name === 'globe_view') ctx.globeView?.();
+      if (a.name === 'show_layer') ctx.showLayer?.(String(a.args.layer), a.args.on !== false);
+      if (a.name === 'build_model' && a.args.name) ctx.buildModel?.(String(a.args.name));
       if (a.name === 'set_lens' && a.args.lens) ctx.setLens?.(String(a.args.lens));
       if (a.name === 'orbit') ctx.orbit?.(Number(a.args.speed) || 0);
       if (a.name === 'isolate') ctx.isolate?.(a.args.on !== false);
     }
     ui.log(j.answer, 'answer');
+    // Which model answered (the provider can fail over), so the viewer always knows who is talking.
+    if (j.model) ui.log(`answered by ${j.model.split(' + ').map((m) => m.split('·').pop()!.trim().split('/').pop()).join(' + ')}`, 'model');
     if (ctx.focused() >= 0) { ui.setCardBody(j.answer); ui.setSources(j.sources); }
     history.push({ role: 'user', content: question }, { role: 'assistant', content: j.answer });
     speak(j.answer);

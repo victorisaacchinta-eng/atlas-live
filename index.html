@@ -76,6 +76,8 @@
         <input id="place-input" placeholder="Any place on Earth, e.g. Golconda Fort" />
         <button type="submit" class="send">Go</button>
       </form>
+      <div class="sig-head"><span class="eyebrow">Live signals</span><button type="button" id="globe-btn" class="iso-btn" title="Back out to the whole planet (key G)"><span class="lk">G</span>Whole Earth</button></div>
+      <div class="signals" id="signals" role="group" aria-label="Live signal layers"></div>
       <div class="look" id="lenses" role="group" aria-label="Lens (keys 1 to 5)"></div>
       <div class="place-actions">
         <button type="button" id="iso-btn" class="iso-btn" aria-pressed="false" title="Cut the landmark out of the city (key I)"><span class="lk">I</span>Isolate</button>
@@ -97,10 +99,12 @@
       <h2 id="card-title">Part</h2>
       <p id="card-body">Ask about this part, or pinch another one.</p>
       <ol id="card-sources" class="sources"></ol>
+      <div class="card-actions" id="card-actions" hidden></div>
     </aside>
 
     <section class="console" aria-label="Ask ATLAS">
       <ol id="log" class="log" aria-live="polite"></ol>
+      <div class="ask-chips" id="chips" aria-label="Try asking"></div>
       <form id="ask" class="ask" autocomplete="off">
         <label class="visually-hidden" for="ask-input">Ask ATLAS</label>
         <input id="ask-input" placeholder="Ask about this machine" />

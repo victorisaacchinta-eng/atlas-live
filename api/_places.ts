@@ -6,7 +6,7 @@ const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.p
 interface Feature { n: string; h: number | null; l: number | null; t: string; p: [number, number][] }
 
 export async function geocode(q: string) {
-  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } });
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new HttpError(502, `Place search failed (${r.status})`);
   const j = (await r.json()) as { lat: string; lon: string; display_name: string; type: string }[];
   if (!j.length) throw new HttpError(404, `Could not find "${q}" on the map`);

@@ -1,6 +1,6 @@
 const $ = (id: string) => document.getElementById(id)!;
 
-export type LogKind = 'you' | 'sys' | 'tool' | 'answer' | 'hot';
+export type LogKind = 'you' | 'sys' | 'tool' | 'answer' | 'hot' | 'model';
 
 export interface CardData {
   index: number;
@@ -27,6 +27,8 @@ export const ui = {
     $('card-title').textContent = d.title;
     $('card-body').textContent = d.body;
     ui.setSources(d.sources || []);
+    $('card-actions').hidden = true;
+    $('card-actions').replaceChildren();
     ($('card') as HTMLElement).hidden = false;
   },
 

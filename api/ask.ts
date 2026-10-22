@@ -1,4 +1,6 @@
 import { chat, tavily, send, MODELS, HttpError, type ChatMessage, type TavilyResult } from './_nebius.js';
+import { geocode } from './_places.js';
+import { layer, weather, km, type LayerId, type Signal } from './_signals.js';
 
 /**
  * The ATLAS agent. Nemotron reads the question, the machine and its parts, and answers by
@@ -39,8 +41,55 @@ const EARTH_TOOLS = [
     type: 'function',
     function: {
       name: 'fly_to',
-      description: 'Fly the camera to a real place anywhere on Earth: a landmark, building, neighbourhood or city. Use a specific, searchable name, e.g. "Golconda Fort, Hyderabad".',
+      description: 'Fly the camera to a real place: a landmark, building, neighbourhood or city ("Golconda Fort, Hyderabad"), or to exact coordinates (for a signal found with find_signals, pass its lat, lon and a short name as place).',
+      parameters: { type: 'object', properties: { place: { type: 'string' }, lat: { type: 'number' }, lon: { type: 'number' } }, required: ['place'] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'globe_view',
+      description: 'Pull back out to the whole Earth, with the live signal layers.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'show_layer',
+      description: 'Show or hide a live layer on the globe. quakes: USGS earthquakes M2.5+ from the past 7 days. events: NASA EONET open natural events (wildfires, severe storms, sea ice).',
+      parameters: { type: 'object', properties: { layer: { type: 'string', enum: ['quakes', 'events'] }, on: { type: 'boolean' } }, required: ['layer', 'on'] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'find_signals',
+      description: 'Query a live layer. Returns real items with title, magnitude, time, coordinates and source link. Use it for any question about earthquakes, wildfires, storms or sea ice. Optionally only near a place.',
+      parameters: { type: 'object', properties: {
+        layer: { type: 'string', enum: ['quakes', 'events'] },
+        near: { type: 'string', description: 'Place name to search around, e.g. "Japan" or "California".' },
+        radius_km: { type: 'number', description: 'Search radius around near, default 800.' },
+        kind: { type: 'string', enum: ['wildfire', 'storm', 'ice', 'volcano', 'any'], description: 'events only' },
+        sort: { type: 'string', enum: ['biggest', 'latest'] },
+        limit: { type: 'integer', minimum: 1, maximum: 10 },
+      }, required: ['layer'] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_weather',
+      description: 'Current weather at a place (Open-Meteo): temperature, conditions, wind, humidity, precipitation.',
       parameters: { type: 'object', properties: { place: { type: 'string' } }, required: ['place'] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'build_model',
+      description: 'Hand a real structure to the ATLAS build team: Nemotron agents research it, model it from simple shapes, check it against a real photo, and the viewer can take it apart. Use when the viewer asks to build, reconstruct, model or take apart a structure.',
+      parameters: { type: 'object', properties: { name: { type: 'string', description: 'The structure, e.g. "Charminar, Hyderabad"' } }, required: ['name'] },
     },
   },
   {
@@ -72,6 +121,7 @@ const EARTH_TOOLS = [
 
 interface Body {
   mode?: 'object' | 'earth';
+  layers?: string[];
   question: string;
   machine: string;
   parts: string[];
@@ -82,18 +132,21 @@ interface Body {
 export default async function handler(req: { method: string; body: Body }, res: { status: (n: number) => { json: (b: unknown) => void } }) {
   try {
     if (req.method !== 'POST') throw new HttpError(405, 'POST only');
-    const { question, machine, parts = [], focused, history = [], mode = 'object' } = req.body || ({} as Body);
+    const { question, machine, parts = [], focused, history = [], mode = 'object', layers = [] } = req.body || ({} as Body);
     if (!question || !machine) throw new HttpError(400, 'question and machine are required');
     const earth = mode === 'earth';
     const tools = earth ? EARTH_TOOLS : SCENE_TOOLS;
 
     const partList = parts.map((p, i) => `${i + 1}. ${p}`).join('\n');
-    const system = earth ? `You are ATLAS, a guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
+    const system = earth ? `You are ATLAS, an intelligence guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
+Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC): ${new Date().toISOString().slice(0, 16)}.
 Rules:
-- When the viewer asks to go somewhere, call fly_to with a specific place name. When they ask to see it differently, call set_lens. When they ask to circle, spin or stop, call orbit. When they want the landmark on its own, call isolate.
-- Before stating any fact, number or date, call web_search. Only state what the results support. Moving the camera needs no search.
+- Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
+- Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). To show one item, fly_to its lat and lon. For weather, call get_weather.
+- History, architecture and other facts: call web_search first. Only state what tool results support; say which source (USGS, NASA EONET, Open-Meteo, or the web) a fact came from.
+- To build or take apart a structure, call build_model.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
-- Only say you did something if you called the tool for it.` : `You are ATLAS, a guide inside a hologram of a real machine: ${machine}.
+- Only say you did something if the tool result says it worked. If a tool failed or found nothing, say so plainly.` : `You are ATLAS, a guide inside a hologram of a real machine: ${machine}.
 Parts on screen (index. name):
 ${partList}
 ${focused && focused > 0 ? `The viewer has part ${focused} selected.` : ''}
@@ -112,10 +165,18 @@ Rules:
     const actions: { name: string; args: Record<string, unknown> }[] = [];
     const sources: { title: string; url: string }[] = [];
     const trace: string[] = [];
+    const models = new Set<string>();
     let answer = '';
+    const addSource = (title: string, url: string) => { if (url && !sources.some((s) => s.url === url)) sources.push({ title, url }); };
+    const brief = (x: Signal, from?: { lat: number; lon: number }) => ({
+      title: x.title, kind: x.kind, magnitude: x.mag !== undefined ? `${x.mag}${x.magUnit ? ' ' + x.magUnit : ''}` : undefined,
+      time_utc: x.time.slice(0, 16), lat: +x.lat.toFixed(3), lon: +x.lon.toFixed(3), depth_km: x.depthKm, tsunami: x.tsunami || undefined,
+      km_away: from ? Math.round(km(from, x)) : undefined, source: x.url,
+    });
 
     for (let turn = 0; turn < 5; turn++) {
       const reply = await chat({ model: MODELS.agent, messages, tools, tool_choice: 'auto', temperature: 0.3, max_tokens: 700 });
+      if (reply.servedBy) models.add(String(reply.servedBy));
       const msg = reply.choices?.[0]?.message;
       if (!msg) throw new HttpError(502, 'Empty reply from the model');
       const calls = (msg.tool_calls || []) as { id: string; function: { name: string; arguments: string } }[];
@@ -133,6 +194,51 @@ Rules:
           found.results.forEach((r: TavilyResult) => { if (!sources.some((s) => s.url === r.url)) sources.push({ title: r.title, url: r.url }); });
           result = JSON.stringify(found.results.map((r: TavilyResult) => ({ title: r.title, url: r.url, content: r.content.slice(0, 700) })));
           if (!found.results.length) result = 'No results.';
+        } else if (c.function.name === 'find_signals') {
+          const id = (args.layer === 'events' ? 'events' : 'quakes') as LayerId;
+          try {
+            const data = await layer(id);
+            let list = data.signals;
+            let center: { lat: number; lon: number; name: string } | undefined;
+            if (args.near) {
+              center = await geocode(String(args.near));
+              const r = Number(args.radius_km) > 0 ? Number(args.radius_km) : 800;
+              list = list.filter((x) => km(center!, x) <= r);
+            }
+            if (id === 'events' && args.kind && args.kind !== 'any') list = list.filter((x) => x.kind === args.kind);
+            list = [...list].sort(args.sort === 'latest' ? (a, b) => b.time.localeCompare(a.time) : (a, b) => (b.mag ?? 0) - (a.mag ?? 0));
+            const top = list.slice(0, Math.min(10, Math.max(1, Number(args.limit) || 5)));
+            top.slice(0, 3).forEach((x) => addSource(`${data.source}: ${x.title}`, x.url));
+            trace.push(`${id === 'quakes' ? 'usgs' : 'nasa eonet'} › ${list.length} ${id}${center ? ` within ${Number(args.radius_km) || 800} km of ${center.name}` : ''}`);
+            result = JSON.stringify({ source: data.source, feed_updated_utc: data.updated.slice(0, 16), total_matching: list.length, items: top.map((x) => brief(x, center)) });
+          } catch (err) {
+            trace.push(`${id} › failed`);
+            result = `The ${id} feed failed: ${err instanceof Error ? err.message : 'error'}. Tell the viewer the data is unavailable right now.`;
+          }
+        } else if (c.function.name === 'get_weather') {
+          try {
+            const g = await geocode(String(args.place || ''));
+            const w = await weather(g.lat, g.lon);
+            addSource(`Open-Meteo: current weather, ${g.name}`, `https://open-meteo.com/en/docs#latitude=${g.lat.toFixed(3)}&longitude=${g.lon.toFixed(3)}`);
+            trace.push(`open-meteo › ${g.name}`);
+            result = JSON.stringify({ place: g.name, lat: g.lat, lon: g.lon, ...w });
+          } catch (err) {
+            trace.push('open-meteo › failed');
+            result = `Weather lookup failed: ${err instanceof Error ? err.message : 'error'}.`;
+          }
+        } else if (c.function.name === 'fly_to') {
+          // Find the place before claiming to go there, so the agent never describes a flight that cannot happen.
+          let lat = Number(args.lat), lon = Number(args.lon);
+          let name = String(args.place || '').trim();
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+            try { const g = await geocode(name); lat = g.lat; lon = g.lon; name = name || g.name; }
+            catch (err) { result = `Could not find "${name}" on the map (${err instanceof Error ? err.message : 'error'}). Nothing moved.`; lat = NaN; }
+          }
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            actions.push({ name: 'fly_to', args: { place: name, lat, lon } });
+            trace.push(`agent › fly_to(${name})`);
+            result = `Flying to ${name} (${lat.toFixed(3)}, ${lon.toFixed(3)}).`;
+          } else trace.push(`agent › fly_to failed: ${name}`);
         } else {
           actions.push({ name: c.function.name, args });
           trace.push(`agent › ${c.function.name}(${JSON.stringify(args)})`);
@@ -141,7 +247,7 @@ Rules:
       }
     }
 
-    res.status(200).json({ answer: answer || 'I could not finish that one. Try asking it a different way.', actions, sources: sources.slice(0, 4), trace, model: MODELS.agent });
+    res.status(200).json({ answer: answer || 'I could not finish that one. Try asking it a different way.', actions, sources: sources.slice(0, 5), trace, model: [...models].join(' + ') || MODELS.agent });
   } catch (err) {
     send(res, err);
   }

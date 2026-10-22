@@ -99,7 +99,7 @@ Reply with JSON only:
     plan: p,
     sources: results.map((r) => ({ title: r.title, url: r.url })),
     reference: ref,
-    model: MODELS.agent,
+    model: served(p, MODELS.agent),
     ms: { research: tResearch, plan: Date.now() - t0 - tResearch },
   };
 }
@@ -118,7 +118,7 @@ Reply with JSON only: {"parts": [ ...parts for your zone... ]}`;
     { role: 'user', content: `Your zone: ${zone.name}\nBrief: ${zone.brief}\nBounding box: ${JSON.stringify(zone.box)}\nParts to build: ${zone.parts.join(', ')}` },
   ];
   const out = await jsonChat<{ parts: Part[] }>(MODELS.agent, messages, 4000, 0.3);
-  return { zone: zone.id, parts: clean(out.parts, zone.id), model: MODELS.agent };
+  return { zone: zone.id, parts: clean(out.parts, zone.id), model: served(out, MODELS.agent) };
 }
 
 // ---------- critique: render vs reference photo ----------
@@ -143,7 +143,7 @@ Reply with JSON only: {"score": 0-10, "issues": ["short, specific"], "replace": 
     replace: clean(c.replace || []),
     add: clean(c.add || []),
     remove: (c.remove || []).map(String).slice(0, 10),
-    model: MODELS.vision,
+    model: served(c, MODELS.vision),
   };
 }
 
@@ -152,6 +152,9 @@ Reply with JSON only: {"score": 0-10, "issues": ["short, specific"], "replace": 
  * Ask for JSON and get JSON. Uses the provider's JSON mode when it has one, repairs the usual
  * slips (comments, trailing commas, a reply cut off mid-object) and retries once.
  */
+const SERVED = Symbol('servedBy');
+const served = (o: unknown, fallback: string) => ((o as Record<symbol, string>)?.[SERVED] ?? fallback);
+
 async function jsonChat<T>(model: string, messages: ChatMessage[], max_tokens: number, temperature = 0.2): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -164,9 +167,11 @@ async function jsonChat<T>(model: string, messages: ChatMessage[], max_tokens: n
       else throw err;
     }
     const text = String(reply.choices?.[0]?.message?.content || '');
-    try { return extractJson<T>(text); } catch (err) {
+    // Record which model actually answered (the provider fails over), for the viewer.
+    const tag = (o: T) => { if (o && typeof o === 'object') Object.defineProperty(o, SERVED, { value: String(reply.servedBy || model), enumerable: false }); return o; };
+    try { return tag(extractJson<T>(text)); } catch (err) {
       lastErr = err;
-      try { return JSON.parse(repairJson(text)) as T; } catch (err2) { lastErr = err2; }
+      try { return tag(JSON.parse(repairJson(text)) as T); } catch (err2) { lastErr = err2; }
     }
   }
   throw new HttpError(502, `The model's JSON could not be read (${lastErr instanceof Error ? lastErr.message.slice(0, 80) : 'parse error'})`);

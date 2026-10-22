@@ -18,6 +18,7 @@ import type { EarthAuth } from './earth';
 import { LENSES, type Lens } from './lens';
 import { toHologram, applyFixes, type BuiltPart } from './construct';
 import { loadSplat, disposeSplat } from './splat';
+import { SignalLayers, ago, type Signal, type LayerId } from './signals';
 
 applyCss(theme);
 
@@ -85,13 +86,14 @@ const canvas = stage.renderer.domElement;
 let downAt = { x: 0, y: 0, t: 0 };
 canvas.addEventListener('pointerdown', (ev) => { downAt = { x: ev.clientX, y: ev.clientY, t: performance.now() }; });
 canvas.addEventListener('pointerup', (ev) => {
+  if (earthActive) return; // the globe handles its own clicks (signals)
   const moved = Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y);
   if (moved > 6 || performance.now() - downAt.t > 400) return;
   const i = pickAt(ev.clientX, ev.clientY);
   if (i >= 0) focusPart(i); else unfocus();
 });
 canvas.addEventListener('pointermove', (ev) => {
-  if (ev.buttons) return;
+  if (ev.buttons || earthActive) return;
   stage.model?.setHot(pickAt(ev.clientX, ev.clientY));
 });
 
@@ -176,7 +178,6 @@ stage.onFrame = (dt) => {
 // ---------- boot ----------
 ui.log('ATLAS online', 'sys');
 refreshStatus();
-loadEntry(LIBRARY[0]);
 
 // Expose a small handle for the hand controller and agent modules.
 export const app = { stage, setExplode, focusPart, unfocus, get explode() { return state.explodeTarget; }, get entry() { return state.entry; } };
@@ -195,17 +196,30 @@ export { gestures };
 
 // ---------- ask (text + voice) ----------
 const agentCtx = {
-  machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model ATLAS built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
+  machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model ATLAS built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : earthActive ? `the whole Earth seen from orbit, centred near ${originLL ? `${originLL.lat.toFixed(1)}, ${originLL.lon.toFixed(1)}` : 'India'}` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
+  layers: () => (earthActive ? signals.active : []),
+  globeView: () => goGlobe(),
+  showLayer: (id: string, on: boolean) => { if (id === 'quakes' || id === 'events') setLayer(id, on); },
+  buildModel: (name: string) => { const l = LANDMARKS.find((x) => name.toLowerCase().includes(x.name.toLowerCase())); runConstruct(l?.name || name.split(',')[0].trim(), l?.city || name.split(',').slice(1).join(',').trim()); },
   parts: () => earthActive ? [] : stage.model?.parts.map((p) => p.name) || [],
   focused: () => stage.model?.focused ?? -1,
   focusPart,
   setExplode,
   mode: () => (earthActive ? 'earth' : 'object') as 'earth' | 'object',
-  flyTo: (place: string) => {
+  flyTo: (place: string, lat?: number, lon?: number) => {
     const q = place.toLowerCase();
     const head = q.split(',')[0].trim();
     const preset = LANDMARKS.find((l) => q.includes(l.name.toLowerCase()) || (head.length >= 5 && l.name.toLowerCase().includes(head)));
-    if (preset) selectLandmark(preset); else searchPlace(place);
+    if (preset) { if (mode !== 'places') setMode('places'); selectLandmark(preset); return; }
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      if (mode !== 'places') setMode('places');
+      const parts = place.split(',');
+      // A signal (earthquake, fire) is a region, not a building: land higher.
+      const sig = signals.active.length && /earthquake|quake|fire|storm|cyclone|ice|volcano|\bM ?\d/i.test(place);
+      selectLandmark({ id: `at-${Date.now()}`, name: parts[0].trim(), city: parts.slice(1).join(',').trim() || `${lat!.toFixed(3)}, ${lon!.toFixed(3)}`, lat: lat!, lon: lon!, view: sig ? 26000 : 450, lift: 20 });
+      return;
+    }
+    searchPlace(place);
   },
   setLens: (l: string) => { if (LENSES.some((x) => x.id === l)) setLens(l as Lens); },
   isolate: (on: boolean) => setIsolate(on),
@@ -216,7 +230,7 @@ const agentCtx = {
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
-const askHint = () => (earthActive ? 'Ask ATLAS: "take me to Big Ben, thermal"' : 'Ask about this machine');
+const askHint = () => (earthActive ? 'Ask ATLAS: "biggest earthquake this week?"' : 'Ask about this machine');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -561,7 +575,7 @@ async function enterPlaces() {
     if (!place) intro.hidden = true;
     return;
   }
-  if (!earthStarted) selectLandmark(currentLandmark ?? LANDMARKS[0]);
+  if (!earthStarted) { if (currentLandmark) selectLandmark(currentLandmark); else goGlobe(); }
   else earthOn();
 }
 
@@ -577,6 +591,7 @@ function earthOn() {
 }
 
 function exitEarth() {
+  if (globe) leaveGlobe();
   if (!earthActive) return;
   earthActive = false;
   earthStarted = false;
@@ -658,8 +673,9 @@ window.addEventListener('keydown', (e) => {
   if ((e.key === 'r' || e.key === 'R') && splatFor(currentLandmark)) reconBtn.click();
 });
 
-async function selectLandmark(l: Landmark) {
+async function selectLandmark(l: Landmark, opts: { facts?: boolean } = {}) {
   if (recon) { leaveReconstruction(); earthStarted = false; originLL = null; }
+  if (globe) leaveGlobe();
   landmarkList.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === l.id));
   const auth = await getEarthAuth();
   if (!auth) { loadPlace(`${l.name}, ${l.city}`); return; }
@@ -712,6 +728,7 @@ async function selectLandmark(l: Landmark) {
     // First arrival: start on the whole planet, then fall in.
     stage.earth.start(auth, l.lat, l.lon);
     stage.earth.setLook(look);
+    signals.rebuild();
     earthStarted = true;
     stage.holdTopDown(ORBIT);
     originLL = { lat: l.lat, lon: l.lon };
@@ -735,7 +752,7 @@ async function selectLandmark(l: Landmark) {
     });
   }
   shareState(l);
-  loadFacts(l);
+  if (opts.facts !== false) loadFacts(l);
 }
 
 const ORBIT = 1.25e7;
@@ -821,16 +838,20 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'b' || e.key === 'B') runConstruct(currentLandmark.name, currentLandmark.city);
 });
 
-function stepRow(who: string, text: string, cls = 'run') {
+/** "NVIDIA API catalog · nvidia/nemotron-3.5-super-vl-120b-a12b" → "nemotron-3.5-super-vl-120b-a12b" */
+const shortModel = (m?: string) => (m ? m.split('·').pop()!.trim().split('/').pop()! : '');
+function stepRow(who: string, text: string, cls = 'run', by?: string) {
   const li = document.createElement('li');
   li.className = cls;
-  li.innerHTML = '<span class="who"></span><span class="what"></span>';
+  li.innerHTML = '<span class="who"></span><span class="what"></span><span class="by"></span>';
   li.querySelector('.who')!.textContent = who;
   li.querySelector('.what')!.textContent = text;
+  const setBy = (m?: string) => { li.querySelector('.by')!.textContent = m ? `by ${shortModel(m)}` : ''; };
+  setBy(by);
   buildSteps.appendChild(li);
   li.scrollIntoView({ block: 'nearest' });
   return {
-    done(t?: string) { li.className = 'done'; if (t) li.querySelector('.what')!.textContent = t; },
+    done(t?: string, m?: string) { li.className = 'done'; if (t) li.querySelector('.what')!.textContent = t; if (m) setBy(m); },
     fail(t: string) { li.className = 'bad'; li.querySelector('.what')!.textContent = t; },
   };
 }
@@ -893,11 +914,11 @@ async function runConstruct(name: string, city: string) {
     // 1. Research and plan.
     const s1 = stepRow('Research', `Reading up on ${name}: dimensions, plan, features`);
     type Zone = { id: string; name: string; brief: string; box: unknown; parts: string[] };
-    type PlanRes = { plan: { name: string; summary: string; height_m: number; footprint_m: number[]; zones: Zone[]; facts: { text: string }[] }; sources: { title: string; url: string }[]; reference: { image: string; page: string; title: string } | null };
+    type PlanRes = { plan: { name: string; summary: string; height_m: number; footprint_m: number[]; zones: Zone[]; facts: { text: string }[] }; sources: { title: string; url: string }[]; reference: { image: string; page: string; title: string } | null; model?: string };
     const planned = await post<PlanRes>({ step: 'plan', name, city });
     const P = planned.plan;
-    s1.done(`${planned.sources.length} sources. ${P.height_m ? `About ${Math.round(P.height_m)} m tall` : ''}${P.footprint_m?.length ? `, ${Math.round(P.footprint_m[0])} × ${Math.round(P.footprint_m[1])} m footprint` : ''}.`);
-    stepRow('Architect', `${P.zones.length} zones: ${P.zones.map((z) => z.name).join(', ')}`, 'done');
+    s1.done(`${planned.sources.length} sources. ${P.height_m ? `About ${Math.round(P.height_m)} m tall` : ''}${P.footprint_m?.length ? `, ${Math.round(P.footprint_m[0])} × ${Math.round(P.footprint_m[1])} m footprint` : ''}.`, 'Tavily web search + Wikipedia');
+    stepRow('Architect', `${P.zones.length} zones: ${P.zones.map((z) => z.name).join(', ')}`, 'done', planned.model);
     if (planned.reference) {
       (document.getElementById('build-ref-img') as HTMLImageElement).src = planned.reference.image;
       (document.getElementById('build-ref-img') as HTMLImageElement).alt = `Photo of ${planned.reference.title}`;
@@ -913,10 +934,10 @@ async function runConstruct(name: string, city: string) {
     const buildZone = async (z: Zone, i: number) => {
       const row = stepRow(`Builder ${i + 1}`, `${z.name}: ${z.parts.slice(0, 4).join(', ')}${z.parts.length > 4 ? '…' : ''}`);
       try {
-        const r = await post<{ parts: BuiltPart[] }>({ step: 'build', name, plan: P, zone: z });
+        const r = await post<{ parts: BuiltPart[]; model?: string }>({ step: 'build', name, plan: P, zone: z });
         if (!built) return;
         built.parts.push(...r.parts);
-        row.done(`${z.name}: ${r.parts.length} parts`);
+        row.done(`${z.name}: ${r.parts.length} parts`, r.model);
         showBuilt();
       } catch (err) {
         row.fail(`${z.name}: failed (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`);
@@ -932,9 +953,9 @@ async function runConstruct(name: string, city: string) {
       const { image: shot, combined } = await sideBySide(stage.snapshot(), planned.reference?.image);
       const c = stepRow('Critic', round === 1 ? 'Comparing the build with the reference photo' : 'Checking the fixes');
       try {
-        const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[] }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, combined });
+        const fix = await post<{ score: number; issues: string[]; replace: BuiltPart[]; add: BuiltPart[]; remove: string[]; model?: string }>({ step: 'critique', name, blueprint: { parts: built.parts.map(({ id, name: n, role, prims }) => ({ id, name: n, role, prims })) }, render: shot, combined });
         const changes = fix.replace.length + fix.add.length + fix.remove.length;
-        c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`);
+        c.done(`Likeness ${fix.score}/10. ${fix.issues.slice(0, 2).join(' ')}${changes ? ` Fixing ${changes} part${changes > 1 ? 's' : ''}.` : ''}`, fix.model);
         // The score is unreliable; the issues are not. Always apply the first round's fixes.
         if (!changes || (round > 1 && fix.score >= 7)) break;
         built.parts = applyFixes(built.parts, fix);
@@ -958,6 +979,212 @@ async function runConstruct(name: string, city: string) {
   }
 }
 
+// ---------- the intelligence globe: live signals on the whole Earth ----------
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const signals = new SignalLayers(stage.camera, stage.renderer, () => stage.earth.tiles, reducedMotion);
+stage.earth.group.add(signals.group);
+/** Non-null while the camera is out in orbit showing the whole planet. */
+let globe: { lat: number; lon: number; dist: number; spin: boolean } | null = null;
+/** Far enough out that the whole disc fits on screen. */
+const GLOBE_DIST = 1.85e7;
+/** Tall, narrow screens need the planet further away to fit across. */
+const globeDist = () => GLOBE_DIST * (innerWidth / innerHeight < 0.8 ? 2.1 : 1);
+const LAYER_META: Record<LayerId, { label: string; blurb: string }> = {
+  quakes: { label: 'Earthquakes', blurb: 'M2.5+ · past 7 days' },
+  events: { label: 'Natural events', blurb: 'Wildfires, storms, sea ice' },
+};
+
+async function goGlobe(focus?: { lat: number; lon: number }) {
+  if (mode !== 'places') { setMode('places'); if (!focus) return; }
+  const auth = await getEarthAuth();
+  if (!auth) return;
+  if (recon) { leaveReconstruction(); earthStarted = false; originLL = null; }
+  currentLandmark = null;
+  updateReconBtn();
+  landmarkList.querySelectorAll('button').forEach((b) => b.classList.remove('is-on'));
+  earthOn();
+  ui.closeCard();
+  signals.select(null);
+  stage.setIsolate(0, 0);
+  placeTag.hidden = true;
+  intro.hidden = false;
+  setTitle('Earth');
+  document.body.classList.add('globe');
+  updateGlobeKind();
+  placeStatus.textContent = 'Drag to turn the globe, scroll to zoom. Click a dot to inspect it, or ask ATLAS.';
+  shareState(null);
+  const at = focus ?? originLL ?? { lat: 18, lon: 78 };
+  const look = lens === 'hologram' ? 'hologram' : 'photo';
+  const enter = () => { globe = { lat: at.lat, lon: at.lon, dist: globeDist(), spin: !reducedMotion }; originLL = { ...at }; };
+  if (!earthStarted || !originLL) {
+    stage.earth.start(auth, at.lat, at.lon);
+    stage.earth.setLook(look);
+    signals.rebuild();
+    earthStarted = true;
+    originLL = { ...at };
+    stage.holdTopDown(globeDist());
+    stage.holdUntil(globeDist(), () => stage.earth.visibleTiles > 4, 0.4, 4, enter);
+  } else {
+    stage.rise(globeDist(), 2.2, enter);
+  }
+  // First visit: switch the live layers on so the planet is never an empty ball.
+  for (const id of ['quakes', 'events'] as LayerId[]) if (signals.state(id).status === 'off') setLayer(id, true);
+}
+
+function leaveGlobe() {
+  globe = null;
+  document.body.classList.remove('globe');
+  stage.camera.clearViewOffset();
+  stage.controls.autoRotate = !reducedMotion;
+}
+
+function updateGlobeKind() {
+  if (currentLandmark || !earthActive) return;
+  const q = signals.state('quakes').data?.signals.length, e = signals.state('events').data?.signals.length;
+  const bits = [q !== undefined && signals.state('quakes').on ? `${q} earthquakes` : '', e !== undefined && signals.state('events').on ? `${e} natural events` : ''].filter(Boolean);
+  $('model-kind').textContent = bits.length ? `Live: ${bits.join(' · ')}` : 'Live signals off';
+}
+
+// Layer switches in the Places panel.
+const sigBox = $('signals');
+for (const id of ['quakes', 'events'] as LayerId[]) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = `sig sig-${id}`;
+  b.dataset.layer = id;
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = '<i class="dot" aria-hidden="true"></i><span class="t"></span><span class="m"></span>';
+  b.querySelector('.t')!.textContent = LAYER_META[id].label;
+  b.addEventListener('click', () => {
+    const st = signals.state(id);
+    setLayer(id, st.status === 'failed' ? true : !st.on);
+  });
+  sigBox.appendChild(b);
+}
+function setLayer(id: LayerId, on: boolean) { signals.set(id, on); }
+function renderLayers() {
+  for (const id of ['quakes', 'events'] as LayerId[]) {
+    const st = signals.state(id);
+    const b = sigBox.querySelector<HTMLButtonElement>(`[data-layer="${id}"]`)!;
+    b.setAttribute('aria-pressed', String(st.on));
+    b.dataset.status = st.status;
+    const m = b.querySelector('.m')!;
+    if (st.status === 'loading') m.textContent = 'loading…';
+    else if (st.status === 'failed') m.textContent = `unavailable: ${st.error?.slice(0, 60)} · tap to retry`;
+    else if (st.data) {
+      const age = Date.now() - Date.parse(st.data.updated);
+      const stale = id === 'quakes' ? age > 3 * 3600e3 : age > 3 * 86400e3;
+      m.textContent = `${st.data.signals.length} · ${LAYER_META[id].blurb} · ${st.data.source.replace(' Earthquake Hazards Program', '')} · updated ${ago(st.data.updated)}${stale ? ' (stale)' : ''}`;
+      b.title = `${st.data.name}. Source: ${st.data.source} (${st.data.license}). Feed updated ${new Date(st.data.updated).toUTCString()}, fetched ${ago(st.data.fetchedAt)}.`;
+    } else m.textContent = LAYER_META[id].blurb;
+  }
+  updateGlobeKind();
+}
+signals.onChange = renderLayers;
+renderLayers();
+setInterval(renderLayers, 60e3);
+
+// Inspect a signal: what it is, when, how big, and the source's own page.
+function openSignal(s: Signal) {
+  signals.select(s);
+  const d = signals.state(s.layer).data;
+  const when = `${ago(s.time)} (${s.time.slice(0, 16).replace('T', ' ')} UTC)`;
+  const body = s.layer === 'quakes'
+    ? `Magnitude ${s.mag}${s.depthKm !== undefined ? `, ${Math.round(s.depthKm)} km deep` : ''}, ${when}.${s.tsunami ? ' USGS set its tsunami flag for this event.' : ''}${s.alert ? ` USGS PAGER alert level: ${s.alert}.` : ''} Epicentre ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`
+    : `${s.kind[0].toUpperCase()}${s.kind.slice(1)}${s.mag ? `, ${s.mag.toLocaleString()} ${s.magUnit ?? ''}` : ''}. Last observed ${when}. Position ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`;
+  ui.openCard({ index: 1, total: 1, title: s.title, body, sources: [{ title: `${d?.source ?? 'Source'}: this ${s.kind}`, url: s.url }] });
+  $('card-index').textContent = `${s.kind.toUpperCase()} · ${(d?.source ?? '').replace(' Earthquake Hazards Program', '').toUpperCase()}`;
+  const acts = $('card-actions');
+  acts.replaceChildren();
+  const fly = document.createElement('button');
+  fly.type = 'button'; fly.className = 'iso-btn'; fly.textContent = 'Fly here';
+  fly.addEventListener('click', async () => {
+    // A live signal keeps its own sourced card; the web-facts card is for landmarks.
+    await selectLandmark({ id: `sig-${s.id}`, name: s.title.replace(/^M [\d.]+ - /, ''), city: s.layer === 'quakes' ? `M${s.mag} earthquake · ${ago(s.time)}` : `${s.kind} · ${ago(s.time)}`, lat: s.lat, lon: s.lon, view: 26000, lift: 20 }, { facts: false });
+    openSignal(s);
+    $('card-actions').hidden = true;
+  });
+  const askB = document.createElement('button');
+  askB.type = 'button'; askB.className = 'iso-btn'; askB.textContent = 'Ask ATLAS';
+  askB.addEventListener('click', () => ask(`Tell me about this ${s.kind}: ${s.title} (${s.time.slice(0, 10)}). What happened and what is nearby?`, agentCtx));
+  acts.append(fly, askB);
+  acts.hidden = false;
+}
+
+// Drag to turn the globe, wheel to zoom, click a dot to inspect it.
+let globeDrag: { x: number; y: number; moved: number } | null = null;
+canvas.addEventListener('pointerdown', (ev) => {
+  if (!earthActive) return;
+  globeDrag = { x: ev.clientX, y: ev.clientY, moved: 0 };
+});
+canvas.addEventListener('pointermove', (ev) => {
+  if (!globeDrag || !ev.buttons) return;
+  const dx = ev.clientX - globeDrag.x, dy = ev.clientY - globeDrag.y;
+  globeDrag.x = ev.clientX; globeDrag.y = ev.clientY;
+  globeDrag.moved += Math.abs(dx) + Math.abs(dy);
+  if (globe && !stage.flying) {
+    const k = 0.16 * (globe.dist / ORBIT);
+    globe.lon = ((globe.lon - dx * k + 540) % 360) - 180;
+    globe.lat = THREE.MathUtils.clamp(globe.lat + dy * k, -75, 75);
+    globe.spin = false;
+  }
+});
+canvas.addEventListener('pointerup', (ev) => {
+  const d = globeDrag;
+  globeDrag = null;
+  if (!earthActive || !d || d.moved > 6) return;
+  const s = signals.pick(ev.clientX, ev.clientY);
+  if (s) { openSignal(s); if (globe) globe.spin = false; }
+});
+canvas.addEventListener('wheel', (ev) => {
+  if (!globe || stage.flying) return;
+  globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(ev.deltaY * 0.0012), 3.2e6, 3.4e7);
+  ev.preventDefault();
+}, { passive: false });
+$('globe-btn').addEventListener('click', () => goGlobe());
+window.addEventListener('keydown', (e) => {
+  if (mode !== 'places' || e.metaKey || e.ctrlKey || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
+  if (e.key === 'g' || e.key === 'G') goGlobe();
+});
+
+// Each frame: keep signals in the globe's frame; in orbit, hold the camera and turn the planet.
+{
+  const prev = stage.onFrame;
+  stage.onFrame = (dt, t) => {
+    prev?.(dt, t);
+    if (!earthActive) return;
+    signals.update(t);
+    if (globe && !stage.flying) {
+      if (globe.spin && !globeDrag) globe.lon = ((globe.lon + dt * 2.2 + 540) % 360) - 180;
+      stage.controls.autoRotate = false;
+      stage.controls.enabled = false;
+      stage.earth.setOrigin(globe.lat, globe.lon);
+      originLL = { lat: globe.lat, lon: globe.lon };
+      stage.holdTopDown(globe.dist);
+      // On wide screens, centre the planet in the space right of the panel, not behind it.
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      // Phones: the panel sits on top, so lower the planet into the space under it instead.
+      const shiftX = w > 900 ? Math.min(230, w * 0.15) : 0, shiftY = w <= 760 ? h * 0.17 : 0;
+      if (shiftX || shiftY) stage.camera.setViewOffset(w, h, -shiftX, -shiftY, w, h); else stage.camera.clearViewOffset();
+    }
+  };
+}
+
+// Test hook for automated checks (?debug only).
+if (new URLSearchParams(location.search).has('debug')) (window as unknown as Record<string, unknown>).atlas = { signals, openSignal, goGlobe, get globe() { return globe; } };
+
+// Example questions under the ask box: a one-tap way into what ATLAS can do.
+{
+  const chips = $('chips');
+  const EXAMPLES = ['What was the biggest earthquake this week?', 'Any wildfires burning in California right now?', 'Take me to Charminar and build it'];
+  for (const q of EXAMPLES) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ask-chip'; b.textContent = q;
+    b.addEventListener('click', () => ask(q, agentCtx));
+    chips.appendChild(b);
+  }
+}
+
 // Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
 {
   const q = new URLSearchParams(location.search);
@@ -970,4 +1197,6 @@ async function runConstruct(name: string, city: string) {
     if (Number.isFinite(+la) && Number.isFinite(+lo)) target = { id: 'shared', name: name.join(',') || 'Shared place', city: `${(+la).toFixed(3)}, ${(+lo).toFixed(3)}`, lat: +la, lon: +lo, view: 450, lift: 20 };
   }
   if (target) { currentLandmark = target; setMode('places'); }
+  else if (q.get('mode') === 'library') setMode('library');
+  else setMode('places');
 }
