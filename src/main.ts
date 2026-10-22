@@ -47,7 +47,8 @@ async function loadEntry(e: LibraryEntry) {
   if (state.loading || state.entry?.id === e.id) return;
   state.loading = true;
   shelf.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === e.id));
-  ui.log(`loading ${e.title.toLowerCase()}`, 'sys');
+  // A place link opens straight into Places: the library model loads quietly behind it.
+  if (!/[?&](place|at)=/.test(location.search) || state.entry) ui.log(`loading ${e.title.toLowerCase()}`, 'sys');
   try {
     const m = await HoloModel.load(e.url);
     // Opened straight into another mode (a ?place= link, say): don't let a late library model take over.
@@ -687,10 +688,14 @@ async function selectLandmark(l: Landmark) {
     if (predicted !== null) stage.earth.predictGround(predicted);
     arrived = true;
     stage.dive(land, l.view, from, from > 1e6 ? 8 : 5.5, () => {
-      placeStatus.textContent = !l.lowDetail ? ''
-        : splatFor(l) ? `Google’s 3D is coarse at ${l.name}. Press R for ATLAS’s reconstruction from ${l.splat?.photos ?? 'public'} photos, or B to build a model you can take apart.`
-        : `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.`;
       applyIsolate();
+      if (l.lowDetail && splatFor(l)) {
+        // Google's mesh is flat here: show the site for a beat, then hand over to the reconstruction.
+        placeStatus.textContent = `Google’s 3D is coarse at ${l.name}. Switching to ATLAS’s reconstruction from ${l.splat?.photos || 'public'} photos…`;
+        setTimeout(() => { if (currentLandmark === l && !recon && mode === 'places') showReconstruction(l); }, 2200);
+        return;
+      }
+      placeStatus.textContent = l.lowDetail ? `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.` : '';
     });
   };
   stage.earth.onGround = (y) => {
