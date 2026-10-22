@@ -40,8 +40,10 @@ code(r"""
 #@title Settings
 LANDMARK = 'taj'  #@param ['taj', 'charminar', 'india-gate', 'gateway']
 MAX_PHOTOS = 220  #@param {type:'integer'}
-STEPS = 12000     #@param {type:'integer'}
-MAX_SPLATS = 350000  #@param {type:'integer'}
+STEPS = 25000     #@param {type:'integer'}
+MAX_SPLATS = 500000  #@param {type:'integer'}
+# Keep photo matching in Google Drive so a retrain skips the slow part (about an hour).
+USE_DRIVE = True  #@param {type:'boolean'}
 # Crop: keep everything within this many "camera distances" of the monument's centre (1.0 = a typical photo's distance).
 CROP = 0.55       #@param {type:'number'}
 
@@ -59,81 +61,105 @@ DROP_ALWAYS = (r'interior|inside|cenotaph|calligraph|inlay|detail|close[- ]?up|f
                r'painting|sketch|engraving|lithograph|stamp|coin|logo|replica|model|miniature|night|ceiling|door|jali|museum|'
                r'ticket|selfie|wedding|poster|panorama|360|\b1[89]\d\d\b|\b19[0-6]\d\b|album|postcard|souvenir|svg')
 P = PRESETS[LANDMARK]
+
+import os, shutil, pathlib
+WORK = pathlib.Path(f'/content/work/{LANDMARK}'); IMAGES = WORK / 'images'
+SFM = WORK / 'sfm'
+SAVED = None
+if USE_DRIVE:
+    from google.colab import drive
+    drive.mount('/content/drive')
+    SAVED = pathlib.Path(f'/content/drive/MyDrive/atlas-reconstruct/{LANDMARK}')
+    if (SAVED / 'sfm' / 'images.bin').exists() and not SFM.exists():
+        print('Restoring photos and matching from Drive: steps 1 and 2 will be skipped')
+        shutil.copytree(SAVED, WORK, dirs_exist_ok=True)
+CACHED = (SFM / 'images.bin').exists()
 """)
 
 code(r"""
-#@title 1 · Photos from Wikimedia Commons
-import re, json, time, html, pathlib, requests
+#@title 1 · Photos from Wikimedia Commons (skipped when restored from Drive)
+import re, json, time, html, requests
 from io import BytesIO
 from PIL import Image, ImageOps
 
-WORK = pathlib.Path(f'/content/work/{LANDMARK}'); IMAGES = WORK / 'images'
-IMAGES.mkdir(parents=True, exist_ok=True)
-S = requests.Session()
-S.headers['User-Agent'] = 'ATLAS-Live-reconstruction/1.0 (https://github.com/victorisaacchinta-eng/atlas-live)'
+def fetch_photos():
+    IMAGES.mkdir(parents=True, exist_ok=True)
+    S = requests.Session()
+    S.headers['User-Agent'] = 'ATLAS-Live-reconstruction/1.0 (https://github.com/victorisaacchinta-eng/atlas-live)'
+    def get(url, **kw):
+        for attempt in range(6):
+            r = S.get(url, timeout=60, **kw)
+            if r.status_code == 429 or r.status_code >= 500:
+                time.sleep(2 + attempt * 4); continue
+            r.raise_for_status(); return r
+        r.raise_for_status()
+    drop = re.compile(DROP_ALWAYS + '|' + P['drop'], re.I)
+    found = {}
+    for term in P['queries']:
+        cont = {}
+        for _ in range(6):
+            q = dict(action='query', format='json', generator='search', gsrsearch=term + ' filetype:bitmap', gsrnamespace=6,
+                     gsrlimit=50, prop='imageinfo', iiprop='url|size|mime|extmetadata', iiurlwidth=1600, **cont)
+            j = get('https://commons.wikimedia.org/w/api.php', params=q).json()
+            for pg in (j.get('query', {}).get('pages', {}) or {}).values():
+                ii = (pg.get('imageinfo') or [{}])[0]; meta = ii.get('extmetadata', {})
+                lic = meta.get('LicenseShortName', {}).get('value', '')
+                title = pg['title']
+                if ii.get('mime') != 'image/jpeg' or min(ii.get('width', 0), ii.get('height', 0)) < 900: continue
+                if drop.search(title) or not re.search(r'CC|Public domain|PD', lic, re.I): continue
+                artist = re.sub('<[^>]+>', '', html.unescape(meta.get('Artist', {}).get('value', 'unknown'))).strip()
+                found[title] = dict(title=title, url=ii.get('thumburl') or ii['url'], page=ii.get('descriptionurl'),
+                                    author=artist[:120], license=lic, licenseUrl=meta.get('LicenseUrl', {}).get('value', ''),
+                                    pixels=ii['width'] * ii['height'])
+            if 'continue' not in j: break
+            cont = j['continue']; time.sleep(0.5)
+    print(len(found), 'candidate photos')
+    # Larger originals first: they are usually deliberate photographs rather than snapshots.
+    picked = sorted(found.values(), key=lambda f: -f['pixels'])[:MAX_PHOTOS]
+    out = []
+    for i, f in enumerate(picked):
+        name = f'{i:04d}.jpg'
+        if not (IMAGES / name).exists():
+            try:
+                im = ImageOps.exif_transpose(Image.open(BytesIO(get(f['url']).content))).convert('RGB')
+            except Exception as e:
+                print('skip', f['title'], e); continue
+            im.thumbnail((1600, 1600)); im.save(IMAGES / name, quality=93)
+            time.sleep(0.3)
+        out.append({**{k: f[k] for k in ('title', 'page', 'author', 'license', 'licenseUrl')}, 'file': name})
+    (WORK / 'credits_all.json').write_text(json.dumps(out, indent=1))
+    return out
 
-def get(url, **kw):
-    for attempt in range(6):
-        r = S.get(url, timeout=60, **kw)
-        if r.status_code == 429 or r.status_code >= 500:
-            time.sleep(2 + attempt * 4); continue
-        r.raise_for_status(); return r
-    r.raise_for_status()
-
-drop = re.compile(DROP_ALWAYS + '|' + P['drop'], re.I)
-found = {}
-for term in P['queries']:
-    cont = {}
-    for _ in range(6):
-        q = dict(action='query', format='json', generator='search', gsrsearch=term + ' filetype:bitmap', gsrnamespace=6,
-                 gsrlimit=50, prop='imageinfo', iiprop='url|size|mime|extmetadata', iiurlwidth=1600, **cont)
-        j = get('https://commons.wikimedia.org/w/api.php', params=q).json()
-        for pg in (j.get('query', {}).get('pages', {}) or {}).values():
-            ii = (pg.get('imageinfo') or [{}])[0]; meta = ii.get('extmetadata', {})
-            lic = meta.get('LicenseShortName', {}).get('value', '')
-            title = pg['title']
-            if ii.get('mime') != 'image/jpeg' or min(ii.get('width', 0), ii.get('height', 0)) < 900: continue
-            if drop.search(title) or not re.search(r'CC|Public domain|PD', lic, re.I): continue
-            artist = re.sub('<[^>]+>', '', html.unescape(meta.get('Artist', {}).get('value', 'unknown'))).strip()
-            found[title] = dict(title=title, url=ii.get('thumburl') or ii['url'], page=ii.get('descriptionurl'),
-                                author=artist[:120], license=lic, licenseUrl=meta.get('LicenseUrl', {}).get('value', ''),
-                                pixels=ii['width'] * ii['height'])
-        if 'continue' not in j: break
-        cont = j['continue']; time.sleep(0.5)
-print(len(found), 'candidate photos')
-
-# Larger originals first: they are usually deliberate photographs rather than snapshots.
-picked = sorted(found.values(), key=lambda f: -f['pixels'])[:MAX_PHOTOS]
-credits = []
-for i, f in enumerate(picked):
-    name = f'{i:04d}.jpg'
-    if not (IMAGES / name).exists():
-        try:
-            im = ImageOps.exif_transpose(Image.open(BytesIO(get(f['url']).content))).convert('RGB')
-        except Exception as e:
-            print('skip', f['title'], e); continue
-        im.thumbnail((1600, 1600)); im.save(IMAGES / name, quality=93)
-        time.sleep(0.3)
-    credits.append({**{k: f[k] for k in ('title', 'page', 'author', 'license', 'licenseUrl')}, 'file': name})
-(WORK / 'credits_all.json').write_text(json.dumps(credits, indent=1))
-print(len(credits), 'photos downloaded')
+if CACHED and (WORK / 'credits_all.json').exists():
+    credits = json.loads((WORK / 'credits_all.json').read_text())
+    print(len(credits), 'photos restored from Drive')
+else:
+    credits = fetch_photos()
+    print(len(credits), 'photos downloaded')
 """)
 
 code(r"""
-#@title 2 · Structure from Motion (hloc · about 15 to 25 minutes)
+#@title 2 · Structure from Motion (hloc · about an hour; skipped when restored from Drive)
 import pycolmap
-from hloc import extract_features, match_features, pairs_from_retrieval, reconstruction
-
-OUT = WORK / 'hloc'; SFM = WORK / 'sfm'
-pairs = OUT / 'pairs-netvlad.txt'
-retrieval = extract_features.main(extract_features.confs['netvlad'], IMAGES, OUT)
-pairs_from_retrieval.main(retrieval, pairs, num_matched=min(30, len(credits) - 1))
-fconf = extract_features.confs['superpoint_max']
-features = extract_features.main(fconf, IMAGES, OUT)
-matches = match_features.main(match_features.confs['superpoint+lightglue'], pairs, fconf['output'], OUT)
-model = reconstruction.main(SFM, IMAGES, pairs, features, matches, camera_mode=pycolmap.CameraMode.PER_IMAGE)
-print(model.summary())
-assert model.num_reg_images() >= 25, 'Too few photos registered: try more photos or different search terms.'
+if not CACHED:
+    from hloc import extract_features, match_features, pairs_from_retrieval, reconstruction
+    OUT = WORK / 'hloc'
+    pairs = OUT / 'pairs-netvlad.txt'
+    retrieval = extract_features.main(extract_features.confs['netvlad'], IMAGES, OUT)
+    pairs_from_retrieval.main(retrieval, pairs, num_matched=min(30, len(credits) - 1))
+    fconf = extract_features.confs['superpoint_max']
+    features = extract_features.main(fconf, IMAGES, OUT)
+    matches = match_features.main(match_features.confs['superpoint+lightglue'], pairs, fconf['output'], OUT)
+    model = reconstruction.main(SFM, IMAGES, pairs, features, matches, camera_mode=pycolmap.CameraMode.PER_IMAGE)
+    print(model.summary())
+    if SAVED:   # keep the slow part: photos, credits and the matched cameras (not the big feature files)
+        for sub in ('images', 'sfm'):
+            shutil.copytree(WORK / sub, SAVED / sub, dirs_exist_ok=True)
+        shutil.copy(WORK / 'credits_all.json', SAVED / 'credits_all.json')
+        print('Saved to Drive: a retrain will skip steps 1 and 2')
+nreg = len(pycolmap.Reconstruction(str(SFM)).images)
+print(nreg, 'photos placed in 3D')
+assert nreg >= 25, 'Too few photos registered: try more photos or different search terms.'
 """)
 
 code(r"""
@@ -170,7 +196,7 @@ def to_new(p): return scale * (np.asarray(p) - target) @ R0.T
 pts = np.array([p.xyz for p in rec.points3D.values()]); cols = np.array([p.color for p in rec.points3D.values()]) / 255.0
 pts = to_new(pts)
 
-LONG = 1000
+LONG = 1280
 dev = 'cuda'
 images, viewmats, Ks = [], [], []
 for im, R, t in zip(ims, Rs, ts):
@@ -193,10 +219,11 @@ plt.title('Top view: points, cameras (red), crop (dashed)'); plt.show()
 """)
 
 code(r"""
-#@title 4 · Train the splat (about 15 minutes)
+#@title 4 · Train the splat (about 45 minutes)
 import math, random
 from tqdm.auto import tqdm
 from gsplat import rasterization, DefaultStrategy
+from gsplat.strategy.ops import reset_opa
 
 N0 = len(pts)
 means = torch.tensor(pts, dtype=torch.float32, device=dev)
@@ -218,7 +245,8 @@ sched = torch.optim.lr_scheduler.ExponentialLR(opts['means'], gamma=0.01 ** (1.0
 appear = torch.nn.Parameter(torch.cat([torch.eye(3), torch.zeros(3, 1)], 1).repeat(len(images), 1, 1).to(dev))
 opt_app = torch.optim.Adam([appear], lr=5e-4)
 
-strategy = DefaultStrategy(refine_stop_iter=int(STEPS * 0.6), refine_every=100, verbose=False)
+# A lower growth threshold than the default gives more, smaller splats: sharper marble, fewer blobs.
+strategy = DefaultStrategy(refine_stop_iter=int(STEPS * 0.5), refine_every=100, grow_grad2d=0.00012, verbose=False)
 strategy.check_sanity(params, opts)
 state = strategy.initialize_state(scene_scale=scene_scale)
 
@@ -232,7 +260,7 @@ def render(V, K, w, h):
     return rasterization(params['means'], F.normalize(params['quats'], dim=-1), torch.exp(params['scales']),
                          torch.sigmoid(params['opacities']), params['sh0'], V[None], K[None], w, h, sh_degree=0, packed=False)
 
-MAX_TRAIN = 900_000
+MAX_TRAIN = 1_500_000
 bar = tqdm(range(STEPS))
 for step in bar:
     i = random.randrange(len(images)); gt = images[i].float() / 255; h, w = gt.shape[:2]
@@ -244,11 +272,17 @@ for step in bar:
         e = err.mean(-1); err = err * (e < torch.quantile(e.flatten()[::7], 0.92)).unsqueeze(-1)
     loss = 0.8 * err.mean() + 0.2 * (1 - ssim(img.permute(2, 0, 1)[None], gt.permute(2, 0, 1)[None]))
     loss = loss + 1e-2 * (appear[i][:, :3] - torch.eye(3, device=dev)).abs().mean()
+    # No needles: a splat's longest axis may be at most 4x its second axis (flat discs are fine).
+    sv = torch.exp(params['scales']).sort(dim=1, descending=True).values
+    loss = loss + 0.02 * torch.relu(sv[:, 0] / sv[:, 1].clamp_min(1e-8) - 4).mean()
     loss.backward()
     for o in opts.values(): o.step(); o.zero_grad(set_to_none=True)
     opt_app.step(); opt_app.zero_grad(set_to_none=True); sched.step()
     strategy.step_post_backward(params, opts, state, step, info, packed=False)
     if len(params['means']) > MAX_TRAIN: strategy.refine_stop_iter = step
+    # gsplat 1.5.3 never resets opacity (an operator precedence slip), so do it here: this is what clears floaters.
+    if 0 < step < strategy.refine_stop_iter and step % 3000 == 0:
+        reset_opa(params=params, optimizers=opts, state=state, value=0.01)
     if step % 200 == 0: bar.set_postfix(loss=f'{loss.item():.3f}', splats=len(params['means']))
 print(len(params['means']), 'splats')
 """)
@@ -262,6 +296,12 @@ with torch.no_grad():
     hy = m[keep, 1]
     lo, hi = torch.quantile(hy[::max(1, len(hy) // 200000)], torch.tensor([0.001, 0.999], device=dev))  # y is down
     keep &= (m[:, 1] > lo) & (m[:, 1] < hi)
+    # Splats under the platform are the reflecting pool's mirror image: cut below the ground.
+    ground = torch.quantile(m[keep, 1][::max(1, int(keep.sum()) // 200000)], 0.97)
+    keep &= m[:, 1] < ground + 0.02
+    # Sky-coloured specks and near-invisible haze.
+    rgb = (0.5 + C0 * params['sh0'][:, 0]).clamp(0, 1)
+    keep &= ~((rgb[:, 2] - rgb[:, 0] > 0.07) & (rgb[:, 2] >= rgb[:, 1])) & (op > 0.1)
     idx = keep.nonzero().squeeze(1)
     vol = torch.exp(params['scales'][idx]).prod(1) * op[idx]
     idx = idx[vol.argsort(descending=True)][:MAX_SPLATS]
@@ -286,7 +326,12 @@ with torch.no_grad():
 
     # .splat: per splat 32 bytes: position f32x3, scale f32x3, RGBA u8x4, rotation u8x4 (w,x,y,z).
     pos = sel['means'].cpu().numpy().astype(np.float32)
-    scl = torch.exp(sel['scales']).cpu().numpy().astype(np.float32)
+    sv = torch.exp(sel['scales'])
+    # Clamp what survived: no needles longer than 4x their second axis, no soft blobs.
+    order = sv.argsort(dim=1, descending=True); srt = sv.gather(1, order)
+    srt[:, 0] = torch.minimum(srt[:, 0], 4 * srt[:, 1]); srt = srt.clamp_max(CROP * 0.022)
+    sv = torch.empty_like(sv).scatter_(1, order, srt)
+    scl = sv.cpu().numpy().astype(np.float32)
     rgb = (0.5 + C0 * sel['sh0'][:, 0]).clamp(0, 1)
     rgba = (torch.cat([rgb, torch.sigmoid(sel['opacities'])[:, None]], 1) * 255).round().byte().cpu().numpy()
     q = F.normalize(sel['quats'], dim=-1)
