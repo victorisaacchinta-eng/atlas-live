@@ -633,6 +633,8 @@ async function showReconstruction(l: Landmark) {
     if (recon?.l !== l) { disposeSplat(root); return; }
     recon.root = root;
     stage.pivot.add(root);
+    // Reconstructions from tourist photos are strong from the front only.
+    stage.setSway(0.42);
     placeStatus.textContent = 'Drag to turn it, scroll to zoom. Press R to go back to Google 3D.';
   } catch (err) {
     placeStatus.textContent = `Could not load the reconstruction (${err instanceof Error ? err.message.slice(0, 80) : 'error'})`;
@@ -641,6 +643,7 @@ async function showReconstruction(l: Landmark) {
 function leaveReconstruction() {
   if (!recon) return;
   disposeSplat(recon.root);
+  stage.setSway(null);
   recon = null;
   document.body.classList.remove('recon');
   updateReconBtn();

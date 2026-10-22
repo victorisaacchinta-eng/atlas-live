@@ -37,6 +37,23 @@ export class Stage {
   /** Spin applied by hands, in radians per second, decays to the idle spin. */
   spin = 0;
   idleSpin = 0.12;
+  sway: { center: number; arc: number; t: number } | null = null;
+
+  /** Present a model from its good side: a slow swing of +-arc instead of a full turn, and drag limited to that arc. */
+  setSway(arc: number | null) {
+    if (arc === null) {
+      this.sway = null;
+      this.controls.minAzimuthAngle = -Infinity;
+      this.controls.maxAzimuthAngle = Infinity;
+      return;
+    }
+    const off = this.camera.position.clone().sub(this.controls.target);
+    const az = Math.atan2(off.x, off.z);
+    this.sway = { center: az, arc, t: 0 };
+    this.pivot.rotation.y = az;
+    this.controls.minAzimuthAngle = az - arc;
+    this.controls.maxAzimuthAngle = az + arc;
+  }
   /** Once someone zooms by hand, the automatic framing stops fighting them. */
   userZoomed = false;
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -350,7 +367,11 @@ export class Stage {
     const t = this.clock.elapsedTime;
     const motion = this.reducedMotion ? 0 : 1;
     this.spin += (0 - this.spin) * Math.min(1, dt * 2.2);
-    this.pivot.rotation.y += (this.idleSpin * motion + this.spin) * dt;
+    if (this.sway) {
+      // Show one side only: swing gently around the angle that faces the camera.
+      this.sway.t += dt * motion;
+      this.pivot.rotation.y = this.sway.center + Math.sin(this.sway.t * 0.3) * this.sway.arc;
+    } else this.pivot.rotation.y += (this.idleSpin * motion + this.spin) * dt;
     const sweep = this.pad.getObjectByName('sweep');
     if (sweep) sweep.rotation.y -= dt * 0.9 * motion;
     this.motes.rotation.y += dt * 0.01 * motion;
