@@ -200,7 +200,13 @@ const agentCtx = {
   layers: () => (earthActive ? signals.active : []),
   globeView: () => goGlobe(),
   showLayer: (id: string, on: boolean) => { if (id === 'quakes' || id === 'events') setLayer(id, on); },
-  buildModel: (name: string) => { const l = LANDMARKS.find((x) => name.toLowerCase().includes(x.name.toLowerCase())); runConstruct(l?.name || name.split(',')[0].trim(), l?.city || name.split(',').slice(1).join(',').trim()); },
+  buildModel: (name: string) => {
+    const l = LANDMARKS.find((x) => name.toLowerCase().includes(x.name.toLowerCase()));
+    const go = () => runConstruct(l?.name || name.split(',')[0].trim(), l?.city || name.split(',').slice(1).join(',').trim());
+    // "Take me there and build it": let the flight land first, then hand over to the build team.
+    const wait = (n: number) => { if (!stage.flying || n > 40) setTimeout(go, stage.flying ? 0 : 1200); else setTimeout(() => wait(n + 1), 400); };
+    setTimeout(() => wait(0), 300);
+  },
   parts: () => earthActive ? [] : stage.model?.parts.map((p) => p.name) || [],
   focused: () => stage.model?.focused ?? -1,
   focusPart,

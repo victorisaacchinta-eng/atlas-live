@@ -110,7 +110,7 @@ export async function chat(body: Record<string, unknown>) {
     // answers, so thinking is off unless a caller asks for it. NIM / vLLM read chat_template_kwargs.
     if ((p.id === 'nvidia' || p.id === 'nebius') && payload.chat_template_kwargs === undefined) payload.chat_template_kwargs = { enable_thinking: false };
     // Free endpoints occasionally stall a request for minutes: give up on that model and try the next.
-    const limit = Number(body.max_tokens ?? 1000) <= 1200 ? 30_000 : 120_000;
+    const limit = Number(body.max_tokens ?? 1000) <= 1200 ? 22_000 : 120_000;
     let r: Response;
     try {
       r = await fetch(`${p.base}/chat/completions`, {

@@ -142,7 +142,8 @@ export default async function handler(req: { method: string; body: Body }, res: 
 Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC): ${new Date().toISOString().slice(0, 16)}.
 Rules:
 - Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
-- Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). To show one item, fly_to its lat and lon. For weather, call get_weather.
+- Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). When your answer is about one specific item, also fly_to its lat and lon so the viewer sees it. For weather, call get_weather.
+- find_signals items are real and current. NASA EONET lists events as open while they are ongoing; give each one's last_observed date. Never say there are none when items came back.
 - History, architecture and other facts: call web_search first. Only state what tool results support; say which source (USGS, NASA EONET, Open-Meteo, or the web) a fact came from.
 - To build or take apart a structure, call build_model.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
@@ -170,7 +171,8 @@ Rules:
     const addSource = (title: string, url: string) => { if (url && !sources.some((s) => s.url === url)) sources.push({ title, url }); };
     const brief = (x: Signal, from?: { lat: number; lon: number }) => ({
       title: x.title, kind: x.kind, magnitude: x.mag !== undefined ? `${x.mag}${x.magUnit ? ' ' + x.magUnit : ''}` : undefined,
-      time_utc: x.time.slice(0, 16), lat: +x.lat.toFixed(3), lon: +x.lon.toFixed(3), depth_km: x.depthKm, tsunami: x.tsunami || undefined,
+      [x.layer === 'events' ? 'last_observed_utc' : 'time_utc']: x.time.slice(0, 16), status: x.layer === 'events' ? 'open (ongoing per NASA EONET)' : undefined,
+      lat: +x.lat.toFixed(3), lon: +x.lon.toFixed(3), depth_km: x.depthKm, tsunami: x.tsunami || undefined,
       km_away: from ? Math.round(km(from, x)) : undefined, source: x.url,
     });
 
@@ -206,7 +208,9 @@ Rules:
               list = list.filter((x) => km(center!, x) <= r);
             }
             if (id === 'events' && args.kind && args.kind !== 'any') list = list.filter((x) => x.kind === args.kind);
-            list = [...list].sort(args.sort === 'latest' ? (a, b) => b.time.localeCompare(a.time) : (a, b) => (b.mag ?? 0) - (a.mag ?? 0));
+            // Quakes default to biggest first; events to most recently observed (old big fires should not hide current ones).
+            const latest = args.sort ? args.sort === 'latest' : id === 'events';
+            list = [...list].sort(latest ? (a, b) => b.time.localeCompare(a.time) : (a, b) => (b.mag ?? 0) - (a.mag ?? 0));
             const top = list.slice(0, Math.min(10, Math.max(1, Number(args.limit) || 5)));
             top.slice(0, 3).forEach((x) => addSource(`${data.source}: ${x.title}`, x.url));
             trace.push(`${id === 'quakes' ? 'usgs' : 'nasa eonet'} › ${list.length} ${id}${center ? ` within ${Number(args.radius_km) || 800} km of ${center.name}` : ''}`);
@@ -242,6 +246,13 @@ Rules:
         } else {
           actions.push({ name: c.function.name, args });
           trace.push(`agent › ${c.function.name}(${JSON.stringify(args)})`);
+          // These run in the viewer after this reply. Say what will happen, not that it already has.
+          const ok: Record<string, string> = {
+            build_model: 'The build team has been asked to start in the viewer. It takes about two minutes; say it has started, not that it is finished.',
+            show_layer: 'The layer will switch in the viewer.',
+            globe_view: 'The camera will pull back to the whole Earth.',
+          };
+          result = ok[c.function.name] ?? 'Sent to the viewer.';
         }
         messages.push({ role: 'tool', tool_call_id: c.id, name: c.function.name, content: result });
       }
