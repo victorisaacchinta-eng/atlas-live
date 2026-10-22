@@ -109,11 +109,20 @@ export async function chat(body: Record<string, unknown>) {
     // Nemotron 3.x reasons at length by default (minutes on long JSON); ATLAS needs fast, structured
     // answers, so thinking is off unless a caller asks for it. NIM / vLLM read chat_template_kwargs.
     if ((p.id === 'nvidia' || p.id === 'nebius') && payload.chat_template_kwargs === undefined) payload.chat_template_kwargs = { enable_thinking: false };
-    const r = await fetch(`${p.base}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` },
-      body: JSON.stringify(payload),
-    });
+    // Free endpoints occasionally stall a request for minutes: give up on that model and try the next.
+    const limit = Number(body.max_tokens ?? 1000) <= 1200 ? 30_000 : 120_000;
+    let r: Response;
+    try {
+      r = await fetch(`${p.base}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(limit),
+      });
+    } catch (err) {
+      last = `${p.label} ${model}: no reply in ${limit / 1000} s (${err instanceof Error ? err.name : 'error'})`;
+      continue;
+    }
     if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; return j; }
     last = `${p.label} ${r.status}: ${(await r.text()).replace(/\s+/g, ' ').slice(0, 300)}`;
     if (r.status === 429) EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 15 * 60 * 1000);
@@ -130,6 +139,7 @@ export async function tavily(query: string, maxResults = 4) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({ query, max_results: maxResults, search_depth: 'basic', include_answer: false }),
+    signal: AbortSignal.timeout(12_000),
   });
   if (!r.ok) throw new HttpError(r.status, `Tavily ${r.status}`);
   const j = await r.json();
