@@ -851,11 +851,15 @@ async function sideBySide(render: string, refUrl?: string): Promise<{ image: str
   }
 }
 
-async function post<T>(body: Record<string, unknown>): Promise<T> {
-  const r = await fetch('/api/construct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
-  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
-  return j as T;
+async function post<T>(body: Record<string, unknown>, tries = 2): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const r = await fetch('/api/construct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+    if (r.ok && !j.error) return j as T;
+    // The free model endpoints drop the odd request under parallel load: one quiet retry after a pause.
+    if (attempt >= tries || r.status === 400) throw new Error(j.error || `HTTP ${r.status}`);
+    await new Promise((res) => setTimeout(res, 1500 + Math.random() * 1500));
+  }
 }
 
 function showBuilt() {
