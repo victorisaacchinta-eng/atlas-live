@@ -1,5 +1,5 @@
-/* ATLAS Live: one dark stage, the hologram is the light source.
-   Layout: full-bleed WebGL stage, chrome pinned to the edges, the centre left clear. */
+/* Layout: full-bleed WebGL stage, controls pinned to the edges, the centre left clear.
+   These colours are defaults; theme.ts overrides them at runtime. */
 :root {
   --ground: #120e0c;
   --ground-2: #1b1512;
@@ -12,7 +12,6 @@
   --card-ink: #120e0c;
   --panel: #efe6da;
   --panel-text: #120e0c;
-  /* Survey-instrument type: engraved-plate display, a plain grotesk, a machined mono. */
   --display: 'Science Gothic Variable', 'Eurostile', 'Bank Gothic', 'Arial Narrow', sans-serif;
   --ui: 'Mona Sans Variable', 'Helvetica Neue', Arial, sans-serif;
   --mono: 'Monaspace Krypton', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -254,7 +253,7 @@ body.mode-places .log { max-height: 46px; }
 body.mode-places .console { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 body.mode-places .shelf { display: none; }
 
-/* ---------- live signals ---------- */
+/* live signals */
 .sig-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
 .sig-head .eyebrow { margin: 0; color: var(--signal); }
 .sig-head .iso-btn { min-height: 30px; }

@@ -1,6 +1,6 @@
 /**
- * Preset places. Coordinates come from OpenStreetMap's Nominatim (looked up 21 Oct 2026,
- * tools/geocode-presets.py), not from memory. `view` is the orbit radius in metres that frames
+ * Preset places. Coordinates come from OpenStreetMap's Nominatim (looked up 21 Oct 2026 with
+ * tools/geocode-presets.py). `view` is the orbit radius in metres that frames
  * the landmark with some of its surroundings; `lift` raises the orbit target above the ground
  * so tall subjects sit in the middle of the frame.
  */

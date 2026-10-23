@@ -35,9 +35,9 @@ export const MODELS = {
 };
 
 const configured = { ...MODELS };
-/** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
 /** Model ids the provider lists right now (Nemotron / Gemini only), for /api/status. */
 export const LIVE_IDS: string[] = [];
+/** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
 export const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
 let checked: Promise<void> | null = null;
 

@@ -5,3 +5,6 @@ dist
 !.env.example
 .vercel
 *.log
+
+# screenshots from tools/*test.py
+tools/shots/

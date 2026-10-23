@@ -5,8 +5,8 @@ import { HttpError } from './_nebius.js';
  * - quakes: USGS, magnitude 2.5+ over the past 7 days (updated every few minutes by USGS)
  * - events: NASA EONET open natural events of the last 60 days (wildfires, storms, sea ice)
  * - weather: Open-Meteo current conditions at a point (CC BY 4.0)
- * Every response says when the source last updated and when ATLAS fetched it. Nothing is invented:
- * if a feed fails, the layer reports the failure instead of showing old or made-up points.
+ * Every response says when the source last updated and when ATLAS fetched it. If a feed fails,
+ * the layer reports the failure instead of showing made-up points.
  */
 
 export type LayerId = 'quakes' | 'events';

@@ -233,11 +233,9 @@ export class EarthView {
   }
 
   /**
-   * Cast a ray straight down through the origin to find the real ground height.
-   * Coarse tiles (geometric error in the hundreds of metres) can sit far above or below the true
-   * surface, so only trust hits on tiles detailed enough; after 10 s take the best we have.
-   */
-  /**
+   * Find the real ground height. Coarse tiles (geometric error in the hundreds of metres) can sit
+   * far above or below the true surface, so only hits on detailed tiles count; after 10 s take the
+   * best we have.
    * The landmark itself sits at the origin, so a single ray there lands on its roof (the top of
    * the Eiffel Tower, not the Champ de Mars). Sample a ring around it and keep the lowest hit:
    * that is street level. A prediction from the elevation model bounds it, so a river or a

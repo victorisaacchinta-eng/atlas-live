@@ -1,15 +1,14 @@
 import { chat, tavily, extractJson, send, MODELS, HttpError, type ChatMessage, type TavilyResult } from './_nebius.js';
 
 /**
- * CONSTRUCT: ATLAS builds a 3D model of a real structure that you can take apart.
- * A team of agents, in the spirit of an architect's office:
+ * Build mode: a 3D model of a real structure that you can take apart, made in three steps.
  *   plan     - a researcher reads the web (Tavily) for real dimensions and features, and a planner
  *              splits the structure into 3 to 5 zones, each with a bounding box and named parts.
  *   build    - one builder per zone, run in parallel by the browser, writes its parts in a small
  *              shape grammar (no free-form code), so every answer can be checked and rendered.
  *   critique - a critic looks at the browser's render beside a real reference photo (Wikimedia)
  *              and returns concrete fixes: parts to replace, add or remove.
- * Each step is its own request so a step never outlives a serverless timeout, and so the viewer
+ * Each step is its own request so no step runs into the serverless timeout, and the viewer
  * watches the build happen.
  */
 

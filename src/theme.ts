@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 
 /**
- * A theme is a whole printed world: the ground the hologram sits on, the ink its lines are
- * drawn in, and one accent for "this part". Light grounds turn the glow off and read like a
- * technical poster; dark grounds glow.
+ * A theme: the ground the hologram sits on, the ink its lines are drawn in, and one accent for
+ * the selected part. Light grounds turn the glow off; dark grounds glow. Pick one with ?theme=
  */
 export interface Theme {
   id: string;
