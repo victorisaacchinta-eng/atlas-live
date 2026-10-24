@@ -1,4 +1,6 @@
 import {
+  Cesium3DTileFeature,
+  Cesium3DTileStyle,
   ClassificationType,
   Color,
   ColorGeometryInstanceAttribute,
@@ -8,11 +10,13 @@ import {
   PolygonHierarchy,
   Cartesian3,
   createGooglePhotorealistic3DTileset,
+  createOsmBuildingsAsync,
+  type Cartesian2,
   type Cesium3DTileset,
 } from 'cesium';
 import { toDecimal, type LatLon } from '../core/geo';
 import type { Provenance } from '../core/provenance';
-import { structureAt, type Structure } from '../data/overpass';
+import { addressOf, buildingHeight, humanKind, structureAt, type Structure } from '../data/overpass';
 import type { Fact, InspectTarget, LayerContext, LayerDef } from './types';
 
 /** Below this camera height the textured mesh replaces the globe; above the exit height the globe returns. */
@@ -22,6 +26,9 @@ export const LEAVE_3D_M = 55_000;
 const HANDOVER_MS = 3000;
 
 const HIGHLIGHT = Color.fromCssColorString('#ffb24d').withAlpha(0.5);
+/** OpenStreetMap boxes are kept all but invisible inside the mesh, so they can be picked. */
+const GHOST = Color.WHITE.withAlpha(0.004);
+const GHOST_STYLE = "color('white', 0.004)";
 
 /** Whether the mesh should be on for a camera height, with hysteresis so it does not flicker at the boundary. */
 export function wants3d(altitude: number, shownNow: boolean): boolean {
@@ -34,7 +41,7 @@ export interface PhotorealLayer extends LayerDef {
   onActive(fn: (on: boolean) => void): void;
   owns(picked: unknown): boolean;
   /** Looks up the mapped structure under a point on the mesh, outlines it, and describes it. */
-  inspectAt(ctx: LayerContext, p: LatLon): Promise<InspectTarget>;
+  inspectAt(ctx: LayerContext, p: LatLon, screen?: Cartesian2): Promise<InspectTarget>;
   clearHighlight(ctx: LayerContext): void;
 }
 
@@ -54,6 +61,11 @@ export function photorealLayer(): PhotorealLayer {
   let shownAt = 0;
   let loadedSinceShown = false;
   let highlight: GroundPrimitive | null = null;
+  // Cesium OSM Buildings, one feature per building with its OpenStreetMap tags, loaded
+  // alongside the mesh when there is an ion token. It answers instantly, where Overpass
+  // can be slow or blocked.
+  let osm: Cesium3DTileset | null = null;
+  let litFeature: Cesium3DTileFeature | null = null;
   const activeListeners = new Set<(on: boolean) => void>();
   const setShown = (on: boolean) => {
     shown = on;
@@ -89,10 +101,20 @@ export function photorealLayer(): PhotorealLayer {
       });
       ctx.widget.scene.primitives.add(t);
       const scene = ctx.widget.scene;
+      if (ctx.ionToken) {
+        try {
+          osm = await createOsmBuildingsAsync({ style: new Cesium3DTileStyle({ color: GHOST_STYLE }) });
+          osm.show = false;
+          scene.primitives.add(osm);
+        } catch {
+          osm = null;
+        }
+      }
       unhook = scene.preRender.addEventListener(() => {
         const want = !ctx.suspend3d && wants3d(scene.camera.positionCartographic.height, shown);
         if (want !== shown) {
           t.show = want;
+          if (osm) osm.show = want;
           shownAt = performance.now();
           loadedSinceShown = false;
           if (!want) scene.globe.show = true;
@@ -107,6 +129,9 @@ export function photorealLayer(): PhotorealLayer {
       unhook = null;
       if (tileset) ctx.widget.scene.primitives.remove(tileset);
       tileset = null;
+      if (osm) ctx.widget.scene.primitives.remove(osm);
+      osm = null;
+      litFeature = null;
       ctx.widget.scene.globe.show = true;
       def.clearHighlight(ctx);
       if (shown) setShown(false);
@@ -114,14 +139,35 @@ export function photorealLayer(): PhotorealLayer {
     summary: () => (shown ? 'Google 3D mesh in view' : `Takes over below ${ENTER_3D_M / 1000} km`),
     active: () => shown,
     onActive: (fn) => void activeListeners.add(fn),
-    owns: (picked) => !!tileset && (picked as { primitive?: unknown } | undefined)?.primitive === tileset,
+    owns: (picked) => {
+      const prim = (picked as { primitive?: unknown } | undefined)?.primitive;
+      return !!prim && (prim === tileset || prim === osm);
+    },
     clearHighlight(ctx) {
       if (highlight) ctx.widget.scene.groundPrimitives.remove(highlight);
       highlight = null;
+      if (litFeature) {
+        try {
+          litFeature.color = GHOST;
+        } catch {
+          /* tile already unloaded */
+        }
+      }
+      litFeature = null;
     },
-    async inspectAt(ctx, p) {
+    async inspectAt(ctx, p, screen) {
       const google: Provenance = { ...def.provenance, fetchedAt: new Date().toISOString() };
       def.clearHighlight(ctx);
+      if (osm && screen) {
+        const feature = ctx.widget.scene
+          .drillPick(screen, 8)
+          .find((x): x is Cesium3DTileFeature => x instanceof Cesium3DTileFeature && x.primitive === osm);
+        if (feature) {
+          feature.color = HIGHLIGHT;
+          litFeature = feature;
+          return osmFeatureTarget(feature, p, google);
+        }
+      }
       let found: Awaited<ReturnType<typeof structureAt>> | null = null;
       try {
         found = await structureAt(p);
@@ -207,5 +253,44 @@ export function structureTarget(s: Structure, clicked: LatLon, google: Provenanc
     ],
     links,
     enrich: false,
+  };
+}
+
+/** Describes a Cesium OSM Buildings feature from the OpenStreetMap tags it carries. */
+function osmFeatureTarget(f: Cesium3DTileFeature, clicked: LatLon, google: Provenance): InspectTarget {
+  const tags: Record<string, string> = {};
+  for (const id of f.getPropertyIds()) {
+    const v = f.getProperty(id);
+    if (v != null && v !== '' && !id.startsWith('cesium#')) tags[id] = String(v);
+  }
+  const h = buildingHeight(tags);
+  const estimated = f.getProperty('cesium#estimatedHeight');
+  const type = String(f.getProperty('elementType') ?? 'way') === 'relation' ? 'relation' : 'way';
+  const s: Structure = {
+    id: Number(f.getProperty('elementId') ?? 0),
+    type,
+    name: tags.name ?? tags['name:en'] ?? null,
+    kind: humanKind(tags),
+    outline: null,
+    height: h.source === 'default' && Number.isFinite(Number(estimated)) ? Number(estimated) : h.height,
+    heightSource: h.source,
+    levels: h.levels,
+    address: addressOf(tags),
+    tags,
+  };
+  const t = structureTarget(s, clicked, google, null, Date.now());
+  return {
+    ...t,
+    subtitle: 'OpenStreetMap building, shown on Google’s 3D mesh',
+    provenance: [
+      {
+        kind: 'cached',
+        source: 'Cesium OSM Buildings via Cesium ion (© OpenStreetMap contributors)',
+        url: s.id ? `https://www.openstreetmap.org/${s.type}/${s.id}` : 'https://cesium.com/platform/cesium-ion/content/cesium-osm-buildings/',
+        licence: 'ODbL 1.0 + Cesium ion terms',
+        fetchedAt: new Date().toISOString(),
+      },
+      google,
+    ],
   };
 }

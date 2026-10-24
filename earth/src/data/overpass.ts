@@ -130,13 +130,13 @@ export function buildingHeight(tags: Record<string, string>): { height: number; 
   return { height: DEFAULT_HEIGHT[kind] ?? 8, minHeight, source: 'default', levels: null };
 }
 
-function addressOf(t: Record<string, string>): string | null {
+export function addressOf(t: Record<string, string>): string | null {
   const line = [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' ');
   const parts = [line, t['addr:suburb'], t['addr:city'], t['addr:postcode']].filter(Boolean);
   return parts.length ? parts.join(', ') : null;
 }
 
-function humanKind(t: Record<string, string>): string {
+export function humanKind(t: Record<string, string>): string {
   const b = t.building;
   if (!b || b === 'yes') return t.amenity ? t.amenity.replace(/_/g, ' ') : 'Building';
   return b.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());

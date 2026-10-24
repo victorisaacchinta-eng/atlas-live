@@ -244,7 +244,8 @@ async function start() {
     const arrived = await nav.focus(l.position, { range: l.range, lift: l.height * 0.45, pitch: -20 });
     if (!arrived || selected !== placeholder) return;
     if (photoreal.active() || layers.isOn('photoreal-3d')) {
-      const t = await photoreal.inspectAt(ctx, l.position);
+      // The flight leaves the landmark in the middle of the screen.
+      const t = await photoreal.inspectAt(ctx, l.position, new Cartesian2(scene.canvas.clientWidth / 2, scene.canvas.clientHeight / 2));
       if (selected === placeholder) inspect({ ...t, title: t.kind === 'building' && t.title ? t.title : l.name, subtitle: t.subtitle ?? l.city });
     } else {
       inspectPoint(l.position, l.name, l.city);
@@ -501,7 +502,7 @@ async function start() {
       // Google's mesh is one surface, so the building comes from OpenStreetMap at the clicked point.
       const placeholder: InspectTarget = { kind: 'place', title: 'Looking up this building', subtitle: 'Asking OpenStreetMap what is mapped here', position: p, facts: [], provenance: [], enrich: false };
       inspect(placeholder);
-      const t = await photoreal.inspectAt(ctx, p);
+      const t = await photoreal.inspectAt(ctx, p, e.position);
       if (selected === placeholder) inspect(t);
       return;
     }
