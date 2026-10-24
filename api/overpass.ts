@@ -30,7 +30,8 @@ export default async function handler(req: Req, res: Res) {
       try {
         const r = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
+          // Explicit Accept headers: overpass-api.de answers 406 to the defaults Node sends.
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA, Accept: 'application/json', 'Accept-Language': 'en' },
           body: `data=${encodeURIComponent(data)}`,
           signal: AbortSignal.timeout(15_000),
         });
