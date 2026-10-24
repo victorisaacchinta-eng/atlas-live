@@ -50,6 +50,12 @@ button { cursor: pointer; }
 .mode + .mode { border-left: 1px solid var(--line); }
 .mode:hover { color: var(--bone); }
 .mode.is-on { background: var(--panel); color: var(--panel-text); }
+.mode-link {
+  display: inline-flex; align-items: center; padding: 10px 18px; min-height: 40px; border-left: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+  transition: color .2s;
+}
+.mode-link:hover { color: var(--bone); }
 
 .status { display: flex; gap: 8px; }
 .chip {
@@ -141,7 +147,7 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .bar { flex-wrap: wrap; }
   .modes { order: 3; width: 100%; }
-  .mode { flex: 1; }
+  .mode, .mode-link { flex: 1; justify-content: center; }
   .status .chip.quiet { display: none; }
   .intro { top: 132px; width: calc(100vw - 48px); }
   .intro h1 { font-size: 42px; }
