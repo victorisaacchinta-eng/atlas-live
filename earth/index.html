@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>God's Eye View · ATLAS Live</title>
+    <meta name="description" content="The real Earth in 3D, from orbit down to photorealistic cities and landmarks, with live earthquakes, natural events, weather and satellites. Every layer shows its source and its age." />
+    <meta name="theme-color" content="#05070a" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="globe" role="application" aria-label="3D globe. Drag to rotate, scroll to zoom, arrow keys to move, plus and minus to zoom." tabindex="0"></div>
+
+      <header class="masthead">
+        <a class="wordmark" href="./" aria-label="God's Eye View, back to the whole planet"><span class="wordmark-name">ATLAS</span><span class="wordmark-sub">GOD'S EYE VIEW</span></a>
+        <form id="search" class="search glass glass-pill" role="search" autocomplete="off">
+          <svg class="s-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM10.4 10.4 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <label for="q" class="vh">Search for a place, or ask a question about what you see</label>
+          <input id="q" name="q" type="search" placeholder="Search a place, or ask: weather here, rivers in this area" spellcheck="false" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" />
+          <kbd class="search-key" aria-hidden="true">/</kbd>
+          <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+        </form>
+      </header>
+
+      <section id="answer" class="answer glass panel" aria-live="polite" hidden></section>
+
+      <aside id="layers" class="layers glass panel" aria-label="Layers"></aside>
+
+      <section id="hud" class="hud glass" aria-label="Conditions at the centre of the view" aria-live="off"></section>
+
+      <nav id="ladder" class="ladder" aria-label="Scale"></nav>
+
+      <aside id="inspector" class="inspector glass panel" aria-label="Selected place" hidden></aside>
+
+      <div id="navpad" class="navpad glass glass-pill" role="toolbar" aria-label="View controls"></div>
+
+      <div id="compare" class="compare" hidden></div>
+
+      <div id="credits" class="credits"></div>
+      <footer id="status" class="status glass glass-pill"></footer>
+
+      <dialog id="sources" class="sources" aria-labelledby="sources-title"></dialog>
+      <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+      <div id="boot" class="boot">
+        <p class="boot-name">ATLAS</p>
+        <p class="boot-line" id="boot-line">Loading the planet</p>
+      </div>
+    </div>
+    <noscript>God's Eye View needs JavaScript and WebGL to draw the globe.</noscript>
+    <script type="module" src="/earth/src/main.ts"></script>
+  </body>
+</html>
