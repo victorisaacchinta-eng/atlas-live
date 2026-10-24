@@ -1,4 +1,5 @@
-import { fetchJson } from '../core/http';
+import { fetchJson, isAbort } from '../core/http';
+import { CONFIG } from '../config';
 import type { BBox, LatLon } from '../core/geo';
 
 /**
@@ -6,7 +7,7 @@ import type { BBox, LatLon } from '../core/geo';
  * asks for roughly fewer than 10,000 requests and 1 GB per day per user, so
  * queries are small (one view at a time), cached, and spaced out.
  */
-export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+export const OVERPASS_URL = CONFIG.overpassUrls[0];
 const OVERPASS_OPTS = { cacheMs: 30 * 60_000, timeoutMs: 30_000, minIntervalMs: 1100 };
 
 interface OverpassElement {
@@ -29,9 +30,25 @@ function bboxString(b: BBox): string {
   return `${b.south.toFixed(6)},${b.west.toFixed(6)},${b.north.toFixed(6)},${b.east.toFixed(6)}`;
 }
 
+/** The endpoint that last answered, tried first next time. */
+let preferred = 0;
+
 async function run(query: string, signal?: AbortSignal) {
-  const url = `${OVERPASS_URL}?data=${encodeURIComponent(query)}`;
-  const { data, fetchedAt, fromCache } = await fetchJson<OverpassResponse>(url, { ...OVERPASS_OPTS, signal });
+  const urls = CONFIG.overpassUrls;
+  let result: { data: OverpassResponse; fetchedAt: number; fromCache: boolean } | null = null;
+  let lastError: unknown = null;
+  for (let i = 0; i < urls.length && !result; i++) {
+    const index = (preferred + i) % urls.length;
+    try {
+      result = await fetchJson<OverpassResponse>(`${urls[index]}?data=${encodeURIComponent(query)}`, { ...OVERPASS_OPTS, signal });
+      preferred = index;
+    } catch (err) {
+      if (isAbort(err)) throw err;
+      lastError = err;
+    }
+  }
+  if (!result) throw lastError instanceof Error ? lastError : new Error('The OpenStreetMap Overpass API could not be reached.');
+  const { data, fetchedAt, fromCache } = result;
   if (data.remark && /runtime error|timed out|out of memory/i.test(data.remark)) {
     throw new Error('OpenStreetMap query timed out for this area. Zoom in and try again.');
   }

@@ -17,11 +17,15 @@ export const CONFIG: {
   assistUrl: string;
   /** Optional host endpoint that reports the live model and a browser-safe Cesium ion token. */
   statusUrl: string | null;
+  /** Overpass endpoints, tried in order when one cannot be reached. */
+  overpassUrls: string[];
   host: HostLink | null;
 } = {
   name: 'ATLAS',
   assistUrl: '/api/earth',
   statusUrl: '/api/status',
+  // ATLAS's own function first: some networks block the public Overpass mirrors.
+  overpassUrls: ['/api/overpass', 'https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'],
   host: {
     label: 'ATLAS Live',
     href: '/',

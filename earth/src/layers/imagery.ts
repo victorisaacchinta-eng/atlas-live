@@ -1,6 +1,7 @@
 import {
   Cesium3DTileset,
   CesiumTerrainProvider,
+  type TerrainProvider,
   Color,
   Credit,
   EllipsoidTerrainProvider,
@@ -254,9 +255,9 @@ export function bordersOverlay(): LayerDef {
   };
 }
 
-/** Full city lights above 1,500 km, none below 250 km, eased between. */
+/** Full city lights above 1,800 km, none below 400 km (where terrain takes over), eased between. */
 export function nightLightsAlpha(altitude: number): number {
-  const t = Math.min(1, Math.max(0, (altitude - 250_000) / (1_500_000 - 250_000)));
+  const t = Math.min(1, Math.max(0, (altitude - 400_000) / (1_800_000 - 400_000)));
   return t * t * (3 - 2 * t);
 }
 
@@ -398,8 +399,14 @@ export class Comparison {
 
 /* ------------------------------------------------------------- terrain */
 
+/** Terrain relief is swapped in below the first height and out above the second. */
+export const TERRAIN_ON_M = 300_000;
+export const TERRAIN_OFF_M = 400_000;
+
 export function terrainLayer(): LayerDef & { exaggeration: number; setExaggeration(ctx: LayerContext, v: number): void } {
   let usingIon = false;
+  let relief: TerrainProvider | null = null;
+  let unhook: (() => void) | null = null;
   const def = {
     id: 'terrain',
     title: 'Terrain relief',
@@ -414,20 +421,43 @@ export function terrainLayer(): LayerDef & { exaggeration: number; setExaggerati
       note: 'About 30 m in most land areas, coarser elsewhere. Oceans drawn at sea level.',
     },
     async enable(ctx: LayerContext) {
+      relief = null;
       if (ctx.ionToken) {
         try {
-          ctx.widget.scene.terrainProvider = await CesiumTerrainProvider.fromIonAssetId(1, { requestVertexNormals: true });
+          relief = await CesiumTerrainProvider.fromIonAssetId(1, { requestVertexNormals: true });
           usingIon = true;
           def.provenance = { ...def.provenance, source: 'Cesium World Terrain via Cesium ion', url: 'https://cesium.com/platform/cesium-ion/content/cesium-world-terrain/', licence: 'Cesium ion terms' };
-          return;
         } catch {
           ctx.notify('Cesium World Terrain did not load, using open terrain tiles instead.', 'warn');
         }
       }
-      usingIon = false;
-      ctx.widget.scene.terrainProvider = createTerrariumTerrainProvider(ctx.terrainSource);
+      if (!relief) {
+        usingIon = false;
+        relief = createTerrariumTerrainProvider(ctx.terrainSource);
+      }
+      // With any terrain mesh under it, Cesium 1.146 shades the whole globe as night for
+      // layers that use day and night alpha, so the city lights would cover the day side.
+      // Relief barely shows from that high, so the smooth ellipsoid is used while the
+      // lights are visible and terrain comes in below them, with a gap between the two
+      // heights so it never flickers.
+      const scene = ctx.widget.scene;
+      const flat = new EllipsoidTerrainProvider();
+      let high = scene.camera.positionCartographic.height > TERRAIN_OFF_M;
+      scene.terrainProvider = high ? flat : relief;
+      const r = relief;
+      unhook = scene.preRender.addEventListener(() => {
+        const h = scene.camera.positionCartographic.height;
+        const next = high ? h > TERRAIN_ON_M : h > TERRAIN_OFF_M;
+        if (next !== high) {
+          high = next;
+          scene.terrainProvider = high ? flat : r;
+        }
+      });
     },
     disable(ctx: LayerContext) {
+      unhook?.();
+      unhook = null;
+      relief = null;
       ctx.widget.scene.terrainProvider = new EllipsoidTerrainProvider();
     },
     setExaggeration(ctx: LayerContext, v: number) {

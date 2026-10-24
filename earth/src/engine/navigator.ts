@@ -4,6 +4,7 @@ import {
   Cartesian3,
   Cartographic,
   EasingFunction,
+  EllipsoidTerrainProvider,
   HeadingPitchRange,
   Math as CesiumMath,
   Matrix4,
@@ -155,11 +156,13 @@ export class Navigator {
   }
 
   /** Ground height under a point, from loaded terrain when there is some, else from the elevation tiles. */
-  private async groundOf(target: LatLon): Promise<number> {
-    const loaded = this.widget.scene.globe.getHeight(Cartographic.fromDegrees(target.lon, target.lat));
+  private async groundOf(target: LatLon, waitMs = 1200): Promise<number> {
+    // From orbit the globe is a smooth ellipsoid (terrain loads lower down), so its height says nothing.
+    const flat = this.widget.scene.terrainProvider instanceof EllipsoidTerrainProvider;
+    const loaded = flat ? undefined : this.widget.scene.globe.getHeight(Cartographic.fromDegrees(target.lon, target.lat));
     return loaded != null
       ? loaded / (this.widget.scene.verticalExaggeration || 1)
-      : await Promise.race([this.groundAt(target).catch(() => 0), new Promise<number>((r) => setTimeout(() => r(0), 1200))]);
+      : await Promise.race([this.groundAt(target).catch(() => 0), new Promise<number>((r) => setTimeout(() => r(0), waitMs))]);
   }
 
   /** Flies so the camera looks at `target` from `altitude` metres, with a pitch that suits the scale. */
@@ -201,14 +204,33 @@ export class Navigator {
   async focus(target: LatLon, opts: { range: number; lift?: number; pitch?: number; orbit?: boolean }): Promise<boolean> {
     this.stopOrbit();
     this.record();
-    const ground = Math.max(0, await this.groundOf(target)) * (this.widget.scene.verticalExaggeration || 1);
-    const center = Cartesian3.fromDegrees(target.lon, target.lat, ground + (opts.lift ?? 0));
+    const lift = opts.lift ?? 0;
     const pitch = CesiumMath.toRadians(opts.pitch ?? -24);
-    const done = await new Promise<boolean>((resolve) => {
+    // Elevation tiles are heights above sea level and Google's mesh is above the ellipsoid,
+    // which differ by tens of metres, so the first flight stops a little high and the
+    // shot is then settled onto the real surface.
+    const estimate = Math.max(0, await this.groundOf(target, 3000)) * (this.widget.scene.verticalExaggeration || 1);
+    let center = Cartesian3.fromDegrees(target.lon, target.lat, estimate + lift + 120);
+    let done = await this.flyAround(center, pitch, opts.range, this.duration(this.centerPoint(), target, opts.range));
+    if (!done) return false;
+    const mesh = await this.meshGround(target, Math.max(40, opts.range * 0.25));
+    const ground = mesh ?? estimate;
+    center = Cartesian3.fromDegrees(target.lon, target.lat, ground + lift);
+    done = await this.flyAround(center, pitch, opts.range, this.reducedMotion() ? 0 : 1.2);
+    if (!done) return false;
+    // Circling keeps the camera moving, so tell listeners the view has arrived first.
+    const v = this.view();
+    for (const fn of this.settleListeners) fn(v);
+    if (opts.orbit !== false && !this.reducedMotion()) this.orbit(center, opts.range, pitch);
+    return true;
+  }
+
+  private flyAround(center: Cartesian3, pitch: number, range: number, duration: number): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
       this.flying = true;
       this.camera.flyToBoundingSphere(new BoundingSphere(center, 0), {
-        offset: new HeadingPitchRange(this.camera.heading, pitch, opts.range),
-        duration: this.duration(this.centerPoint(), target, opts.range),
+        offset: new HeadingPitchRange(this.camera.heading, pitch, range),
+        duration,
         easingFunction: EasingFunction.CUBIC_IN_OUT,
         complete: () => {
           this.flying = false;
@@ -220,8 +242,29 @@ export class Navigator {
         },
       });
     });
-    if (done && opts.orbit !== false && !this.reducedMotion()) this.orbit(center, opts.range, pitch);
-    return done;
+  }
+
+  /**
+   * Ground height under a structure on the 3D mesh: the lowest of six samples
+   * on a ring around it, so the structure's own roof does not count. Null when
+   * the globe is showing or the mesh does not answer in time.
+   */
+  private async meshGround(target: LatLon, radiusM: number): Promise<number | null> {
+    const scene = this.widget.scene;
+    if (scene.globe.show || !scene.sampleHeightSupported) return null;
+    const dLat = radiusM / 111_320;
+    const dLon = radiusM / (111_320 * Math.max(0.2, Math.cos(CesiumMath.toRadians(target.lat))));
+    const points = Array.from({ length: 6 }, (_, k) => {
+      const a = (k / 6) * Math.PI * 2;
+      return Cartographic.fromDegrees(target.lon + Math.cos(a) * dLon, target.lat + Math.sin(a) * dLat);
+    });
+    try {
+      const sampled = await Promise.race([scene.sampleHeightMostDetailed(points), new Promise<null>((r) => setTimeout(() => r(null), 6000))]);
+      const heights = (sampled ?? []).map((c) => c?.height).filter((h): h is number => Number.isFinite(h));
+      return heights.length ? Math.min(...heights) : null;
+    } catch {
+      return null;
+    }
   }
 
   private orbitStop: (() => void) | null = null;
