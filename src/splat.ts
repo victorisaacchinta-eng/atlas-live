@@ -3,8 +3,8 @@ import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
 
 /**
  * Photo reconstructions: Gaussian splats trained from public photos of a landmark (see
- * tools/reconstruct.ipynb). Shown on the stage like any hologram: centred, standing on the pad.
- * Spark (World Labs, MIT) renders the splats inside the normal three.js
+ * tools/reconstruct.ipynb). Shown on the ATLAS stage like any hologram: centred, standing on the
+ * pad, turning slowly. Spark (World Labs, MIT) renders the splats inside the normal three.js
  * pipeline, so the lenses still apply.
  */
 
@@ -29,7 +29,7 @@ export async function loadSplat(scene: THREE.Scene, renderer: THREE.WebGLRendere
   mesh.quaternion.setFromEuler(new THREE.Euler(Math.PI + r[0] * THREE.MathUtils.DEG2RAD, r[1] * THREE.MathUtils.DEG2RAD, r[2] * THREE.MathUtils.DEG2RAD));
   mesh.updateMatrixWorld(true);
 
-  // Fit by the splat centres, ignoring the faint halo of large splats.
+  // Fit by the splat centres (robust to the faint halo of large splats).
   const local = mesh.getBoundingBox(true);
   const box = local.clone().applyMatrix4(mesh.matrix);
   const size = box.getSize(new THREE.Vector3());

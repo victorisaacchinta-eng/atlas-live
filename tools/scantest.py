@@ -1,7 +1,5 @@
-import json, pathlib, time
+import json, time
 from playwright.sync_api import sync_playwright
-SHOTS = pathlib.Path(__file__).resolve().parent / "shots"
-SHOTS.mkdir(exist_ok=True)
 fake = {"object": "Pratt & Whitney JT8D turbofan (test rig)", "category": "Jet engine", "summary": "A low-bypass turbofan that powered 727s and DC-9s, mounted in a NASA altitude test chamber.",
   "object_box": [0.226, 0.22, 0.95, 0.64],
   "parts": [
@@ -26,8 +24,8 @@ with sync_playwright() as p:
         if "turbofan" in (pg.text_content("#model-title") or "").lower(): break
     print("took", round(time.time()-t0), "s | status:", st, "| parts:", pg.text_content("#parts-n"))
     pg.wait_for_timeout(5000)
-    pg.screenshot(path=str(SHOTS / "scan1.png"))
+    pg.screenshot(path="/tmp/claude-0/-home-claude/2818f404-a8d0-57da-866a-85ba3bd9e661/scratchpad/scan1.png")
     pg.evaluate("window.atlas.focusPart(4)"); pg.wait_for_timeout(2500)
-    pg.screenshot(path=str(SHOTS / "scan2.png"))
+    pg.screenshot(path="/tmp/claude-0/-home-claude/2818f404-a8d0-57da-866a-85ba3bd9e661/scratchpad/scan2.png")
     for l in [l for l in logs if 'error' in l.lower()][-8:]: print(l)
     b.close()
