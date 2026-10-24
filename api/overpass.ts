@@ -33,7 +33,7 @@ export default async function handler(req: Req, res: Res) {
           // Explicit Accept headers: overpass-api.de answers 406 to the defaults Node sends.
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA, Accept: 'application/json', 'Accept-Language': 'en' },
           body: `data=${encodeURIComponent(data)}`,
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(9_000),
         });
         if (!r.ok) throw new Error(`${host} ${r.status}`);
         return await r.json();

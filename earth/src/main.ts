@@ -250,7 +250,14 @@ async function start() {
     if (photoreal.active() || layers.isOn('photoreal-3d')) {
       // The flight leaves the landmark in the middle of the screen.
       const t = await photoreal.inspectAt(ctx, l.position, new Cartesian2(scene.canvas.clientWidth / 2, scene.canvas.clientHeight / 2));
-      if (selected === placeholder) inspect({ ...t, title: t.kind === 'building' && t.title ? t.title : l.name, subtitle: t.subtitle ?? l.city });
+      if (selected !== placeholder) return;
+      // Only keep the picked building if it is the landmark itself, never a neighbour under its name.
+      const same = (a: string, b: string) => a.toLowerCase().replace(/[^a-z]/g, '').includes(b.toLowerCase().replace(/[^a-z]/g, ''));
+      if (t.kind === 'building' && same(t.title, l.name)) inspect(t);
+      else {
+        photoreal.clearHighlight(ctx);
+        inspectPoint(l.position, l.name, l.city);
+      }
     } else {
       inspectPoint(l.position, l.name, l.city);
     }

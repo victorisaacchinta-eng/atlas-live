@@ -167,6 +167,16 @@ export function photorealLayer(): PhotorealLayer {
           litFeature = feature;
           return osmFeatureTarget(feature, p, google);
         }
+        // Cesium OSM Buildings holds every mapped building, so a miss means none is mapped here.
+        return {
+          kind: 'place',
+          title: 'Point on the 3D mesh',
+          subtitle: 'No OpenStreetMap building is mapped here',
+          position: p,
+          facts: [],
+          provenance: [google],
+          enrich: true,
+        };
       }
       let found: Awaited<ReturnType<typeof structureAt>> | null = null;
       try {
@@ -219,7 +229,7 @@ export function structureTarget(s: Structure, clicked: LatLon, google: Provenanc
   if (s.height != null && s.heightSource) {
     facts.push({
       label: 'Height',
-      value: s.heightSource === 'tagged' ? `${s.height.toFixed(1)} m (mapped)` : s.heightSource === 'levels' ? `About ${Math.round(s.height)} m, from ${s.levels} floors` : 'Not mapped',
+      value: s.heightSource === 'tagged' ? `${s.height.toFixed(1)} m (mapped)` : s.heightSource === 'levels' ? `About ${Math.round(s.height)} m, from ${s.levels} floors` : `Not mapped (drawn at about ${Math.round(s.height)} m)`,
       estimated: s.heightSource !== 'tagged',
     });
   }
