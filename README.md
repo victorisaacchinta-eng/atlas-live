@@ -22,7 +22,7 @@ Built for the Nebius x NVIDIA Global AI Hackathon (2026) by Chintha Victor Isaac
 | Identify a scanned object and locate its parts | Nemotron 3.5 Super VL (vision) | `api/scan.ts` |
 | Agent that answers, searches and drives the hologram with tool calls (`web_search`, `focus_part`, `set_explode`) | Nemotron 3 Super | `api/ask.ts` |
 | Cited landmark captions for Places | Nemotron 3 Super + Tavily | `api/place.ts` |
-| Plan God's Eye requests ("show me the Taj Mahal and circle it", "earthquakes near Japan") as whitelisted globe operations; the page runs them against the live data sources | Nemotron fast model | `api/earth.ts` |
+| Plan God's Eye requests ("show me the Taj Mahal and circle it", "earthquakes near Japan") as whitelisted globe operations; the page runs them against the live data sources | Nemotron 3 Super | `api/earth.ts` |
 
 All model calls run server-side (Vercel functions). Keys never reach the browser. Model ids are set in `api/_nebius.ts` and can be overridden with environment variables.
 

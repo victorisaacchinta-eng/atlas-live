@@ -38,6 +38,8 @@ export function wants3d(altitude: number, shownNow: boolean): boolean {
 export interface PhotorealLayer extends LayerDef {
   /** True when the textured mesh is what the viewer sees right now. */
   active(): boolean;
+  /** Tiles still to fetch or decode while the mesh is in view, for the status bar. */
+  onProgress(fn: (pending: number) => void): void;
   onActive(fn: (on: boolean) => void): void;
   owns(picked: unknown): boolean;
   /** Looks up the mapped structure under a point on the mesh, outlines it, and describes it. */
@@ -67,6 +69,7 @@ export function photorealLayer(): PhotorealLayer {
   let osm: Cesium3DTileset | null = null;
   let litFeature: Cesium3DTileFeature | null = null;
   const activeListeners = new Set<(on: boolean) => void>();
+  const progressListeners = new Set<(pending: number) => void>();
   const setShown = (on: boolean) => {
     shown = on;
     for (const fn of activeListeners) fn(on);
@@ -88,7 +91,16 @@ export function photorealLayer(): PhotorealLayer {
       note: 'Capture dates vary by city and are not given per tile. Buildings are part of one mesh, so selection uses OpenStreetMap outlines.',
     },
     async enable(ctx) {
-      const options = { maximumScreenSpaceError: 16, showCreditsOnScreen: true };
+      const options = {
+        maximumScreenSpaceError: 16,
+        showCreditsOnScreen: true,
+        // A smaller cache than Cesium's 1.5 GB default: after a few cities the old ones are
+        // dropped instead of slowing the next one down.
+        cacheBytes: 640 * 1024 * 1024,
+        maximumCacheOverflowBytes: 384 * 1024 * 1024,
+        // Circling is slow and steady, so keep fetching detail while the camera moves.
+        cullRequestsWhileMoving: false,
+      };
       tileset = ctx.googleKey
         ? await createGooglePhotorealistic3DTileset({ key: ctx.googleKey, onlyUsingWithGoogleGeocoder: true }, options)
         : await createGooglePhotorealistic3DTileset({ onlyUsingWithGoogleGeocoder: true }, options);
@@ -98,6 +110,9 @@ export function photorealLayer(): PhotorealLayer {
       shown = false;
       t.allTilesLoaded.addEventListener(() => {
         if (shown) loadedSinceShown = true;
+      });
+      t.loadProgress.addEventListener((pending: number, processing: number) => {
+        for (const fn of progressListeners) fn(shown ? pending + processing : 0);
       });
       ctx.widget.scene.primitives.add(t);
       const scene = ctx.widget.scene;
@@ -139,6 +154,7 @@ export function photorealLayer(): PhotorealLayer {
     summary: () => (shown ? 'Google 3D mesh in view' : `Takes over below ${ENTER_3D_M / 1000} km`),
     active: () => shown,
     onActive: (fn) => void activeListeners.add(fn),
+    onProgress: (fn) => void progressListeners.add(fn),
     owns: (picked) => {
       const prim = (picked as { primitive?: unknown } | undefined)?.primitive;
       return !!prim && (prim === tileset || prim === osm);

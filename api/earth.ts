@@ -16,10 +16,10 @@ export default async function handler(req: Req, res: Res) {
   try {
     if (req.method !== 'POST') throw new HttpError(405, 'POST only');
     if (!hasModel()) return res.status(501).json({ error: 'not_configured' });
-    let label = MODELS.fast;
+    let label = MODELS.agent;
     const complete = async (system: string, user: string) => {
       const reply = await chat({
-        model: MODELS.fast,
+        model: MODELS.agent,
         temperature: 0.1,
         max_tokens: 700,
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
@@ -29,7 +29,7 @@ export default async function handler(req: Req, res: Res) {
     };
     const forwarded = req.headers['x-forwarded-for'];
     const client = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim() || 'unknown';
-    const result = await planRequest(req.body, complete, MODELS.fast, client);
+    const result = await planRequest(req.body, complete, MODELS.agent, client);
     if (result.status === 200) (result.body as { planner: string }).planner = label;
     res.status(result.status).json(result.body);
   } catch (err) {

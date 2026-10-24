@@ -343,7 +343,9 @@ export class Navigator {
     const scene = this.widget.scene;
     if (!scene.globe.show && scene.pickPositionSupported) {
       const p = scene.pickPosition(pos);
-      if (p) return p;
+      // While tiles stream in the depth buffer can be empty, which reads as a point far away.
+      const limit = Math.max(30_000, this.camera.positionCartographic.height * 25);
+      if (p && Cartesian3.distance(p, this.camera.positionWC) < limit) return p;
     }
     const ray = this.camera.getPickRay(pos);
     return (ray && scene.globe.pick(ray, scene)) ?? this.camera.pickEllipsoid(pos, scene.globe.ellipsoid);

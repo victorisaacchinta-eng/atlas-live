@@ -233,6 +233,7 @@ async function start() {
 
   /** Circles the selected thing, or the centre of the view when nothing is selected. */
   function orbitSelection(): boolean {
+    if (nav.isOrbiting()) return true;
     if (selected) {
       void nav.focus(selected.position, { range: Math.min(Math.max(nav.altitude() * 1.2, 300), 4000), lift: selected.kind === 'building' ? 25 : 0, pitch: -26 });
       return true;
@@ -428,6 +429,7 @@ async function start() {
   if (window.innerWidth <= 760) panel.toggleCollapsed(true);
 
   /* ------------------------------------------------------- imagery status */
+  let pending3d = 0;
   function updateImagery() {
     const base = layers.activeBase();
     const alt = nav.altitude();
@@ -457,7 +459,7 @@ async function start() {
     }
     if (photoreal.active()) {
       text = 'Google Photorealistic 3D Tiles';
-      warn = '';
+      warn = pending3d > 0 ? `Streaming 3D tiles, ${pending3d} to go` : '';
     }
     if (comparison.active) text = `Comparing ${comparison.active.a} with ${comparison.active.b}`;
     status.imagery(text, warn);
@@ -625,6 +627,11 @@ async function start() {
         : null,
     );
   layers.onChange(syncGeocoder);
+  photoreal.onProgress((n) => {
+    const changed = (n > 0) !== (pending3d > 0) || Math.abs(n - pending3d) >= 10 || n === 0;
+    pending3d = n;
+    if (changed) updateImagery();
+  });
   photoreal.onActive((on) => {
     document.body.classList.toggle('has-3d', on);
     updateImagery();
