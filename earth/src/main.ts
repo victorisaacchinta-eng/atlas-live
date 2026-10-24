@@ -10,6 +10,7 @@ import {
   Cartesian3,
   Cartographic,
   EllipsoidalOccluder,
+  EllipsoidTerrainProvider,
   Ion,
   Math as CesiumMath,
   SceneTransforms,
@@ -20,7 +21,7 @@ import {
 
 import { createGlobe } from './engine/globe';
 import { Navigator } from './engine/navigator';
-import { createTerrariumSource } from './engine/terrarium';
+import { createTerrariumSource, heightAt } from './engine/terrarium';
 import { groundHeights } from './engine/ground';
 import { LayerManager } from './layers/manager';
 import type { InspectTarget, LayerContext } from './layers/types';
@@ -173,7 +174,10 @@ async function start() {
   ])
     layers.register(d);
 
-  const nav = new Navigator(widget, reducedMotion, async (p) => (await groundHeights(widget, terrainSource, [p]))[0] ?? 0);
+  // Framing needs the real ground even while the globe is drawn as a smooth ellipsoid from orbit.
+  const nav = new Navigator(widget, reducedMotion, async (p) =>
+    scene.terrainProvider instanceof EllipsoidTerrainProvider ? heightAt(terrainSource, p.lat, p.lon, 13) : ((await groundHeights(widget, terrainSource, [p]))[0] ?? 0),
+  );
   const results = new ResultMarks(widget);
   const comparison = new Comparison(ctx);
 

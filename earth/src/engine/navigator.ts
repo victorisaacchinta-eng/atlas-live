@@ -259,13 +259,19 @@ export class Navigator {
       const a = (k / 6) * Math.PI * 2;
       return Cartographic.fromDegrees(target.lon + Math.cos(a) * dLon, target.lat + Math.sin(a) * dLat);
     });
+    const lowest = (hs: Array<number | undefined>) => {
+      const ok = hs.filter((h): h is number => Number.isFinite(h));
+      return ok.length ? Math.min(...ok) : null;
+    };
     try {
-      const sampled = await Promise.race([scene.sampleHeightMostDetailed(points), new Promise<null>((r) => setTimeout(() => r(null), 6000))]);
-      const heights = (sampled ?? []).map((c) => c?.height).filter((h): h is number => Number.isFinite(h));
-      return heights.length ? Math.min(...heights) : null;
+      // The most detailed answer loads the finest tiles, which can take a while on a slow line.
+      const sampled = await Promise.race([scene.sampleHeightMostDetailed(points.map((c) => c.clone())), new Promise<null>((r) => setTimeout(() => r(null), 12_000))]);
+      const best = sampled ? lowest(sampled.map((c) => c?.height)) : null;
+      if (best != null) return best;
     } catch {
-      return null;
+      /* fall through to what is loaded now */
     }
+    return lowest(points.map((c) => scene.sampleHeight(c)));
   }
 
   private orbitStop: (() => void) | null = null;
