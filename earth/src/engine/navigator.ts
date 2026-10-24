@@ -246,12 +246,13 @@ export class Navigator {
 
   /**
    * Ground height under a structure on the 3D mesh: the lowest of six samples
-   * on a ring around it, so the structure's own roof does not count. Null when
-   * the globe is showing or the mesh does not answer in time.
+   * on a ring around it, so the structure's own roof does not count. Samples
+   * whatever is drawn (the mesh, or the globe where there is none); null when
+   * nothing answers in time.
    */
   private async meshGround(target: LatLon, radiusM: number): Promise<number | null> {
     const scene = this.widget.scene;
-    if (scene.globe.show || !scene.sampleHeightSupported) return null;
+    if (!scene.sampleHeightSupported) return null;
     const dLat = radiusM / 111_320;
     const dLon = radiusM / (111_320 * Math.max(0.2, Math.cos(CesiumMath.toRadians(target.lat))));
     const points = Array.from({ length: 6 }, (_, k) => {
