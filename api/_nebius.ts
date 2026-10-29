@@ -78,6 +78,12 @@ export function ensureModels() {
  * them, models trained on Indian languages go first. Override with ATLAS_INDIC_MODEL.
  */
 const INDIC_PREFER = [/sarvam-m\b/i, /sarvam/i, /^gemini-flash-latest$/, /gemini-3(\.\d)?-flash$/, /gemma-3-27b/i, /llama-4-maverick/i, /qwen3-235b/i, /llama-3\.3-70b/i];
+/** Second opinions for Indian-language work when the first model is overloaded: open-weight models the provider lists. */
+export async function indicFallbacks() {
+  await ensureModels();
+  return ALL_IDS.filter((id) => /gemma-4|gemma-3-27b|llama-4-maverick|qwen3-235b/i.test(id)).sort((a, b) => b.localeCompare(a, undefined, { numeric: true })).slice(0, 2);
+}
+
 export async function indicModel() {
   if (process.env.ATLAS_INDIC_MODEL) return process.env.ATLAS_INDIC_MODEL;
   await ensureModels();

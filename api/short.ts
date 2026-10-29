@@ -1,4 +1,4 @@
-import { chat, tavily, extractJson, send, MODELS, PROVIDER, HttpError, indicModel, type TavilyResult } from './_nebius.js';
+import { chat, tavily, extractJson, send, MODELS, PROVIDER, HttpError, indicModel, indicFallbacks, type TavilyResult } from './_nebius.js';
 import { geocode } from './_places.js';
 import { isSachetUrl, parseCap, alertRecord } from './_sachet.js';
 import { LANGS as LANG_LIST, LANG_BY_CODE, langOf as pickLang } from './_langs.js';
@@ -187,7 +187,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
         op: 'short.write',
         // A Short is a live-news tool: an overloaded model gets 40 s, then the next one is tried.
         timeout_ms: 40_000,
-        fallbacks: [MODELS.agent],
+        fallbacks: lang === 'en' ? [] : [...(await indicFallbacks()), MODELS.agent],
         model: writer,
         temperature: 0.4,
         max_tokens: 2200,
