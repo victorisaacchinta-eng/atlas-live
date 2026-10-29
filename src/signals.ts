@@ -146,6 +146,8 @@ export class SignalLayers {
       const j = await r.json();
       if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
       l.data = j as LayerData;
+      // A cached copy can outlive an alert: never show one past its own expiry time.
+      if (id === 'india') l.data.signals = l.data.signals.filter((x) => !x.expires || Date.parse(x.expires) > Date.now());
       l.status = 'ok';
       this.build(l);
     } catch (err) {

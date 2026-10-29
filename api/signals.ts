@@ -15,7 +15,9 @@ export default async function handler(req: { method: string; query: Record<strin
     }
     if (id !== 'quakes' && id !== 'events' && id !== 'india') throw new HttpError(400, 'layer must be quakes, events, india or weather');
     const data = await layer(id as LayerId);
-    res.setHeader?.('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
+    // India alerts take a while to assemble from scratch (one CAP document per alert), so the CDN keeps
+    // serving the last copy while it refreshes in the background. The card shows each alert's own times.
+    res.setHeader?.('Cache-Control', id === 'india' ? 's-maxage=240, stale-while-revalidate=1800' : 's-maxage=120, stale-while-revalidate=600');
     res.status(200).json(data);
   } catch (err) { send(res, err); }
 }
