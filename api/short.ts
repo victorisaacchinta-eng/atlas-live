@@ -1,6 +1,7 @@
 import { chat, tavily, extractJson, send, MODELS, PROVIDER, HttpError, indicModel, type TavilyResult } from './_nebius.js';
 import { geocode } from './_places.js';
 import { isSachetUrl, parseCap, alertRecord } from './_sachet.js';
+import { LANGS as LANG_LIST, LANG_BY_CODE, langOf as pickLang } from './_langs.js';
 
 /**
  * SHORT: turn a live event or a place into a 60-second explainer package.
@@ -18,8 +19,8 @@ import { isSachetUrl, parseCap, alertRecord } from './_sachet.js';
  */
 
 interface SignalIn { id?: string; layer?: string; kind?: string; title: string; lat: number; lon: number; time?: string; mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url?: string; severity?: string; sender?: string; area?: string; districts?: string[]; texts?: { lang: string; language: string; headline: string }[] }
-type Lang = 'en' | 'hi' | 'te';
-const LANGS: Record<Lang, string> = { en: 'English', hi: 'Hindi', te: 'Telugu' };
+type Lang = string;
+const LANGS: Record<string, string> = Object.fromEntries(LANG_LIST.map((l) => [l.code, l.name]));
 export interface Source { title: string; url: string; kind: 'record' | 'web'; publisher: string; published?: string; retrieved: string; text: string }
 type Shot = 'orbit' | 'region' | 'area' | 'close';
 interface DraftBeat { say: string; caption: string; claim: string | null; source: number | null; shot: Shot; focus: string }
@@ -45,11 +46,11 @@ const VERDICTS: Verdict[] = ['supported', 'partly', 'contradicted', 'unsupported
 const clip = (s: unknown, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
 /** Seconds to say a line: about 2.6 English words a second; Indic words are longer, about 1.9 a second. */
-const spoken = (s: string) => /[\u0900-\u097F\u0C00-\u0C7F]/.test(s) ? words(s) / 1.9 : words(s) / 2.6;
+const spoken = (s: string) => /[^\u0000-\u024F\s\d.,:;!?'"()-]/.test(s) ? words(s) / 1.9 : words(s) / 2.6;
 const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 // Unicode-aware: Telugu and Devanagari letters and their vowel signs survive; punctuation does not.
 const norm = (s: string) => s.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{M}\p{N}.%]+/gu, ' ').trim();
-const langOf = (x: unknown): Lang => (x === 'hi' || x === 'te' ? x : 'en');
+const langOf = (x: unknown): Lang => pickLang(x);
 
 /** The source's own record for a live signal, as plain text the writer and checker can both read. */
 async function recordFor(sig: SignalIn): Promise<Source> {
@@ -176,7 +177,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
       const writer = lang === 'en' ? MODELS.agent : await indicModel();
       const voice = lang === 'en'
         ? (alert ? 'Voice: a calm, clear Indian news explainer.' : 'Voice: a witty, warm British documentary host.')
-        : `Voice: a calm, clear ${LANGS[lang]} news explainer, the way a good regional news channel speaks to families. Write "say" and "caption" in ${LANGS[lang]} script (${lang === 'te' ? 'తెలుగు' : 'हिन्दी'}), in everyday spoken ${LANGS[lang]}, not formal or Sanskritised. Write numbers as digits. Keep units as the alert gives them (mm, km/h). Write "claim" in plain English so it can be checked against the record, and make the ${LANGS[lang]} line say exactly that claim and nothing more.`;
+        : `Voice: a calm, clear ${LANGS[lang]} news explainer, the way a good regional news channel speaks to families. Write "say" and "caption" in ${LANGS[lang]} (${LANG_BY_CODE[lang].native}), in the ${LANG_BY_CODE[lang].script} script, in everyday spoken ${LANGS[lang]}${lang === 'sa' ? '' : ', not formal or Sanskritised'}. Write numbers as digits. Keep units as the alert gives them (mm, km/h). Write "claim" in plain English so it can be checked against the record, and make the ${LANGS[lang]} line say exactly that claim and nothing more.`;
       const alertRules = alert ? `
 - This is an official public-safety alert. Do not dramatise. Never mention damage, injuries or deaths unless a source states them.
 - One beat says who issued the alert, for which districts, and until when it is in force (from the record).

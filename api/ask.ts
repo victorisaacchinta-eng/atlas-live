@@ -1,6 +1,7 @@
 import { chat, tavily, send, MODELS, HttpError, type ChatMessage, type TavilyResult } from './_nebius.js';
 import { geocode } from './_places.js';
 import { layer, weather, km, type LayerId, type Signal } from './_signals.js';
+import { LANGS } from './_langs.js';
 
 /**
  * The ATLAS agent. Nemotron reads the question, the machine and its parts, and answers by
@@ -97,7 +98,7 @@ const EARTH_TOOLS = [
     function: {
       name: 'make_short',
       description: 'Open the Short director: ATLAS writes a 60-second, cited, shot-by-shot explainer script about a live signal or a place, plays it in a 9:16 frame and exports it for Google Earth. Use when the viewer asks to make a Short, a Reel, a video, an explainer or a script. For a live signal, call find_signals first and pass its title, lat and lon.',
-      parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' }, lang: { type: 'string', enum: ['en', 'hi', 'te'], description: 'Language of the Short: en English, hi Hindi, te Telugu. Use the language the viewer asks for or writes in.' } }, required: ['topic'] },
+      parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' }, lang: { type: 'string', enum: LANGS.map((l) => l.code), description: `Language of the Short, any of India's 22 scheduled languages or English: ${LANGS.map((l) => `${l.code} ${l.name}`).join(', ')}. Use the language the viewer asks for or writes in.` } }, required: ['topic'] },
     },
   },
   {

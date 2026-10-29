@@ -8,7 +8,7 @@
   /* Survey-instrument type: engraved-plate display, a plain grotesk, a machined mono. */
   --wordmark: 'Science Gothic Variable', 'Eurostile', 'Arial Narrow', sans-serif;
   /* Telugu and Devanagari fall through to Noto, glyph by glyph: Inter has neither script. */
-  --indic: 'Noto Sans Telugu Variable', 'Noto Sans Devanagari Variable';
+  --indic: 'Noto Sans Telugu Variable', 'Noto Sans Devanagari Variable', 'Noto Sans Bengali Variable', 'Noto Sans Gurmukhi Variable', 'Noto Sans Gujarati Variable', 'Noto Sans Oriya Variable', 'Noto Sans Tamil Variable', 'Noto Sans Kannada Variable', 'Noto Sans Malayalam Variable', 'Noto Sans Ol Chiki Variable', 'Noto Sans Meetei Mayek Variable', 'Noto Naskh Arabic Variable';
   --display: 'Inter Variable', 'Inter', var(--indic), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ui: 'Inter Variable', 'Inter', var(--indic), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -542,11 +542,26 @@ html { transition: background-color .18s var(--ease); }
   font-size: 15px; line-height: 1.55; color: var(--panel-text); quotes: none; }
 .alert-local cite { display: block; margin-top: 6px; font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
   color: color-mix(in srgb, var(--panel-text) 60%, var(--panel)); }
-.lang-pick { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid color-mix(in srgb, var(--panel-text) 35%, var(--panel)); border-radius: var(--r-control); overflow: hidden; }
-.lang-pick button { min-height: 34px; border: 0; background: transparent; color: color-mix(in srgb, var(--panel-text) 70%, var(--panel)); font-family: var(--ui); font-size: 13px; cursor: pointer; transition: background .14s var(--ease), color .14s var(--ease); }
-.lang-pick button + button { border-left: 1px solid color-mix(in srgb, var(--panel-text) 20%, var(--panel)); }
-.lang-pick button[aria-checked="true"] { background: var(--panel-text); color: var(--panel); }
-.lang-pick button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
-/* Indic captions: no uppercase (it means nothing in these scripts), more line height for vowel signs. */
-.director[data-lang="te"] .dir-caption, .director[data-lang="hi"] .dir-caption { text-transform: none; line-height: 1.3; font-weight: 700; letter-spacing: 0; }
-.director[data-lang="te"] .dir-beats .say, .director[data-lang="hi"] .dir-beats .say { font-size: 14.5px; line-height: 1.6; }
+.lang-pick { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--panel-text) 35%, var(--panel)); border-radius: var(--r-control); }
+.lang-pick > span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, var(--panel-text) 60%, var(--panel)); white-space: nowrap; }
+.lang-pick select { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--panel-text); font-family: var(--ui); font-size: 14px; padding: 8px 0; cursor: pointer; }
+.lang-pick select option { color: #111; background: #fff; }
+.lang-pick:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+/* Non-Latin captions: no uppercase (it means nothing in these scripts), more line height for vowel signs. */
+.director:not([data-lang="en"]) .dir-caption { text-transform: none; line-height: 1.3; font-weight: 700; letter-spacing: 0; }
+.director:not([data-lang="en"]) .dir-beats .say { font-size: 14.5px; line-height: 1.6; }
+/* Urdu is written in Nastaliq, which needs far more line height than Naskh or Indic scripts. */
+:lang(ur) { font-family: 'Noto Nastaliq Urdu Variable', var(--ui); line-height: 2; }
+.director[data-lang="ur"] .dir-caption { line-height: 2.1; }
+:lang(ks), :lang(sd) { font-family: 'Noto Naskh Arabic Variable', var(--ui); }
+
+/* Corner language menu */
+.lang-menu { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 10px;
+  border: 1px solid var(--line); border-radius: var(--r-control); color: var(--bone-2); background: transparent; }
+.lang-menu:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.lang-glyph { font-family: var(--ui); font-size: 12px; letter-spacing: .02em; color: var(--muted); }
+.lang-menu select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: var(--bone); font-family: var(--ui); font-size: 13px;
+  padding: 6px 18px 6px 2px; max-width: 168px; cursor: pointer; outline: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 9px) 52%, calc(100% - 5px) 52%; background-size: 4px 4px; background-repeat: no-repeat; }
+.lang-menu select option { color: #111; background: #fff; }
