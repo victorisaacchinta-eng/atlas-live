@@ -1,6 +1,8 @@
 import '@fontsource-variable/science-gothic/full.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/noto-sans-telugu';
+import '@fontsource-variable/noto-sans-devanagari';
 import './style.css';
 import * as THREE from 'three';
 import { Stage } from './stage';
@@ -10,7 +12,7 @@ import { ui } from './ui';
 import { applyCss, theme, resolve, savedMode, saveMode, onSystemChange, type ThemeMode } from './theme';
 import { GestureControl } from './gestures';
 import { ask, listen, refreshStatus, speak, setMuted } from './agent';
-import { Director, type Beat, type ShortInput } from './director';
+import { Director, LANG_LABEL, type Beat, type ShortInput, type ShortLang } from './director';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
@@ -200,7 +202,7 @@ const agentCtx = {
   machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model ATLAS built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : earthActive ? `the whole Earth seen from orbit, centred near ${originLL ? `${originLL.lat.toFixed(1)}, ${originLL.lon.toFixed(1)}` : 'India'}` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
   layers: () => (earthActive ? signals.active : []),
   globeView: () => goGlobe(),
-  showLayer: (id: string, on: boolean) => { if (id === 'quakes' || id === 'events') setLayer(id, on); },
+  showLayer: (id: string, on: boolean) => { if (id === 'quakes' || id === 'events' || id === 'india') setLayer(id, on); },
   buildModel: (name: string) => {
     const l = LANDMARKS.find((x) => name.toLowerCase().includes(x.name.toLowerCase()));
     const go = () => runConstruct(l?.name || name.split(',')[0].trim(), l?.city || name.split(',').slice(1).join(',').trim());
@@ -1073,12 +1075,12 @@ const director: Director = new Director({
 
 /** A Short about a live signal when one matches (it brings the official record), else about the topic. */
 function makeShortFor(topic: string, lat?: number, lon?: number) {
-  const all = (['quakes', 'events'] as LayerId[]).flatMap((id) => signals.state(id).data?.signals ?? []);
+  const all = (['india', 'quakes', 'events'] as LayerId[]).flatMap((id) => signals.state(id).data?.signals ?? []);
   const t = topic.toLowerCase();
   const hit = all.find((x) => x.title.toLowerCase() === t)
     || (Number.isFinite(lat) && Number.isFinite(lon) ? all.find((x) => Math.abs(x.lat - lat!) < 0.05 && Math.abs(x.lon - lon!) < 0.05) : undefined)
     || all.find((x) => t.includes(x.title.toLowerCase()));
-  const input: ShortInput = hit ? { topic: hit.title, signal: hit } : { topic, lat, lon };
+  const input: ShortInput = hit ? { topic: hit.title, signal: hit, lang: langFor(hit) } : { topic, lat, lon, lang: savedLang() };
   director.make(input);
 }
 
@@ -1095,7 +1097,22 @@ const globeDist = () => GLOBE_DIST * (innerWidth / innerHeight < 0.8 ? 2.1 : 1);
 const LAYER_META: Record<LayerId, { label: string; blurb: string }> = {
   quakes: { label: 'Earthquakes', blurb: 'M2.5+ · past 7 days' },
   events: { label: 'Natural events', blurb: 'Wildfires, storms, sea ice' },
+  india: { label: 'India alerts', blurb: 'official, in force now' },
 };
+const LAYERS: LayerId[] = ['india', 'quakes', 'events'];
+
+// The language a Short is written in. Remembered per viewer; an alert published in Telugu or
+// Hindi suggests that language the first time.
+const LANG_KEY = 'atlas-short-lang';
+function savedLang(): ShortLang { try { const v = localStorage.getItem(LANG_KEY); return v === 'hi' || v === 'te' ? v : 'en'; } catch { return 'en'; } }
+function saveLang(l: ShortLang) { try { localStorage.setItem(LANG_KEY, l); } catch { /* per-viewer only */ } }
+function langFor(s: Signal): ShortLang {
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(LANG_KEY); } catch { /* none */ }
+  if (stored) return savedLang();
+  const langs = (s.texts ?? []).map((t) => t.lang.slice(0, 2).toLowerCase());
+  return langs.includes('te') ? 'te' : langs.includes('hi') ? 'hi' : 'en';
+}
 
 async function goGlobe(focus?: { lat: number; lon: number }) {
   if (mode !== 'places') { setMode('places'); if (!focus) return; }
@@ -1131,7 +1148,7 @@ async function goGlobe(focus?: { lat: number; lon: number }) {
     stage.rise(globeDist(), 2.2, enter);
   }
   // First visit: switch the live layers on so the planet is never an empty ball.
-  for (const id of ['quakes', 'events'] as LayerId[]) if (signals.state(id).status === 'off') setLayer(id, true);
+  for (const id of LAYERS) if (signals.state(id).status === 'off') setLayer(id, true);
 }
 
 function leaveGlobe() {
@@ -1143,14 +1160,15 @@ function leaveGlobe() {
 
 function updateGlobeKind() {
   if (currentLandmark || !earthActive) return;
-  const q = signals.state('quakes').data?.signals.length, e = signals.state('events').data?.signals.length;
-  const bits = [q !== undefined && signals.state('quakes').on ? `${q} earthquakes` : '', e !== undefined && signals.state('events').on ? `${e} natural events` : ''].filter(Boolean);
+  const n = (id: LayerId) => (signals.state(id).on ? signals.state(id).data?.signals.length : undefined);
+  const q = n('quakes'), e = n('events'), a = n('india');
+  const bits = [a !== undefined ? `${a} India alerts` : '', q !== undefined ? `${q} earthquakes` : '', e !== undefined ? `${e} natural events` : ''].filter(Boolean);
   $('model-kind').textContent = bits.length ? `Live: ${bits.join(' · ')}` : 'Live signals off';
 }
 
 // Layer switches in the Places panel.
 const sigBox = $('signals');
-for (const id of ['quakes', 'events'] as LayerId[]) {
+for (const id of LAYERS) {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = `sig sig-${id}`;
@@ -1166,7 +1184,7 @@ for (const id of ['quakes', 'events'] as LayerId[]) {
 }
 function setLayer(id: LayerId, on: boolean) { signals.set(id, on); }
 function renderLayers() {
-  for (const id of ['quakes', 'events'] as LayerId[]) {
+  for (const id of LAYERS) {
     const st = signals.state(id);
     const b = sigBox.querySelector<HTMLButtonElement>(`[data-layer="${id}"]`)!;
     b.setAttribute('aria-pressed', String(st.on));
@@ -1176,8 +1194,8 @@ function renderLayers() {
     else if (st.status === 'failed') m.textContent = `unavailable: ${st.error?.slice(0, 60)} · tap to retry`;
     else if (st.data) {
       const age = Date.now() - Date.parse(st.data.updated);
-      const stale = id === 'quakes' ? age > 3 * 3600e3 : age > 3 * 86400e3;
-      m.textContent = `${st.data.signals.length} · ${LAYER_META[id].blurb} · ${st.data.source.replace(' Earthquake Hazards Program', '')} · updated ${ago(st.data.updated)}${stale ? ' (stale)' : ''}`;
+      const stale = id === 'quakes' ? age > 3 * 3600e3 : id === 'india' ? age > 6 * 3600e3 : age > 3 * 86400e3;
+      m.textContent = `${st.data.signals.length} · ${LAYER_META[id].blurb} · ${st.data.source.replace(' Earthquake Hazards Program', '').replace(/ \(.*\)$/, '')} · updated ${ago(st.data.updated)}${stale ? ' (stale)' : ''}`;
       b.title = `${st.data.name}. Source: ${st.data.source} (${st.data.license}). Feed updated ${new Date(st.data.updated).toUTCString()}, fetched ${ago(st.data.fetchedAt)}.`;
     } else m.textContent = LAYER_META[id].blurb;
   }
@@ -1192,10 +1210,26 @@ function openSignal(s: Signal) {
   signals.select(s);
   const d = signals.state(s.layer).data;
   const when = `${ago(s.time)} (${s.time.slice(0, 16).replace('T', ' ')} UTC)`;
-  const body = s.layer === 'quakes'
+  const local = (s.texts ?? []).find((t) => !/^en/i.test(t.lang));
+  const body = s.layer === 'india'
+    ? `${s.severity ?? 'Unrated'} alert from ${s.sender ?? 'an issuing authority'}, issued ${ago(s.time)}${s.expires ? `, in force until ${new Date(s.expires).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST` : ''}. ${(s.texts ?? []).find((t) => /^en/i.test(t.lang))?.headline ?? ''}${s.located === 'state' ? ' (Shown at the state centre: the districts could not be placed.)' : ''}`
+    : s.layer === 'quakes'
     ? `Magnitude ${s.mag}${s.depthKm !== undefined ? `, ${Math.round(s.depthKm)} km deep` : ''}, ${when}.${s.tsunami ? ' USGS set its tsunami flag for this event.' : ''}${s.alert ? ` USGS PAGER alert level: ${s.alert}.` : ''} Epicentre ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`
     : `${s.kind[0].toUpperCase()}${s.kind.slice(1)}${s.mag ? `, ${s.mag.toLocaleString()} ${s.magUnit ?? ''}` : ''}. Last observed ${when}. Position ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`;
-  ui.openCard({ index: 1, total: 1, title: s.title, body, sources: [{ title: `${d?.source ?? 'Source'}: this ${s.kind}`, url: s.url }] });
+  ui.openCard({ index: 1, total: 1, title: s.title, body, sources: [{ title: s.layer === 'india' ? 'NDMA SACHET: the official alert (CAP)' : `${d?.source ?? 'Source'}: this ${s.kind}`, url: s.url }] });
+  // The alert in the language it was published in, exactly as issued.
+  const cardBody = $('card-body');
+  cardBody.querySelector('.alert-local')?.remove();
+  if (s.layer === 'india' && local?.headline) {
+    const q = document.createElement('blockquote');
+    q.className = 'alert-local';
+    q.lang = local.lang.slice(0, 2).toLowerCase();
+    q.textContent = local.headline;
+    const cap = document.createElement('cite');
+    cap.textContent = `As issued, in ${local.language}`;
+    q.append(cap);
+    cardBody.after(q);
+  }
   $('card-index').textContent = `${s.kind.toUpperCase()} · ${(d?.source ?? '').replace(' Earthquake Hazards Program', '').toUpperCase()}`;
   const acts = $('card-actions');
   acts.replaceChildren();
@@ -1212,8 +1246,25 @@ function openSignal(s: Signal) {
   askB.addEventListener('click', () => ask(`Tell me about this ${s.kind}: ${s.title} (${s.time.slice(0, 10)}). What happened and what is nearby?`, agentCtx));
   const shortB = document.createElement('button');
   shortB.type = 'button'; shortB.className = 'iso-btn short-btn'; shortB.textContent = 'Make a Short';
-  shortB.addEventListener('click', () => director.make({ topic: s.title, signal: s }));
-  acts.append(shortB, fly, askB);
+  // Language for the Short: English, Hindi or Telugu.
+  let lang = langFor(s);
+  const pick = document.createElement('div');
+  pick.className = 'lang-pick';
+  pick.setAttribute('role', 'radiogroup');
+  pick.setAttribute('aria-label', 'Language of the Short');
+  for (const l of ['en', 'hi', 'te'] as ShortLang[]) {
+    const o = document.createElement('button');
+    o.type = 'button'; o.lang = l; o.textContent = LANG_LABEL[l];
+    o.setAttribute('role', 'radio');
+    o.setAttribute('aria-checked', String(l === lang));
+    o.addEventListener('click', () => {
+      lang = l; saveLang(l);
+      pick.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === o)));
+    });
+    pick.append(o);
+  }
+  shortB.addEventListener('click', () => director.make({ topic: s.title, signal: s, lang }));
+  acts.append(pick, shortB, fly, askB);
   acts.hidden = false;
 }
 

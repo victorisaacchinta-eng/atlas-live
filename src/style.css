@@ -7,8 +7,10 @@
   --panel: #191D18; --panel-text: #F7F8F5; --ok: #22C55E; --warn: #F59E0B; --bad: #EF4444; --info: #38BDF8; --review: #38BDF8; --agent: #A78BFA; --ok-ink: #0B0D0B;
   /* Survey-instrument type: engraved-plate display, a plain grotesk, a machined mono. */
   --wordmark: 'Science Gothic Variable', 'Eurostile', 'Arial Narrow', sans-serif;
-  --display: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Telugu and Devanagari fall through to Noto, glyph by glyph: Inter has neither script. */
+  --indic: 'Noto Sans Telugu Variable', 'Noto Sans Devanagari Variable';
+  --display: 'Inter Variable', 'Inter', var(--indic), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ui: 'Inter Variable', 'Inter', var(--indic), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --r-control: 8px; --r-card: 12px; --r-panel: 14px;
   --ease: cubic-bezier(.2,.7,.2,1);
@@ -260,6 +262,7 @@ body.mode-places .shelf { display: none; }
 .sig .dot { grid-row: 1 / 3; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; }
 .sig-quakes .dot { color: var(--bad); }
 .sig-events .dot { color: var(--warn); }
+.sig-india .dot { color: #F97316; }
 .sig[aria-pressed="true"] .dot { background: currentColor; }
 .sig .t { font-size: 13.5px; font-weight: 600; color: var(--bone); line-height: 1.15; }
 .sig .m { font-family: var(--mono); font-size: 10px; letter-spacing: .03em; line-height: 1.35; }
@@ -271,7 +274,7 @@ body.mode-places .shelf { display: none; }
 @keyframes sig-wait { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .sig[data-status="loading"] .m { animation: none; } }
 
-.card-actions { display: flex; gap: 8px; padding-top: 4px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
 .card-actions[hidden] { display: none; }
 .card-actions .iso-btn { color: var(--panel-text); border-color: color-mix(in srgb, var(--panel-text) 35%, var(--panel)); flex: 1; justify-content: center; }
 .card-actions .iso-btn:hover { background: var(--panel-text); color: var(--panel); }
@@ -533,3 +536,17 @@ html { transition: background-color .18s var(--ease); }
 [data-theme="light"] .dir-frame { box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--ground) 52%, transparent); }
 [data-theme="light"] .dir-top, [data-theme="light"] .dir-geo { color: #fff; }
 @media (prefers-contrast: more) { :root { --line: var(--line-strong); } .muted, .eyebrow { color: var(--bone-2); } }
+
+/* ---------- India alerts and Short language ---------- */
+.alert-local { margin: 4px 0 2px; padding: 10px 12px; border-left: 3px solid #F97316; background: color-mix(in srgb, var(--panel-text) 6%, var(--panel));
+  font-size: 15px; line-height: 1.55; color: var(--panel-text); quotes: none; }
+.alert-local cite { display: block; margin-top: 6px; font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--panel-text) 60%, var(--panel)); }
+.lang-pick { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid color-mix(in srgb, var(--panel-text) 35%, var(--panel)); border-radius: var(--r-control); overflow: hidden; }
+.lang-pick button { min-height: 34px; border: 0; background: transparent; color: color-mix(in srgb, var(--panel-text) 70%, var(--panel)); font-family: var(--ui); font-size: 13px; cursor: pointer; transition: background .14s var(--ease), color .14s var(--ease); }
+.lang-pick button + button { border-left: 1px solid color-mix(in srgb, var(--panel-text) 20%, var(--panel)); }
+.lang-pick button[aria-checked="true"] { background: var(--panel-text); color: var(--panel); }
+.lang-pick button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* Indic captions: no uppercase (it means nothing in these scripts), more line height for vowel signs. */
+.director[data-lang="te"] .dir-caption, .director[data-lang="hi"] .dir-caption { text-transform: none; line-height: 1.3; font-weight: 700; letter-spacing: 0; }
+.director[data-lang="te"] .dir-beats .say, .director[data-lang="hi"] .dir-beats .say { font-size: 14.5px; line-height: 1.6; }
