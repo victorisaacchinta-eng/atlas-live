@@ -249,7 +249,11 @@ Rules:
         const evidence = clip(g.evidence, 220);
         // The quote must really be in the source. A positive verdict resting on words the source
         // does not contain is not evidence, so it is downgraded for a human to look at.
-        const found = !!evidence && norm(sources[c.src].text).includes(norm(evidence));
+        // An elided quote ("A... B") counts only if every piece is in the source, in order.
+        const src = norm(sources[c.src].text);
+        const pieces = evidence.split(/\.{3}|…/).map(norm).filter((x) => x.length >= 3);
+        let at = 0;
+        const found = !!pieces.length && pieces.every((p) => { const i = src.indexOf(p, at); if (i < 0) return false; at = i + p.length; return true; });
         if ((g.verdict === 'supported' || g.verdict === 'partly') && !found) {
           return { beat: c.i, verdict: 'needs_review', evidence, reason: `The checker said "${g.verdict}" but its quote is not in the source text.`, quoteFound: false };
         }
