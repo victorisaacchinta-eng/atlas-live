@@ -194,6 +194,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
 Rules:
 - Exactly 6 beats. Beat 1 is a hook (a question or a surprising true fact). Beat 6 lands the point and loops back to the hook.
 - At least 4 beats carry a claim with a source. One claim per beat. Do not stack two facts in one line.
+- A beat whose claim is null states no fact at all: no number, date, time, place-specific event or quote. Hooks and closers frame; they do not inform.
 - Camera: beat 1 usually "orbit" on the subject; then move in (region, area, close). Use "focus": "subject" unless the beat is about another named place in the sources.
 - Plain words. No hashtags, no emoji, no markdown.${alertRules}` },
         ],
