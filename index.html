@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ATLAS Live</title>
-    <meta name="description" content="Take apart machines with your bare hands. Show ATLAS any object or name any place and it builds a hologram you can explode, question and explore." />
+    <meta name="description" content="Ask the live Earth what just happened, then turn it into a cited 60-second Short. NVIDIA Nemotron on Nebius Token Factory writes and fact-checks every beat." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#2B44B8" />
   </head>
@@ -15,12 +15,13 @@
     <header class="bar">
       <div class="mark"><span class="word">ATLAS</span><span class="sub">Live</span></div>
       <nav class="modes" aria-label="Mode">
-        <button type="button" class="mode is-on" data-mode="library" aria-pressed="true">Library</button>
-        <button type="button" class="mode" data-mode="scan" aria-pressed="false">Scan</button>
-        <button type="button" class="mode" data-mode="places" aria-pressed="false">Places</button>
+        <button type="button" class="mode" data-mode="places" aria-pressed="false">Earth</button>
         <button type="button" class="mode" data-mode="build" aria-pressed="false">Build</button>
+        <button type="button" class="mode lab" data-mode="library" aria-pressed="false">Library</button>
+        <button type="button" class="mode lab" data-mode="scan" aria-pressed="false">Scan</button>
       </nav>
       <div class="status">
+        <button type="button" id="sound-btn" class="chip" aria-pressed="false" title="Read answers aloud"><span class="dot"></span><span id="sound-label">Sound off</span></button>
         <button type="button" id="hands-btn" class="chip" aria-pressed="false"><span class="dot"></span><span id="hands-label">Use hands</span></button>
         <span class="chip quiet" id="agent-chip"><span class="dot"></span><span id="agent-label">Nemotron</span></span>
       </div>
@@ -70,10 +71,12 @@
     </section>
 
     <section class="place-panel" id="place-panel" hidden aria-label="Explore a place">
-      <p class="eyebrow">Places</p>
+      <p class="eyebrow">For explainer creators</p>
+      <h2 class="lede-head">Ask the live Earth what just happened. Turn it into a cited Short.</h2>
+      <p class="lede">Click a quake or a fire, or ask. ATLAS writes a 60-second script where every claim is checked against its source, plays it in a 9:16 frame and exports a Google Earth tour you can publish.</p>
       <form id="place-form" class="ask place-ask" autocomplete="off">
         <label class="visually-hidden" for="place-input">Place name</label>
-        <input id="place-input" placeholder="Any place on Earth, e.g. Golconda Fort" />
+        <input id="place-input" placeholder="Go to any place, e.g. Golconda Fort" />
         <button type="submit" class="send">Go</button>
       </form>
       <div class="sig-head"><span class="eyebrow">Live signals</span><button type="button" id="globe-btn" class="iso-btn" title="Back out to the whole planet (key G)"><span class="lk">G</span>Whole Earth</button></div>
@@ -107,7 +110,7 @@
       <div class="ask-chips" id="chips" aria-label="Try asking"></div>
       <form id="ask" class="ask" autocomplete="off">
         <label class="visually-hidden" for="ask-input">Ask ATLAS</label>
-        <input id="ask-input" placeholder="Ask about this machine" />
+        <input id="ask-input" placeholder="Ask ATLAS" />
         <button type="button" id="mic" class="mic" aria-label="Speak a question" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
@@ -122,6 +125,26 @@
       <canvas id="cam-overlay"></canvas>
       <figcaption id="cam-caption">Hands: looking</figcaption>
     </figure>
+
+    <section class="director" id="director" hidden aria-label="Short director">
+      <div class="dir-frame" id="dir-frame">
+        <div class="dir-top"><span class="dir-rec"><i aria-hidden="true"></i>ATLAS Short</span><span id="dir-count">00 / 00</span></div>
+        <p class="dir-caption" id="dir-caption" aria-live="polite"></p>
+      </div>
+      <aside class="dir-rail">
+        <p class="eyebrow">Short <span id="dir-topic"></span></p>
+        <h2 id="dir-title">Writing the Short</h2>
+        <p class="scan-status" id="dir-status" aria-live="polite"></p>
+        <div class="dir-meta" id="dir-meta"></div>
+        <ol class="dir-beats" id="dir-beats"></ol>
+        <div class="dir-actions">
+          <button type="button" id="dir-play" class="btn-solid" disabled>Play</button>
+          <button type="button" id="dir-export" class="btn-line" disabled>Export kit</button>
+          <button type="button" id="dir-close" class="btn-line">Close</button>
+        </div>
+        <p class="dir-note">The kit is a Google Earth tour, the script with its sources, captions and a voiceover script. Render the footage in Google Earth, which is licensed for online video. ATLAS never records Google’s 3D tiles.</p>
+      </aside>
+    </section>
 
     <p class="credit" id="credit"></p>
     <script type="module" src="/src/main.ts"></script>

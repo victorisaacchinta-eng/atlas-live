@@ -197,6 +197,26 @@ export class Stage {
     this.controls.target.set(0, 0, 0);
   }
 
+  /**
+   * Move in or out over the current target to `radius` metres, tilting from top-down (0 degrees)
+   * toward the oblique approach (about 65 degrees). Used by the Short director between beats that
+   * stay on the same subject, so the camera glides instead of climbing and diving again.
+   */
+  zoomTo(radius: number, tiltDeg: number, dur = 2.4, done?: () => void) {
+    const target = this.controls.target.clone();
+    const off = this.camera.position.clone().sub(target);
+    const l0 = Math.log(Math.max(off.length(), 1)), l1 = Math.log(Math.max(radius, 40));
+    const dir0 = off.normalize();
+    const dir1 = Stage.topDir(this.approach).lerp(this.approach, THREE.MathUtils.clamp(tiltDeg / 65, 0, 1)).normalize();
+    const dir = new THREE.Vector3();
+    this.run(dur, (k) => {
+      const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      dir.copy(dir0).lerp(dir1, e).normalize();
+      this.camera.position.copy(target).addScaledVector(dir, Math.exp(l0 + (l1 - l0) * e));
+      this.controls.target.copy(target);
+    }, done);
+  }
+
   /** Climb straight up above the current target to `height` metres, levelling to top-down. */
   rise(height: number, dur = 2.2, done?: () => void) {
     const target = this.controls.target.clone();

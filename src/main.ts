@@ -10,7 +10,8 @@ import { LIBRARY, type LibraryEntry } from './library';
 import { ui } from './ui';
 import { applyCss, theme } from './theme';
 import { GestureControl } from './gestures';
-import { ask, listen, refreshStatus } from './agent';
+import { ask, listen, refreshStatus, speak, setMuted } from './agent';
+import { Director, type Beat, type ShortInput } from './director';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
@@ -21,6 +22,7 @@ import { loadSplat, disposeSplat } from './splat';
 import { SignalLayers, ago, type Signal, type LayerId } from './signals';
 
 applyCss(theme);
+const LAB = new URLSearchParams(location.search).has('lab');
 
 const stage = new Stage(document.getElementById('stage')!);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -212,7 +214,7 @@ const agentCtx = {
   focusPart,
   setExplode,
   mode: () => (earthActive ? 'earth' : 'object') as 'earth' | 'object',
-  flyTo: (place: string, lat?: number, lon?: number) => {
+  flyTo: (place: string, lat?: number, lon?: number, signal?: boolean) => {
     const q = place.toLowerCase();
     const head = q.split(',')[0].trim();
     const preset = LANDMARKS.find((l) => q.includes(l.name.toLowerCase()) || (head.length >= 5 && l.name.toLowerCase().includes(head)));
@@ -221,12 +223,13 @@ const agentCtx = {
       if (mode !== 'places') setMode('places');
       const parts = place.split(',');
       // A signal (earthquake, fire) is a region, not a building: land higher.
-      const sig = signals.active.length && /earthquake|quake|fire|storm|cyclone|ice|volcano|\bM ?\d/i.test(place);
+      const sig = signal || (signals.active.length > 0 && /earthquake|quake|fire|storm|cyclone|ice|volcano|\bM ?\d/i.test(place));
       selectLandmark({ id: `at-${Date.now()}`, name: parts[0].trim(), city: parts.slice(1).join(',').trim() || `${lat!.toFixed(3)}, ${lon!.toFixed(3)}`, lat: lat!, lon: lon!, view: sig ? 26000 : 450, lift: 20 });
       return;
     }
     searchPlace(place);
   },
+  makeShort: (topic: string, lat?: number, lon?: number) => makeShortFor(topic, lat, lon),
   setLens: (l: string) => { if (LENSES.some((x) => x.id === l)) setLens(l as Lens); },
   isolate: (on: boolean) => setIsolate(on),
   orbit: (speed: number) => {
@@ -236,7 +239,7 @@ const agentCtx = {
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
-const askHint = () => (earthActive ? 'Ask ATLAS: "biggest earthquake this week?"' : 'Ask about this machine');
+const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? 'Ask ATLAS: "biggest earthquake this week?"' : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -274,7 +277,7 @@ document.querySelectorAll<HTMLButtonElement>('.mode').forEach((b) => b.addEventL
 
 function setMode(m: Mode) {
   mode = m;
-  document.body.className = `mode-${m}`;
+  document.body.className = [`mode-${m}`, LAB ? 'lab' : '', director?.open ? 'directing' : ''].filter(Boolean).join(' ');
   document.querySelectorAll<HTMLButtonElement>('.mode').forEach((b) => {
     const on = b.dataset.mode === m;
     b.classList.toggle('is-on', on);
@@ -292,6 +295,7 @@ function setMode(m: Mode) {
   placePanel.hidden = m !== 'places';
   sunBox.hidden = m !== 'places' || !place || earthActive;
   if (m === 'places') enterPlaces();
+  askInput.placeholder = askHint();
 }
 
 // ---------- scan ----------
@@ -472,14 +476,15 @@ placeTag.className = 'place-tag';
 placeTag.hidden = true;
 document.body.appendChild(placeTag);
 
-const GROUP_LABEL: Record<string, string> = { Wonders: 'Wonders of the world', Icons: 'Icons in sharp 3D', India: 'India · coarse Google 3D, rebuilt by ATLAS' };
+const FEATURED = ['charminar', 'taj', 'eiffel', 'colosseum', 'liberty', 'golden-gate'];
+const GROUP_LABEL: Record<string, string> = { Featured: 'Fly to a place' };
 let lastGroup = '';
-for (const l of LANDMARKS) {
-  if (l.group && l.group !== lastGroup) {
-    lastGroup = l.group;
+for (const l of FEATURED.map((id) => LANDMARKS.find((x) => x.id === id)!).filter(Boolean)) {
+  if (lastGroup !== 'Featured') {
+    lastGroup = 'Featured';
     const h = document.createElement('li');
     h.className = 'group-head';
-    h.textContent = GROUP_LABEL[l.group] || l.group;
+    h.textContent = GROUP_LABEL.Featured;
     landmarkList.appendChild(h);
   }
   const li = document.createElement('li');
@@ -893,7 +898,8 @@ async function post<T>(body: Record<string, unknown>, tries = 2): Promise<T> {
 }
 
 function showBuilt() {
-  if (!built) return;
+  // A build keeps running if the viewer switches mode: keep its parts, draw it only in Build.
+  if (!built || mode !== 'build') return;
   const m = toHologram(built.parts);
   built.model = m;
   stage.setModel(m);
@@ -954,6 +960,8 @@ async function runConstruct(name: string, city: string) {
 
     // 3. Critic: compare the build with a real photo and fix what is off. Up to two rounds.
     for (let round = 1; round <= 2; round++) {
+      // The critic compares what is on screen: only possible while Build is showing.
+      if (mode !== 'build') { stepRow('Critic', 'Skipped: open Build to let the critic compare the model with the photo', 'bad'); break; }
       setExplode(0);
       await new Promise((r) => setTimeout(r, 700));
       const { image: shot, combined } = await sideBySide(stage.snapshot(), planned.reference?.image);
@@ -983,6 +991,59 @@ async function runConstruct(name: string, city: string) {
   } finally {
     building = false;
   }
+}
+
+// ---------- sound: answers are read aloud only when the viewer turns it on ----------
+const soundBtn = $('sound-btn');
+function setSound(on: boolean) {
+  setMuted(!on);
+  soundBtn.setAttribute('aria-pressed', String(on));
+  $('sound-label').textContent = on ? 'Sound on' : 'Sound off';
+}
+setSound(false);
+soundBtn.addEventListener('click', () => setSound(soundBtn.getAttribute('aria-pressed') !== 'true'));
+mic.addEventListener('click', () => setSound(true));
+
+// ---------- the Short director ----------
+/** Resolve once a scripted camera move (possibly several chained moves) has finished. */
+function settled(maxMs = 16000) {
+  return new Promise<void>((done) => {
+    const t0 = performance.now();
+    let seen = false, still = 0;
+    const tick = () => {
+      if (stage.flying) { seen = true; still = 0; } else still += 150;
+      const elapsed = performance.now() - t0;
+      if ((seen && still >= 600) || (!seen && elapsed > 2500 && still >= 600) || elapsed > maxMs) done();
+      else setTimeout(tick, 150);
+    };
+    setTimeout(tick, 300);
+  });
+}
+const shortName = (t: string) => t.replace(/^M\s?[\d.]+\s*-\s*/i, '').split(',')[0].trim().slice(0, 40);
+const director: Director = new Director({
+  flyTo: async (b: Beat) => {
+    if (mode !== 'places') setMode('places');
+    const name = b.focus && b.focus !== 'subject' ? b.focus : shortName(director.topic || 'Subject');
+    await selectLandmark({ id: `short-${b.lat.toFixed(3)},${b.lon.toFixed(3)}`, name: name.split(',')[0].trim(), city: '', lat: b.lat, lon: b.lon, view: b.range, lift: 20 }, { facts: false });
+    await settled();
+  },
+  zoomTo: (b: Beat) => new Promise<void>((done) => stage.zoomTo(b.range, b.tilt, 2.4, done)),
+  setOrbit: (on: boolean) => { stage.controls.autoRotate = on && !reducedMotion; stage.orbitSpeed = 0.18; },
+  speak: (t: string) => speak(t),
+  stopSpeaking: () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); },
+  onOpen: () => { ui.closeCard(); },
+  onClose: () => { placeStatus.textContent = ''; },
+});
+
+/** A Short about a live signal when one matches (it brings the official record), else about the topic. */
+function makeShortFor(topic: string, lat?: number, lon?: number) {
+  const all = (['quakes', 'events'] as LayerId[]).flatMap((id) => signals.state(id).data?.signals ?? []);
+  const t = topic.toLowerCase();
+  const hit = all.find((x) => x.title.toLowerCase() === t)
+    || (Number.isFinite(lat) && Number.isFinite(lon) ? all.find((x) => Math.abs(x.lat - lat!) < 0.05 && Math.abs(x.lon - lon!) < 0.05) : undefined)
+    || all.find((x) => t.includes(x.title.toLowerCase()));
+  const input: ShortInput = hit ? { topic: hit.title, signal: hit } : { topic, lat, lon };
+  director.make(input);
 }
 
 // ---------- the intelligence globe: live signals on the whole Earth ----------
@@ -1113,7 +1174,10 @@ function openSignal(s: Signal) {
   const askB = document.createElement('button');
   askB.type = 'button'; askB.className = 'iso-btn'; askB.textContent = 'Ask ATLAS';
   askB.addEventListener('click', () => ask(`Tell me about this ${s.kind}: ${s.title} (${s.time.slice(0, 10)}). What happened and what is nearby?`, agentCtx));
-  acts.append(fly, askB);
+  const shortB = document.createElement('button');
+  shortB.type = 'button'; shortB.className = 'iso-btn short-btn'; shortB.textContent = 'Make a Short';
+  shortB.addEventListener('click', () => director.make({ topic: s.title, signal: s }));
+  acts.append(shortB, fly, askB);
   acts.hidden = false;
 }
 
@@ -1176,13 +1240,28 @@ window.addEventListener('keydown', (e) => {
   };
 }
 
+// While a Short plays, aim the camera at the middle of the 9:16 frame, not the middle of the screen.
+{
+  const prev = stage.onFrame;
+  const frame = document.getElementById('dir-frame')!;
+  let offset = false;
+  stage.onFrame = (dt, t) => {
+    prev?.(dt, t);
+    if (director.open && earthActive && !globe) {
+      const r = frame.getBoundingClientRect(), w = canvas.clientWidth, h = canvas.clientHeight;
+      stage.camera.setViewOffset(w, h, w / 2 - (r.left + r.width / 2), h / 2 - (r.top + r.height / 2), w, h);
+      offset = true;
+    } else if (offset && !globe) { stage.camera.clearViewOffset(); offset = false; }
+  };
+}
+
 // Test hook for automated checks (?debug only).
 if (new URLSearchParams(location.search).has('debug')) (window as unknown as Record<string, unknown>).atlas = { signals, openSignal, goGlobe, get globe() { return globe; } };
 
 // Example questions under the ask box: a one-tap way into what ATLAS can do.
 {
   const chips = $('chips');
-  const EXAMPLES = ['What was the biggest earthquake this week?', 'Any wildfires burning in California right now?', 'Take me to Charminar and build it'];
+  const EXAMPLES = ['Make a Short about the biggest earthquake this week', 'What was the biggest earthquake this week?', 'Any open wildfires in California?', 'Take me to Charminar and build it'];
   for (const q of EXAMPLES) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'ask-chip'; b.textContent = q;

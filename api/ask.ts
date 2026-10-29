@@ -95,6 +95,14 @@ const EARTH_TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'make_short',
+      description: 'Open the Short director: ATLAS writes a 60-second, cited, shot-by-shot explainer script about a live signal or a place, plays it in a 9:16 frame and exports it for Google Earth. Use when the viewer asks to make a Short, a Reel, a video, an explainer or a script. For a live signal, call find_signals first and pass its title, lat and lon.',
+      parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' } }, required: ['topic'] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'set_lens',
       description: 'Re-render the world through a sensor lens. photo: real colours. hologram: ATLAS blueprint with height contours. thermal: ironbow heat map. night: night-vision green. riso: two-ink halftone print.',
       parameters: { type: 'object', properties: { lens: { type: 'string', enum: ['photo', 'hologram', 'thermal', 'night', 'riso'] } }, required: ['lens'] },
@@ -143,7 +151,8 @@ Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC):
 Rules:
 - Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
 - Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). When your answer is about one specific item, also fly_to its lat and lon so the viewer sees it. For weather, call get_weather.
-- find_signals items are real and current. NASA EONET lists events as open while they are ongoing; give each one's last_observed date. Never say there are none when items came back.
+- find_signals items are real. NASA EONET marks events "open" until it closes them, so say "open in NASA EONET" and give each one's last_observed date and days_since_observed. Never say "burning now", "active right now" or "currently". Never say there are none when items came back.
+- To make a Short, Reel or explainer video, call make_short.
 - History, architecture and other facts: call web_search first. Only state what tool results support; say which source (USGS, NASA EONET, Open-Meteo, or the web) a fact came from.
 - To build or take apart a structure, call build_model.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
@@ -168,10 +177,12 @@ Rules:
     const trace: string[] = [];
     const models = new Set<string>();
     let answer = '';
+    let lastSignals: Signal[] = [];
     const addSource = (title: string, url: string) => { if (url && !sources.some((s) => s.url === url)) sources.push({ title, url }); };
     const brief = (x: Signal, from?: { lat: number; lon: number }) => ({
       title: x.title, kind: x.kind, magnitude: x.mag !== undefined ? `${x.mag}${x.magUnit ? ' ' + x.magUnit : ''}` : undefined,
-      [x.layer === 'events' ? 'last_observed_utc' : 'time_utc']: x.time.slice(0, 16), status: x.layer === 'events' ? 'open (ongoing per NASA EONET)' : undefined,
+      [x.layer === 'events' ? 'last_observed_utc' : 'time_utc']: x.time.slice(0, 16), status: x.layer === 'events' ? 'open in NASA EONET' : undefined,
+      days_since_observed: x.layer === 'events' ? Math.floor((Date.now() - Date.parse(x.time)) / 864e5) : undefined,
       lat: +x.lat.toFixed(3), lon: +x.lon.toFixed(3), depth_km: x.depthKm, tsunami: x.tsunami || undefined,
       km_away: from ? Math.round(km(from, x)) : undefined, source: x.url,
     });
@@ -208,13 +219,17 @@ Rules:
               list = list.filter((x) => km(center!, x) <= r);
             }
             if (id === 'events' && args.kind && args.kind !== 'any') list = list.filter((x) => x.kind === args.kind);
+            // Prescribed burns are planned, not wildfires. Keep them out unless the viewer asks for them.
+            const planned = id === 'events' ? list.filter((x) => /^prescribed/i.test(x.title)).length : 0;
+            if (planned && !/prescribed/i.test(question)) list = list.filter((x) => !/^prescribed/i.test(x.title));
             // Quakes default to biggest first; events to most recently observed (old big fires should not hide current ones).
             const latest = args.sort ? args.sort === 'latest' : id === 'events';
             list = [...list].sort(latest ? (a, b) => b.time.localeCompare(a.time) : (a, b) => (b.mag ?? 0) - (a.mag ?? 0));
             const top = list.slice(0, Math.min(10, Math.max(1, Number(args.limit) || 5)));
             top.slice(0, 3).forEach((x) => addSource(`${data.source}: ${x.title}`, x.url));
             trace.push(`${id === 'quakes' ? 'usgs' : 'nasa eonet'} › ${list.length} ${id}${center ? ` within ${Number(args.radius_km) || 800} km of ${center.name}` : ''}`);
-            result = JSON.stringify({ source: data.source, feed_updated_utc: data.updated.slice(0, 16), total_matching: list.length, items: top.map((x) => brief(x, center)) });
+            lastSignals = top;
+            result = JSON.stringify({ source: data.source, feed_updated_utc: data.updated.slice(0, 16), total_matching: list.length, prescribed_burns_excluded: planned || undefined, items: top.map((x) => brief(x, center)) });
           } catch (err) {
             trace.push(`${id} › failed`);
             result = `The ${id} feed failed: ${err instanceof Error ? err.message : 'error'}. Tell the viewer the data is unavailable right now.`;
@@ -249,6 +264,7 @@ Rules:
           // These run in the viewer after this reply. Say what will happen, not that it already has.
           const ok: Record<string, string> = {
             build_model: 'The build team has been asked to start in the viewer. It takes about two minutes; say it has started, not that it is finished.',
+            make_short: 'The Short director is opening in the viewer and will write a cited script in about 20 seconds. Say it has started, not that it is finished.',
             show_layer: 'The layer will switch in the viewer.',
             globe_view: 'The camera will pull back to the whole Earth.',
           };
@@ -256,6 +272,14 @@ Rules:
         }
         messages.push({ role: 'tool', tool_call_id: c.id, name: c.function.name, content: result });
       }
+    }
+
+    // The answer is about a live item but the model forgot to move the camera: show it the top match,
+    // passing the signal's own title so the viewer frames a region, not a building.
+    if (lastSignals.length && !actions.some((a) => ['fly_to', 'globe_view', 'make_short', 'build_model'].includes(a.name))) {
+      const top = lastSignals[0];
+      actions.push({ name: 'fly_to', args: { place: top.title, lat: top.lat, lon: top.lon, signal: true } });
+      trace.push(`atlas › fly_to(${top.title})`);
     }
 
     res.status(200).json({ answer: answer || 'I could not finish that one. Try asking it a different way.', actions, sources: sources.slice(0, 5), trace, model: [...models].join(' + ') || MODELS.agent });

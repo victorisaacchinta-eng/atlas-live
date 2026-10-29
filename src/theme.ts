@@ -11,6 +11,8 @@ export interface Theme {
   ground: string;
   ink: string;
   accent: string;
+  /** The accent when it is used as text: lighter, so it passes WCAG AA on the ground. */
+  accentText?: string;
   /** Text on the ground. */
   text: string;
   muted: string;
@@ -29,7 +31,7 @@ export const THEMES: Record<string, Theme> = {
   },
   riso: {
     id: 'riso', name: 'Riso',
-    ground: '#2B44B8', ink: '#F4EFE4', accent: '#FF4FA3',
+    ground: '#2B44B8', ink: '#F4EFE4', accent: '#FF4FA3', accentText: '#FFC2DF',
     text: '#F4EFE4', muted: '#B9C3F2', line: '#5468CC', panel: '#F4EFE4', panelText: '#1D2E80', glow: false,
   },
   bench: {
@@ -57,6 +59,7 @@ export function applyCss(t: Theme) {
   r.setProperty('--muted', t.muted);
   r.setProperty('--line', t.line);
   r.setProperty('--signal', t.accent);
+  r.setProperty('--signal-text', t.accentText ?? t.accent);
   r.setProperty('--panel', t.panel);
   r.setProperty('--panel-text', t.panelText);
   document.documentElement.style.colorScheme = isDark(t.ground) ? 'dark' : 'light';
