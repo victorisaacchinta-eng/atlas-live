@@ -86,6 +86,9 @@ export class Director {
   private playing = 0;
   private busy = false;
   private deps: DirectorDeps;
+  private voice: { url: string; blob: Blob; model: string; seconds: number } | null = null;
+  private voiceBusy = false;
+  private audio: HTMLAudioElement | null = null;
 
   constructor(deps: DirectorDeps) {
     this.deps = deps;
@@ -93,6 +96,7 @@ export class Director {
     $('dir-close').addEventListener('click', () => this.close());
     $('dir-play').addEventListener('click', () => (this.playing ? this.stop() : this.play(this.selected)));
     $('dir-export').addEventListener('click', () => this.exportKit());
+    $('dir-voice').addEventListener('click', () => (this.voice ? this.play(0) : this.makeVoice()));
     $('dir-retry').addEventListener('click', () => this.resume());
     document.querySelectorAll<HTMLButtonElement>('.dir-tab').forEach((t) => t.addEventListener('click', () => this.tab(t.dataset.tab as string)));
     window.addEventListener('keydown', (e) => {
@@ -111,6 +115,8 @@ export class Director {
     this.stop();
     this.run = { input, topic: input.topic, models: {}, ms: {}, wall: {}, started: new Date().toISOString() };
     this.beats = []; this.cut = []; this.selected = 0;
+    if (this.voice) URL.revokeObjectURL(this.voice.url);
+    this.voice = null; this.voiceBusy = false;
     this.root.hidden = false;
     // Captions and the storyboard are in the Short's language; the rest of the UI stays English.
     const L = LANG_BY_CODE[input.lang ?? 'en'] ?? LANG_BY_CODE.en;
@@ -378,7 +384,49 @@ export class Director {
       ['Checker', shortModel(R.models.checker)],
       ['Provider', provider(R.models.writer) || 'unknown'],
     ];
+    if (this.voice) rows.push(['Voice', `AI voice, ${shortModel(this.voice.model)}, ${Math.round(this.voice.seconds)} s`]);
     for (const [k, v] of rows) { const r = el('div', 'm'); r.append(el('span', 'mk', k), el('span', 'mv', v)); box.appendChild(r); }
+    this.renderVoice();
+  }
+
+  private renderVoice() {
+    const btn = $('dir-voice') as HTMLButtonElement, note = $('dir-voice-note');
+    const L = LANG_BY_CODE[this.run?.input.lang ?? 'en'] ?? LANG_BY_CODE.en;
+    const ready = !!this.run?.shots && this.beats.length > 0;
+    btn.disabled = !ready || this.voiceBusy || !L.voice;
+    if (!L.voice) { btn.textContent = 'AI voice'; note.textContent = `No AI voice for ${L.name} yet. The script and captions are ready to record.`; return; }
+    if (this.voiceBusy) { btn.textContent = 'Recording voice…'; note.textContent = `Gemini is reading the script in ${L.name}.`; return; }
+    if (this.voice) { btn.textContent = 'Play with voice'; note.textContent = `AI-generated ${L.name} voice. The shots are retimed to it, and it is in the kit as voiceover.wav.`; return; }
+    btn.textContent = `AI voice in ${L.code === 'en' ? 'English' : L.native}`;
+    note.textContent = ready ? 'Optional. Generates the narration so the preview and the Google Earth tour follow it.' : '';
+  }
+
+  /** Narration from Gemini TTS; the beats are retimed so the tour and captions follow the voice. */
+  async makeVoice() {
+    const R = this.run;
+    if (!R?.shots || !this.beats.length || this.voiceBusy) return;
+    this.voiceBusy = true; this.renderVoice();
+    try {
+      const r = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: R.input.lang ?? 'en', text: this.beats.map((b) => b.say).join('\n\n') }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `HTTP ${r.status}`); }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const seconds = await new Promise<number>((ok, bad) => { const a = new Audio(url); a.onloadedmetadata = () => ok(a.duration); a.onerror = () => bad(new Error('The audio could not be read')); });
+      // Share the voice's length across beats by how much each one says.
+      const w = this.beats.map((b) => Math.max(1, b.say.split(/\s+/).length));
+      const total = w.reduce((a, b) => a + b, 0);
+      this.beats.forEach((b, i) => { b.seconds = Math.round((seconds * w[i] / total) * 10) / 10; });
+      this.voice = { url, blob, model: r.headers.get('X-Voice-Model') || 'Gemini TTS', seconds };
+      ui.log(`voice ready: ${Math.round(seconds)} s`, 'tool');
+    } catch (err) {
+      ui.log(`voice failed: ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`, 'hot');
+      $('dir-voice-note').textContent = err instanceof Error ? err.message.slice(0, 160) : String(err);
+      this.voiceBusy = false;
+      ($('dir-voice') as HTMLButtonElement).disabled = false;
+      return;
+    }
+    this.voiceBusy = false;
+    this.renderAll();
   }
 
   private tab(t: string) {
@@ -393,6 +441,13 @@ export class Director {
     $('dir-play').textContent = t('stop');
     $('dir-frame').classList.add('rolling');
     const end = single ? from + 1 : this.beats.length;
+    // With an AI voice, the track plays across the beats; without one, the browser reads each line.
+    if (this.voice && !single) {
+      this.audio?.pause();
+      this.audio = new Audio(this.voice.url);
+      this.audio.currentTime = this.beats.slice(0, from).reduce((a, b) => a + b.seconds, 0);
+      void this.audio.play().catch(() => undefined);
+    }
     for (let i = from; i < end; i++) {
       if (token !== this.playing) return;
       const b = this.beats[i], prev = this.beats[i - 1];
@@ -404,7 +459,7 @@ export class Director {
       this.caption(b.caption);
       this.deps.setOrbit(false);
       const samePlace = i > from && prev && Math.abs(prev.lat - b.lat) < 0.02 && Math.abs(prev.lon - b.lon) < 0.02;
-      this.deps.speak(b.say);
+      if (!this.audio || single) this.deps.speak(b.say);
       this.runHead(i, token);
       const t0 = performance.now();
       await (samePlace ? this.deps.zoomTo(b) : this.deps.flyTo(b));
@@ -420,7 +475,8 @@ export class Director {
     $('dir-play').textContent = t('play_preview');
     $('dir-frame').classList.remove('rolling');
     this.deps.setOrbit(false);
-    if (silence) this.deps.stopSpeaking();
+    if (silence) { this.deps.stopSpeaking(); this.audio?.pause(); }
+    this.audio = null;
   }
 
   private caption(t: string) {
@@ -450,8 +506,9 @@ export class Director {
     zip.file('evidence.md', evidence(k));
     zip.file('captions.srt', srt(k));
     zip.file('voiceover.txt', k.beats.map((b) => b.say).join('\n\n') + '\n');
+    if (this.voice) zip.file('voiceover.wav', this.voice.blob);
     zip.file('run.json', JSON.stringify(runInfo(k), null, 2));
-    zip.file('README.txt', readme(k));
+    zip.file('README.txt', readme(k) + (this.voice ? `\nvoiceover.wav is an AI-generated voice (${this.voice.model}), ${Math.round(this.voice.seconds)} s. The tour and captions are timed to it.\nMark it as AI-generated or synthetic audio where YouTube or Instagram ask.\n` : ''));
     const blob = await zip.generateAsync({ type: 'blob' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
