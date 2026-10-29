@@ -186,6 +186,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
         op: 'short.write',
         // A Short is a live-news tool: an overloaded model gets 40 s, then the next one is tried.
         timeout_ms: 40_000,
+        fallbacks: [MODELS.agent],
         model: writer,
         temperature: 0.4,
         max_tokens: 2200,
