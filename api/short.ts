@@ -184,6 +184,8 @@ export default async function handler(req: { method: string; body: Body }, res: 
 - Beat 6 tells viewers to follow their district administration and the official alert, not forwarded messages.` : '';
       const r = await chat({
         op: 'short.write',
+        // A Short is a live-news tool: an overloaded model gets 40 s, then the next one is tried.
+        timeout_ms: 40_000,
         model: writer,
         temperature: 0.4,
         max_tokens: 2200,
@@ -226,6 +228,7 @@ Rules:
         const lineRule = lang === 'en' ? '' : `\nAlso set "line_ok": true only if the ${LANGS[lang]} spoken line says the same thing as the claim and adds no fact, number, place or time the claim does not have; otherwise false.`;
         const r = await chat({
           op: 'short.check',
+          timeout_ms: 30_000,
           model: MODELS.fast,
           temperature: 0,
           max_tokens: 1800,

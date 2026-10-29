@@ -107,7 +107,8 @@ function trace(op: string, p: Provider, model: string, status: number | string, 
 
 export async function chat(body: Record<string, unknown>) {
   const op = String(body.op || 'chat');
-  delete body.op;
+  const perModel = Number(body.timeout_ms) || 0;
+  delete body.op; delete body.timeout_ms;
   if (!PROVIDER) throw new HttpError(503, 'No model key is set on the server (NEBIUS_API_KEY, NVIDIA_API_KEY, GEMINI_API_KEY or GROQ_API_KEY)');
   await ensureModels();
   // Callers pass the id they read earlier; map a retired id to its live replacement.
@@ -132,7 +133,7 @@ export async function chat(body: Record<string, unknown>) {
     // answers, so thinking is off unless a caller asks for it. NIM / vLLM read chat_template_kwargs.
     if ((p.id === 'nvidia' || p.id === 'nebius') && payload.chat_template_kwargs === undefined) payload.chat_template_kwargs = { enable_thinking: false };
     // Free endpoints occasionally stall a request for minutes: give up on that model and try the next.
-    const limit = Number(body.max_tokens ?? 1000) <= 1200 ? 22_000 : 120_000;
+    const limit = perModel || (Number(body.max_tokens ?? 1000) <= 1200 ? 22_000 : 120_000);
     let r: Response;
     const t0 = Date.now();
     try {
