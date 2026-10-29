@@ -85,7 +85,14 @@ export function hasModel() { return !!PROVIDER; }
 
 const EXHAUSTED = new Map<string, number>();
 
+/** One safe diagnostic line per model call: provider, model, operation, status, duration. Never keys or prompts. */
+function trace(op: string, p: Provider, model: string, status: number | string, ms: number) {
+  console.log(JSON.stringify({ evt: 'model_call', op, provider: p.id, base: new URL(p.base).host, model, status, ms }));
+}
+
 export async function chat(body: Record<string, unknown>) {
+  const op = String(body.op || 'chat');
+  delete body.op;
   if (!PROVIDER) throw new HttpError(503, 'No model key is set on the server (NEBIUS_API_KEY, NVIDIA_API_KEY, GEMINI_API_KEY or GROQ_API_KEY)');
   await ensureModels();
   // Callers pass the id they read earlier; map a retired id to its live replacement.
@@ -112,6 +119,7 @@ export async function chat(body: Record<string, unknown>) {
     // Free endpoints occasionally stall a request for minutes: give up on that model and try the next.
     const limit = Number(body.max_tokens ?? 1000) <= 1200 ? 22_000 : 120_000;
     let r: Response;
+    const t0 = Date.now();
     try {
       r = await fetch(`${p.base}/chat/completions`, {
         method: 'POST',
@@ -121,9 +129,11 @@ export async function chat(body: Record<string, unknown>) {
       });
     } catch (err) {
       last = `${p.label} ${model}: no reply in ${limit / 1000} s (${err instanceof Error ? err.name : 'error'})`;
+      trace(op, p, model, 'timeout', Date.now() - t0);
       continue;
     }
-    if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; return j; }
+    trace(op, p, model, r.status, Date.now() - t0);
+    if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; j.servedMs = Date.now() - t0; j.servedProvider = p.id; return j; }
     last = `${p.label} ${r.status}: ${(await r.text()).replace(/\s+/g, ' ').slice(0, 300)}`;
     if (r.status === 429) EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 15 * 60 * 1000);
     if (![404, 429, 500, 503].includes(r.status)) throw new HttpError(r.status, last);

@@ -79,11 +79,11 @@ const frag = /* glsl */ `
 `;
 
 const KIND_COLOR: Record<string, THREE.Color> = {
-  earthquake: new THREE.Color('#FF4FA3'),
-  wildfire: new THREE.Color('#FF8A3D'),
-  storm: new THREE.Color('#F4EFE4'),
+  earthquake: new THREE.Color('#EF4444'),
+  wildfire: new THREE.Color('#F59E0B'),
+  storm: new THREE.Color('#38BDF8'),
   ice: new THREE.Color('#9FD8FF'),
-  volcano: new THREE.Color('#FF3B14'),
+  volcano: new THREE.Color('#FB7185'),
 };
 
 export class SignalLayers {

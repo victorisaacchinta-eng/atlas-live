@@ -6,7 +6,14 @@
     <title>ATLAS Live</title>
     <meta name="description" content="Ask the live Earth what just happened, then turn it into a cited 60-second Short. NVIDIA Nemotron on Nebius Token Factory writes and fact-checks every beat." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#2B44B8" />
+    <meta name="theme-color" content="#0B0D0B" />
+    <script>
+      // Set the theme before first paint so there is no flash of the wrong one.
+      (function () { var m = 'system'; try { m = localStorage.getItem('atlas-theme') || 'system'; } catch (e) {}
+        var q = new URLSearchParams(location.search).get('theme'); if (q === 'light' || q === 'dark') m = q;
+        var d = m === 'dark' || (m !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = d ? 'dark' : 'light'; document.documentElement.style.background = d ? '#0B0D0B' : '#F5F6F3'; })();
+    </script>
   </head>
   <body>
     <div id="stage" aria-label="Hologram view"></div>
@@ -21,6 +28,9 @@
         <button type="button" class="mode lab" data-mode="scan" aria-pressed="false">Scan</button>
       </nav>
       <div class="status">
+        <div class="theme-switch" role="group" aria-label="Theme">
+          <button type="button" data-mode="light" aria-pressed="false">Light</button><button type="button" data-mode="dark" aria-pressed="false">Dark</button><button type="button" data-mode="system" aria-pressed="false">Auto</button>
+        </div>
         <button type="button" id="sound-btn" class="chip" aria-pressed="false" title="Read answers aloud"><span class="dot"></span><span id="sound-label">Sound off</span></button>
         <button type="button" id="hands-btn" class="chip" aria-pressed="false"><span class="dot"></span><span id="hands-label">Use hands</span></button>
         <span class="chip quiet" id="agent-chip"><span class="dot"></span><span id="agent-label">Nemotron</span></span>
@@ -126,23 +136,51 @@
       <figcaption id="cam-caption">Hands: looking</figcaption>
     </figure>
 
-    <section class="director" id="director" hidden aria-label="Short director">
-      <div class="dir-frame" id="dir-frame">
-        <div class="dir-top"><span class="dir-rec"><i aria-hidden="true"></i>ATLAS Short</span><span id="dir-count">00 / 00</span></div>
-        <p class="dir-caption" id="dir-caption" aria-live="polite"></p>
-      </div>
-      <aside class="dir-rail">
+    <section class="director" id="director" hidden aria-label="Short workspace">
+      <header class="dir-head">
+        <ol class="dir-flow" aria-label="Workflow">
+          <li>Discover</li><li class="on" aria-current="step">Create</li><li>Deliver</li>
+        </ol>
         <p class="eyebrow">Short <span id="dir-topic"></span></p>
         <h2 id="dir-title">Writing the Short</h2>
-        <p class="scan-status" id="dir-status" aria-live="polite"></p>
-        <div class="dir-meta" id="dir-meta"></div>
+        <ol class="dir-stages" id="dir-stages" aria-label="Pipeline stages"></ol>
+        <p class="dir-status" id="dir-status" role="status" aria-live="polite"></p>
+        <button type="button" id="dir-retry" class="btn-line dir-retry" hidden>Retry from the failed stage</button>
+      </header>
+      <div class="dir-tabs" role="tablist" aria-label="Short panels">
+        <button type="button" class="dir-tab" role="tab" data-tab="story" aria-selected="true">Story</button>
+        <button type="button" class="dir-tab" role="tab" data-tab="evidence" aria-selected="false">Evidence</button>
+        <button type="button" class="dir-tab" role="tab" data-tab="deliver" aria-selected="false">Deliver</button>
+      </div>
+      <section class="dir-story" aria-label="Storyboard">
+        <p class="eyebrow">Storyboard</p>
         <ol class="dir-beats" id="dir-beats"></ol>
         <div class="dir-actions">
-          <button type="button" id="dir-play" class="btn-solid" disabled>Play</button>
-          <button type="button" id="dir-export" class="btn-line" disabled>Export kit</button>
-          <button type="button" id="dir-close" class="btn-line">Close</button>
+          <button type="button" id="dir-play" class="btn-solid" disabled>Play preview</button>
+          <button type="button" id="dir-close" class="btn-line">Back to Earth</button>
         </div>
-        <p class="dir-note">The kit is a Google Earth tour, the script with its sources, captions and a voiceover script. Render the footage in Google Earth, which is licensed for online video. ATLAS never records Google’s 3D tiles.</p>
+      </section>
+      <div class="dir-frame" id="dir-frame" aria-label="9:16 preview (not a rendered video)">
+        <div class="dir-top"><span class="dir-rec"><i aria-hidden="true"></i>Preview · 9:16</span><span id="dir-count">00 / 00</span></div>
+        <span class="dir-corner tl" aria-hidden="true"></span><span class="dir-corner tr" aria-hidden="true"></span><span class="dir-corner bl" aria-hidden="true"></span><span class="dir-corner br" aria-hidden="true"></span>
+        <p class="dir-caption" id="dir-caption" aria-live="polite"></p>
+        <p class="dir-geo" id="dir-geo" aria-hidden="true"></p>
+      </div>
+      <section class="dir-timeline" id="dir-timeline" aria-label="Timeline"></section>
+      <aside class="dir-side" aria-label="Evidence and delivery">
+        <section class="dir-evidence-wrap">
+          <p class="eyebrow">Source check</p>
+          <div class="dir-evidence" id="dir-evidence"></div>
+        </section>
+        <section class="dir-deliver">
+          <p class="eyebrow">Deliver</p>
+          <div class="dir-metrics" id="dir-metrics"></div>
+          <ul class="dir-files" aria-label="Files in the kit">
+            <li><b>tour.kml</b> Google Earth tour</li><li><b>script.md</b> script and sources</li><li><b>evidence.md</b> claim report</li><li><b>captions.srt</b> subtitles</li><li><b>voiceover.txt</b> narration</li><li><b>run.json</b> models and timings</li>
+          </ul>
+          <button type="button" id="dir-export" class="btn-solid" disabled>Download kit</button>
+          <p class="dir-note">Render the footage in Google Earth, which is licensed for online video. ATLAS plans the shots and never records Google’s 3D tiles.</p>
+        </section>
       </aside>
     </section>
 
