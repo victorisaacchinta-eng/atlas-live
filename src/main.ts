@@ -230,7 +230,7 @@ const agentCtx = {
     }
     searchPlace(place);
   },
-  makeShort: (topic: string, lat?: number, lon?: number) => makeShortFor(topic, lat, lon),
+  makeShort: (topic: string, lat?: number, lon?: number, lang?: string) => makeShortFor(topic, lat, lon, lang),
   setLens: (l: string) => { if (LENSES.some((x) => x.id === l)) setLens(l as Lens); },
   isolate: (on: boolean) => setIsolate(on),
   orbit: (speed: number) => {
@@ -240,7 +240,7 @@ const agentCtx = {
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
-const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? 'Ask ATLAS: "biggest earthquake this week?"' : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
+const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? 'Ask ATLAS: "any flood alerts in Andhra Pradesh?"' : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -1074,13 +1074,14 @@ const director: Director = new Director({
 });
 
 /** A Short about a live signal when one matches (it brings the official record), else about the topic. */
-function makeShortFor(topic: string, lat?: number, lon?: number) {
+function makeShortFor(topic: string, lat?: number, lon?: number, asked?: string) {
   const all = (['india', 'quakes', 'events'] as LayerId[]).flatMap((id) => signals.state(id).data?.signals ?? []);
   const t = topic.toLowerCase();
   const hit = all.find((x) => x.title.toLowerCase() === t)
     || (Number.isFinite(lat) && Number.isFinite(lon) ? all.find((x) => Math.abs(x.lat - lat!) < 0.05 && Math.abs(x.lon - lon!) < 0.05) : undefined)
     || all.find((x) => t.includes(x.title.toLowerCase()));
-  const input: ShortInput = hit ? { topic: hit.title, signal: hit, lang: langFor(hit) } : { topic, lat, lon, lang: savedLang() };
+  const want = asked === 'hi' || asked === 'te' || asked === 'en' ? asked as ShortLang : undefined;
+  const input: ShortInput = hit ? { topic: hit.title, signal: hit, lang: want ?? langFor(hit) } : { topic, lat, lon, lang: want ?? savedLang() };
   director.make(input);
 }
 
@@ -1348,7 +1349,7 @@ if (new URLSearchParams(location.search).has('debug')) (window as unknown as Rec
 // Example questions under the ask box: a one-tap way into what ATLAS can do.
 {
   const chips = $('chips');
-  const EXAMPLES = ['Make a Short about the biggest earthquake this week', 'What was the biggest earthquake this week?', 'Any open wildfires in California?', 'Take me to Charminar and build it'];
+  const EXAMPLES = ['Any flood or rain alerts in Andhra Pradesh?', 'Make a Telugu Short about the latest Andhra Pradesh alert', 'What was the biggest earthquake this week?', 'Take me to Charminar and build it'];
   for (const q of EXAMPLES) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'ask-chip'; b.textContent = q;

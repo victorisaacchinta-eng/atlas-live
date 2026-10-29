@@ -57,17 +57,17 @@ const EARTH_TOOLS = [
     type: 'function',
     function: {
       name: 'show_layer',
-      description: 'Show or hide a live layer on the globe. quakes: USGS earthquakes M2.5+ from the past 7 days. events: NASA EONET open natural events (wildfires, severe storms, sea ice).',
-      parameters: { type: 'object', properties: { layer: { type: 'string', enum: ['quakes', 'events'] }, on: { type: 'boolean' } }, required: ['layer', 'on'] },
+      description: 'Show or hide a live layer on the globe. india: official Indian disaster and weather alerts in force now (NDMA SACHET: IMD, CWC, state disaster authorities). quakes: USGS earthquakes M2.5+ from the past 7 days. events: NASA EONET open natural events (wildfires, severe storms, sea ice).',
+      parameters: { type: 'object', properties: { layer: { type: 'string', enum: ['india', 'quakes', 'events'] }, on: { type: 'boolean' } }, required: ['layer', 'on'] },
     },
   },
   {
     type: 'function',
     function: {
       name: 'find_signals',
-      description: 'Query a live layer. Returns real items with title, magnitude, time, coordinates and source link. Use it for any question about earthquakes, wildfires, storms or sea ice. Optionally only near a place.',
+      description: 'Query a live layer. Returns real items with title, magnitude or severity, time, coordinates and source link. Use layer india for any warning, alert, rain, flood, cyclone, thunderstorm or heat question about India; quakes for earthquakes; events for wildfires, storms or sea ice elsewhere. Optionally only near a place.',
       parameters: { type: 'object', properties: {
-        layer: { type: 'string', enum: ['quakes', 'events'] },
+        layer: { type: 'string', enum: ['india', 'quakes', 'events'] },
         near: { type: 'string', description: 'Place name to search around, e.g. "Japan" or "California".' },
         radius_km: { type: 'number', description: 'Search radius around near, default 800.' },
         kind: { type: 'string', enum: ['wildfire', 'storm', 'ice', 'volcano', 'any'], description: 'events only' },
@@ -97,7 +97,7 @@ const EARTH_TOOLS = [
     function: {
       name: 'make_short',
       description: 'Open the Short director: ATLAS writes a 60-second, cited, shot-by-shot explainer script about a live signal or a place, plays it in a 9:16 frame and exports it for Google Earth. Use when the viewer asks to make a Short, a Reel, a video, an explainer or a script. For a live signal, call find_signals first and pass its title, lat and lon.',
-      parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' } }, required: ['topic'] },
+      parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' }, lang: { type: 'string', enum: ['en', 'hi', 'te'], description: 'Language of the Short: en English, hi Hindi, te Telugu. Use the language the viewer asks for or writes in.' } }, required: ['topic'] },
     },
   },
   {
@@ -150,6 +150,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
 Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC): ${new Date().toISOString().slice(0, 16)}.
 Rules:
 - Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
+- India alerts: for any warning, rain, flood, cyclone, thunderstorm or heat question about India, call find_signals with layer india. These are official alerts from NDMA SACHET. Name the issuing authority and say until when the alert is in force (IST). Never add damage, injuries or deaths the alert does not state.
 - Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). When your answer is about one specific item, also fly_to its lat and lon so the viewer sees it. For weather, call get_weather.
 - find_signals items are real. NASA EONET marks events "open" until it closes them, so say "open in NASA EONET" and give each one's last_observed date and days_since_observed. Never say "burning now", "active right now" or "currently". Never say there are none when items came back.
 - To make a Short, Reel or explainer video, call make_short.
@@ -181,7 +182,8 @@ Rules:
     const addSource = (title: string, url: string) => { if (url && !sources.some((s) => s.url === url)) sources.push({ title, url }); };
     const brief = (x: Signal, from?: { lat: number; lon: number }) => ({
       title: x.title, kind: x.kind, magnitude: x.mag !== undefined ? `${x.mag}${x.magUnit ? ' ' + x.magUnit : ''}` : undefined,
-      [x.layer === 'events' ? 'last_observed_utc' : 'time_utc']: x.time.slice(0, 16), status: x.layer === 'events' ? 'open in NASA EONET' : undefined,
+      [x.layer === 'events' ? 'last_observed_utc' : x.layer === 'india' ? 'issued' : 'time_utc']: x.layer === 'india' ? x.time : x.time.slice(0, 16), status: x.layer === 'events' ? 'open in NASA EONET' : undefined,
+      severity: x.severity, issued_by: x.sender, in_force_until: x.expires, districts: x.districts?.slice(0, 12), alert_text_english: x.layer === 'india' ? x.texts?.find((t) => t.lang === 'en')?.headline : undefined,
       days_since_observed: x.layer === 'events' ? Math.floor((Date.now() - Date.parse(x.time)) / 864e5) : undefined,
       lat: +x.lat.toFixed(3), lon: +x.lon.toFixed(3), depth_km: x.depthKm, tsunami: x.tsunami || undefined,
       km_away: from ? Math.round(km(from, x)) : undefined, source: x.url,
@@ -208,7 +210,7 @@ Rules:
           result = JSON.stringify(found.results.map((r: TavilyResult) => ({ title: r.title, url: r.url, content: r.content.slice(0, 700) })));
           if (!found.results.length) result = 'No results.';
         } else if (c.function.name === 'find_signals') {
-          const id = (args.layer === 'events' ? 'events' : 'quakes') as LayerId;
+          const id = (args.layer === 'events' || args.layer === 'india' ? args.layer : 'quakes') as LayerId;
           try {
             const data = await layer(id);
             let list = data.signals;
@@ -223,11 +225,11 @@ Rules:
             const planned = id === 'events' ? list.filter((x) => /^prescribed/i.test(x.title)).length : 0;
             if (planned && !/prescribed/i.test(question)) list = list.filter((x) => !/^prescribed/i.test(x.title));
             // Quakes default to biggest first; events to most recently observed (old big fires should not hide current ones).
-            const latest = args.sort ? args.sort === 'latest' : id === 'events';
+            const latest = args.sort ? args.sort === 'latest' : id !== 'quakes';
             list = [...list].sort(latest ? (a, b) => b.time.localeCompare(a.time) : (a, b) => (b.mag ?? 0) - (a.mag ?? 0));
             const top = list.slice(0, Math.min(10, Math.max(1, Number(args.limit) || 5)));
             top.slice(0, 3).forEach((x) => addSource(`${data.source}: ${x.title}`, x.url));
-            trace.push(`${id === 'quakes' ? 'usgs' : 'nasa eonet'} › ${list.length} ${id}${center ? ` within ${Number(args.radius_km) || 800} km of ${center.name}` : ''}`);
+            trace.push(`${id === 'quakes' ? 'usgs' : id === 'india' ? 'ndma sachet' : 'nasa eonet'} › ${list.length} ${id}${center ? ` within ${Number(args.radius_km) || 800} km of ${center.name}` : ''}`);
             lastSignals = top;
             result = JSON.stringify({ source: data.source, feed_updated_utc: data.updated.slice(0, 16), total_matching: list.length, prescribed_burns_excluded: planned || undefined, items: top.map((x) => brief(x, center)) });
           } catch (err) {

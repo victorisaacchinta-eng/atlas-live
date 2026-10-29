@@ -77,6 +77,9 @@ async function fetchQuakes(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
   };
 }
 
+/** "vamsadhara_80000_cap_footprint" -> "Vamsadhara"; codes like "MTS WITH MR" -> nothing. */
+const clean = (x: string) => { const t = x.replace(/_\d.*$/, '').replace(/_/g, ' ').trim(); return /[a-z]/.test(t) ? t.replace(/^\w/, (c) => c.toUpperCase()) : ''; };
+
 async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
   const { updated, alerts } = await fetchSachet();
   return {
@@ -84,7 +87,7 @@ async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
     signals: alerts.map((a) => ({
       id: a.id, layer: 'india' as const, kind: kindOf(a.event, a.texts[0]?.headline), lat: a.lat, lon: a.lon, time: a.sent,
       title: `${a.event}: ${a.districts.length ? a.districts.slice(0, 3).map((d) => d.name).join(', ') + (a.districts.length > 3 ? ` and ${a.districts.length - 3} more` : '') + `, ${a.districts[0].state}`
-        : /[a-z]/.test(a.areaDesc) && !/_/.test(a.areaDesc) ? `${a.areaDesc}${a.state && !a.areaDesc.includes(a.state) ? `, ${a.state}` : ''}` : a.state || a.sender}`,
+        : clean(a.areaDesc) ? `${clean(a.areaDesc)}${a.state && !a.areaDesc.includes(a.state) ? `, ${a.state}` : ''}` : a.state || a.sender}`,
       mag: SEVERITY_RANK[a.severity] ?? 1, magUnit: 'severity',
       severity: a.severity, sender: a.sender, expires: a.expires, area: a.areaDesc, located: a.located,
       districts: a.districts.map((d) => d.name),

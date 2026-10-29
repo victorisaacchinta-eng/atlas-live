@@ -8,7 +8,7 @@ export interface AgentContext {
   setExplode: (v: number) => void;
   mode?: () => 'object' | 'earth';
   flyTo?: (place: string, lat?: number, lon?: number, signal?: boolean) => void;
-  makeShort?: (topic: string, lat?: number, lon?: number) => void;
+  makeShort?: (topic: string, lat?: number, lon?: number, lang?: string) => void;
   layers?: () => string[];
   globeView?: () => void;
   showLayer?: (layer: string, on: boolean) => void;
@@ -47,7 +47,7 @@ export async function ask(question: string, ctx: AgentContext) {
       if (a.name === 'focus_part') ctx.focusPart(Number(a.args.index) - 1);
       if (a.name === 'set_explode') ctx.setExplode(Number(a.args.amount));
       if (a.name === 'fly_to' && a.args.place) ctx.flyTo?.(String(a.args.place), a.args.lat as number | undefined, a.args.lon as number | undefined, a.args.signal === true);
-      if (a.name === 'make_short' && a.args.topic) ctx.makeShort?.(String(a.args.topic), a.args.lat as number | undefined, a.args.lon as number | undefined);
+      if (a.name === 'make_short' && a.args.topic) ctx.makeShort?.(String(a.args.topic), a.args.lat as number | undefined, a.args.lon as number | undefined, a.args.lang as string | undefined);
       if (a.name === 'globe_view') ctx.globeView?.();
       if (a.name === 'show_layer') ctx.showLayer?.(String(a.args.layer), a.args.on !== false);
       if (a.name === 'build_model' && a.args.name) ctx.buildModel?.(String(a.args.name));
