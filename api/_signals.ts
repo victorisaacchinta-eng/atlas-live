@@ -1,4 +1,5 @@
 import { HttpError } from './_nebius.js';
+import { fetchSachet, kindOf, SEVERITY_RANK, langName } from './_sachet.js';
 
 /**
  * Live signals on the globe. Two layers, both keyless public-domain feeds, plus weather on demand:
@@ -9,7 +10,7 @@ import { HttpError } from './_nebius.js';
  * if a feed fails, the layer reports the failure instead of showing old or made-up points.
  */
 
-export type LayerId = 'quakes' | 'events';
+export type LayerId = 'quakes' | 'events' | 'india';
 
 export interface Signal {
   id: string;
@@ -25,6 +26,14 @@ export interface Signal {
   alert?: string | null;
   tsunami?: boolean;
   url: string;           // the source's own page for this item
+  // India (NDMA SACHET) alerts only
+  severity?: string;
+  sender?: string;
+  expires?: string;
+  area?: string;
+  districts?: string[];
+  located?: string;
+  texts?: { lang: string; language: string; headline: string }[];
 }
 
 export interface LayerData {
@@ -41,6 +50,7 @@ export interface LayerData {
 const META: Record<LayerId, Omit<LayerData, 'updated' | 'fetchedAt' | 'signals' | 'layer'> & { ttl: number }> = {
   quakes: { name: 'Earthquakes, M2.5+, past 7 days', source: 'USGS Earthquake Hazards Program', sourceUrl: 'https://earthquake.usgs.gov/earthquakes/map/', license: 'U.S. public domain', ttl: 5 * 60e3 },
   events: { name: 'Natural events, open', source: 'NASA EONET', sourceUrl: 'https://eonet.gsfc.nasa.gov/', license: 'U.S. public domain (NASA)', ttl: 15 * 60e3 },
+  india: { name: 'India official alerts, in force now', source: 'NDMA SACHET (IMD, CWC, INCOIS, state disaster authorities)', sourceUrl: 'https://sachet.ndma.gov.in/', license: 'Government of India public alerts', ttl: 8 * 60e3 },
 };
 
 const cache = new Map<LayerId, { at: number; data: LayerData }>();
@@ -63,6 +73,22 @@ async function fetchQuakes(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
       lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], depthKm: f.geometry.coordinates[2],
       time: new Date(f.properties.time).toISOString(), mag: f.properties.mag, magUnit: 'M',
       alert: f.properties.alert, tsunami: f.properties.tsunami === 1, url: f.properties.url,
+    })),
+  };
+}
+
+async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
+  const { updated, alerts } = await fetchSachet();
+  return {
+    updated,
+    signals: alerts.map((a) => ({
+      id: a.id, layer: 'india' as const, kind: kindOf(a.event, a.texts[0]?.headline), lat: a.lat, lon: a.lon, time: a.sent,
+      title: `${a.event}: ${a.districts.length ? a.districts.slice(0, 3).map((d) => d.name).join(', ') + (a.districts.length > 3 ? ` and ${a.districts.length - 3} more` : '') + `, ${a.districts[0].state}` : a.areaDesc}`,
+      mag: SEVERITY_RANK[a.severity] ?? 1, magUnit: 'severity',
+      severity: a.severity, sender: a.sender, expires: a.expires, area: a.areaDesc, located: a.located,
+      districts: a.districts.map((d) => d.name),
+      texts: a.texts.map((t) => ({ lang: t.lang, language: langName(t.lang), headline: t.headline.slice(0, 400) })),
+      url: a.url,
     })),
   };
 }
@@ -105,7 +131,7 @@ export async function layer(id: LayerId): Promise<LayerData> {
   const hit = cache.get(id);
   if (hit && Date.now() - hit.at < meta.ttl) return hit.data;
   try {
-    const got = id === 'quakes' ? await fetchQuakes() : await fetchEvents();
+    const got = id === 'quakes' ? await fetchQuakes() : id === 'india' ? await fetchIndia() : await fetchEvents();
     const { ttl: _ttl, ...rest } = meta;
     const data: LayerData = { layer: id, ...rest, ...got, fetchedAt: new Date().toISOString() };
     cache.set(id, { at: Date.now(), data });

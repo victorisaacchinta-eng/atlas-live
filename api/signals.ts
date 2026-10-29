@@ -1,7 +1,7 @@
 import { send, HttpError } from './_nebius.js';
 import { layer, weather, type LayerId } from './_signals.js';
 
-/** GET /api/signals?layer=quakes|events  ·  GET /api/signals?layer=weather&lat=..&lon=.. */
+/** GET /api/signals?layer=quakes|events|india  ·  GET /api/signals?layer=weather&lat=..&lon=.. */
 export default async function handler(req: { method: string; query: Record<string, string | string[]> }, res: { status: (n: number) => { json: (b: unknown) => void }; setHeader?: (k: string, v: string) => void }) {
   try {
     if (req.method !== 'GET') throw new HttpError(405, 'GET only');
@@ -13,7 +13,7 @@ export default async function handler(req: { method: string; query: Record<strin
       res.status(200).json(await weather(lat, lon));
       return;
     }
-    if (id !== 'quakes' && id !== 'events') throw new HttpError(400, 'layer must be quakes, events or weather');
+    if (id !== 'quakes' && id !== 'events' && id !== 'india') throw new HttpError(400, 'layer must be quakes, events, india or weather');
     const data = await layer(id as LayerId);
     res.setHeader?.('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
     res.status(200).json(data);

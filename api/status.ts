@@ -1,4 +1,4 @@
-import { PROVIDER, MODELS, ALTS, LIVE_IDS, ensureModels } from './_nebius.js';
+import { PROVIDER, MODELS, ALTS, LIVE_IDS, ALL_IDS, ensureModels, indicModel } from './_nebius.js';
 
 /** Tells the UI which model provider is live, so the header never claims a model that isn't running. */
 export default async function handler(_req: unknown, res: { status: (n: number) => { json: (b: unknown) => void } }) {
@@ -9,6 +9,8 @@ export default async function handler(_req: unknown, res: { status: (n: number) 
     agent: PROVIDER ? MODELS.agent : null,
     vision: PROVIDER ? MODELS.vision : null,
     fast: PROVIDER ? MODELS.fast : null,
+    indic: PROVIDER ? await indicModel() : null,
+    indicCandidates: ALL_IDS.filter((id) => /sarvam|gemma|llama-4|qwen3|indic|krutrim/i.test(id)).slice(0, 20),
     fallbacks: PROVIDER ? ALTS.agent.slice(0, 6) : [],
     listed: LIVE_IDS,
     search: !!process.env.TAVILY_API_KEY,

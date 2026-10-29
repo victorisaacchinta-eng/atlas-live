@@ -38,6 +38,8 @@ const configured = { ...MODELS };
 /** Live ids that match each role's preferences, best first: fallbacks when one is overloaded. */
 /** Model ids the provider lists right now (Nemotron / Gemini only), for /api/status. */
 export const LIVE_IDS: string[] = [];
+/** Every chat model id the provider lists (used to find a model that writes Indian languages well). */
+export const ALL_IDS: string[] = [];
 export const ALTS: Record<'vision' | 'agent' | 'fast', string[]> = { vision: [], agent: [], fast: [] };
 let checked: Promise<void> | null = null;
 
@@ -54,6 +56,7 @@ export function ensureModels() {
       const j = (await r.json()) as { data?: { id: string }[] };
       const ids = (j.data || []).map((m) => m.id.replace(/^models\//, ''));
       LIVE_IDS.splice(0, LIVE_IDS.length, ...ids.filter((id) => /nemotron|gemini/i.test(id)).slice(0, 60));
+      ALL_IDS.splice(0, ALL_IDS.length, ...ids.filter((id) => !/parse|embed|rerank|reward|safety|guard|retriev|tts|asr|ocr|vision|vl\b/i.test(id)));
       if (!ids.length) return;
       for (const role of ['vision', 'agent', 'fast'] as const) {
         const env = { vision: process.env.ATLAS_VISION_MODEL, agent: process.env.ATLAS_AGENT_MODEL, fast: process.env.ATLAS_FAST_MODEL }[role];
@@ -68,6 +71,18 @@ export function ensureModels() {
     } catch { /* keep the configured ids */ }
   })();
   return checked;
+}
+
+/**
+ * The model that writes Hindi and Telugu. Nemotron is tuned for English, so on providers that list
+ * them, models trained on Indian languages go first. Override with ATLAS_INDIC_MODEL.
+ */
+const INDIC_PREFER = [/sarvam-m\b/i, /sarvam/i, /gemini-3(\.\d)?-flash$/, /gemini-flash-latest/, /gemma-3-27b/i, /llama-4-maverick/i, /qwen3-235b/i, /llama-3\.3-70b/i];
+export async function indicModel() {
+  if (process.env.ATLAS_INDIC_MODEL) return process.env.ATLAS_INDIC_MODEL;
+  await ensureModels();
+  for (const re of INDIC_PREFER) { const id = ALL_IDS.find((x) => re.test(x)); if (id) return id; }
+  return MODELS.agent;
 }
 
 /** Back-compat for the old name. */

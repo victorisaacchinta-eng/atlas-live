@@ -9,11 +9,14 @@ import { HOLO } from './hologram';
  * proportion to the camera's height so terrain never swallows them. Fresh items pulse.
  */
 
-export type LayerId = 'quakes' | 'events';
+export type LayerId = 'quakes' | 'events' | 'india';
 
 export interface Signal {
   id: string; layer: LayerId; kind: string; title: string; lat: number; lon: number; time: string;
   mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url: string;
+  // India (NDMA SACHET) alerts
+  severity?: string; sender?: string; expires?: string; area?: string; districts?: string[]; located?: string;
+  texts?: { lang: string; language: string; headline: string }[];
 }
 
 export interface LayerData {
@@ -85,6 +88,13 @@ const KIND_COLOR: Record<string, THREE.Color> = {
   ice: new THREE.Color('#9FD8FF'),
   volcano: new THREE.Color('#FB7185'),
 };
+/** India alerts are coloured by the issuer's own severity, the way IMD colour-codes its warnings. */
+const SEVERITY_COLOR: Record<string, THREE.Color> = {
+  Extreme: new THREE.Color('#EF4444'),
+  Severe: new THREE.Color('#F97316'),
+  Moderate: new THREE.Color('#F59E0B'),
+  Minor: new THREE.Color('#38BDF8'),
+};
 
 export class SignalLayers {
   readonly group = new THREE.Group();
@@ -112,7 +122,7 @@ export class SignalLayers {
     this.selected = new THREE.Mesh(ring, new THREE.MeshBasicMaterial({ color: HOLO.signal.clone(), transparent: true, opacity: 0.95, depthTest: false, side: THREE.DoubleSide }));
     this.selected.visible = false;
     this.selected.renderOrder = 30;
-    for (const id of ['quakes', 'events'] as LayerId[]) this.layers.set(id, { id, on: false, status: 'off', ecef: [] });
+    for (const id of ['quakes', 'events', 'india'] as LayerId[]) this.layers.set(id, { id, on: false, status: 'off', ecef: [] });
   }
 
   state(id: LayerId) { return this.layers.get(id)!; }
@@ -159,10 +169,10 @@ export class SignalLayers {
       l.ecef.push(v.clone());
       pos.set([v.x, v.y, v.z], i * 3);
       // Earthquakes scale with magnitude (each step is ~32x the energy; on screen, a gentle step).
-      size[i] = s.layer === 'quakes' ? 5 + Math.max(0, (s.mag ?? 2.5) - 2.5) * 3.4 : s.kind === 'storm' ? 12 : 7;
-      const c = KIND_COLOR[s.kind] || KIND_COLOR.storm;
+      size[i] = s.layer === 'quakes' ? 5 + Math.max(0, (s.mag ?? 2.5) - 2.5) * 3.4 : s.layer === 'india' ? 6 + (s.mag ?? 1) * 2.2 : s.kind === 'storm' ? 12 : 7;
+      const c = s.layer === 'india' ? (SEVERITY_COLOR[s.severity ?? ''] || SEVERITY_COLOR.Minor) : KIND_COLOR[s.kind] || KIND_COLOR.storm;
       color.set([c.r, c.g, c.b], i * 3);
-      fresh[i] = s.layer === 'quakes' && now - Date.parse(s.time) < 24 * 3600e3 ? 1 : 0;
+      fresh[i] = (s.layer === 'quakes' && now - Date.parse(s.time) < 24 * 3600e3) || (s.layer === 'india' && (s.severity === 'Extreme' || s.severity === 'Severe')) ? 1 : 0;
     });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));

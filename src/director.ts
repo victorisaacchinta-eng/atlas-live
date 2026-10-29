@@ -23,9 +23,12 @@ interface Check { beat: number; verdict: Verdict; evidence: string; reason: stri
 interface Shot { shot: Draft['shot']; focus: string; lat: number; lon: number; range: number; tilt: number; heading: number; seconds: number }
 export interface Beat extends Draft, Shot { check: Check | null }
 
+export type ShortLang = 'en' | 'hi' | 'te';
+export const LANG_LABEL: Record<ShortLang, string> = { en: 'English', hi: 'हिन्दी', te: 'తెలుగు' };
 export interface ShortInput {
-  topic: string; lat?: number; lon?: number;
-  signal?: { id?: string; layer?: string; kind?: string; title: string; lat: number; lon: number; time?: string; mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url?: string };
+  topic: string; lat?: number; lon?: number; lang?: ShortLang;
+  signal?: { id?: string; layer?: string; kind?: string; title: string; lat: number; lon: number; time?: string; mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url?: string;
+    severity?: string; sender?: string; area?: string; districts?: string[]; texts?: { lang: string; language: string; headline: string }[] };
 }
 export interface DirectorDeps {
   flyTo: (b: Beat) => Promise<void>;
@@ -40,8 +43,8 @@ export interface DirectorDeps {
 type StageId = 'research' | 'write' | 'check' | 'stage';
 const STAGES: { id: StageId; label: string; doing: string }[] = [
   { id: 'research', label: 'Research', doing: 'Reading the official record and the web (Tavily)' },
-  { id: 'write', label: 'Write', doing: 'Nemotron is writing six beats' },
-  { id: 'check', label: 'Source check', doing: 'A second Nemotron model is reading each claim beside its source' },
+  { id: 'write', label: 'Write', doing: 'Writing six beats, each tied to one source' },
+  { id: 'check', label: 'Source check', doing: 'A second model is reading each claim beside its source' },
   { id: 'stage', label: 'Camera', doing: 'Placing each shot on the globe' },
 ];
 const LABEL: Record<Verdict, string> = { supported: 'Supported', partly: 'Partly supported', needs_review: 'Needs review', unsupported: 'Unsupported', contradicted: 'Contradicted' };
@@ -107,6 +110,8 @@ export class Director {
     this.run = { input, topic: input.topic, models: {}, ms: {}, wall: {}, started: new Date().toISOString() };
     this.beats = []; this.cut = []; this.selected = 0;
     this.root.hidden = false;
+    // Captions and the storyboard are in the Short's language; the rest of the UI stays English.
+    this.root.dataset.lang = input.lang ?? 'en';
     document.body.classList.add('directing');
     this.deps.onOpen();
     $('dir-topic').textContent = input.topic;
@@ -130,11 +135,11 @@ export class Director {
         R.topic = j.topic; R.subject = j.subject; R.sources = j.sources; R.live = j.live; R.ms.research = j.ms;
       });
       if (!R.draft) await this.stageRun('write', async () => {
-        const j = await post<{ title: string; beats: Draft[]; model: string; ms: number }>({ step: 'write', topic: R.topic, subject: R.subject, sources: R.sources });
+        const j = await post<{ title: string; beats: Draft[]; model: string; ms: number }>({ step: 'write', lang: R.input.lang ?? 'en', topic: R.topic, subject: R.subject, sources: R.sources });
         R.title = j.title; R.draft = j.beats; R.models.writer = j.model; R.ms.write = j.ms;
       });
       if (!R.checks) await this.stageRun('check', async () => {
-        const j = await post<{ checks: Check[]; model: string | null; ms: number }>({ step: 'check', sources: R.sources, beats: R.draft });
+        const j = await post<{ checks: Check[]; model: string | null; ms: number }>({ step: 'check', lang: R.input.lang ?? 'en', sources: R.sources, beats: R.draft });
         R.checks = j.checks; R.models.checker = j.model ?? undefined; R.ms.check = j.ms;
       });
       this.assemble();
@@ -529,7 +534,7 @@ function srt(k: Kit) {
 
 function script(k: Kit) {
   let t = 0;
-  const L = [`# ${k.title}`, '', `Topic: ${k.topic}  `, `Length: about ${k.metrics.seconds} s, ${k.beats.length} beats  `,
+  const L = [`# ${k.title}`, '', `Topic: ${k.topic}  `, `Language: ${LANG_LABEL[k.run.input.lang ?? 'en']}  `, `Length: about ${k.metrics.seconds} s, ${k.beats.length} beats  `,
     `Source check: ${k.metrics.supported} of ${k.metrics.surviving} remaining claims supported by their cited source, ${k.metrics.partly} partly, ${k.metrics.review} need review, ${k.metrics.cut} cut. This checks that the source says it, not that it is true.  `,
     `Written by ${shortModel(k.run.models.writer)}, checked by ${shortModel(k.run.models.checker)}${provider(k.run.models.writer) ? `, on ${provider(k.run.models.writer)}` : ''}`, '', '## Beats', ''];
   k.beats.forEach((b, i) => {
@@ -541,7 +546,7 @@ function script(k: Kit) {
   L.push('## Sources', '');
   k.sources.forEach((s, i) => L.push(`${i + 1}. [${s.title}](${s.url}) (${s.kind === 'record' ? 'official record' : s.publisher}${s.published ? `, dated ${day(s.published)}` : ''}, retrieved ${day(s.retrieved)})`));
   L.push('', '## Description for YouTube', '', k.title, '', 'Sources:', ...k.sources.map((s) => `${s.title}: ${s.url}`), '',
-    `Map footage: Google Earth. Script researched and source-checked with ATLAS Live (NVIDIA Nemotron${provider(k.run.models.writer) ? ` on ${provider(k.run.models.writer)}` : ''}, Tavily).`, '');
+    `Map footage: Google Earth. Script researched and source-checked with ATLAS Live (written by ${shortModel(k.run.models.writer)}, checked by ${shortModel(k.run.models.checker)}${provider(k.run.models.writer) ? `, on ${provider(k.run.models.writer)}` : ''}; web search by Tavily).`, '');
   return L.join('\n');
 }
 
@@ -567,7 +572,7 @@ function evidence(k: Kit) {
 function runInfo(k: Kit) {
   const R = k.run;
   return {
-    topic: k.topic, live_event: !!R.live, started: R.started,
+    topic: k.topic, language: R.input.lang ?? 'en', live_event: !!R.live, official_alert: R.sources?.[0]?.publisher.startsWith('NDMA SACHET') ?? false, started: R.started,
     provider: provider(R.models.writer) || null, writer_model: R.models.writer ?? null, checker_model: R.models.checker ?? null,
     stage_server_ms: R.ms, stage_wall_ms: Object.fromEntries(Object.entries(R.wall).map(([s, v]) => [s, Math.round(v ?? 0)])),
     claims: { written: k.metrics.before, kept: k.metrics.surviving, supported: k.metrics.supported, partly: k.metrics.partly, needs_review: k.metrics.review, cut: k.metrics.cut },

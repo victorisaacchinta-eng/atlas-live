@@ -26,6 +26,7 @@ export const ui = {
     $('card-index').textContent = `PART ${String(d.index).padStart(2, '0')} / ${String(d.total).padStart(2, '0')}`;
     $('card-title').textContent = d.title;
     $('card-body').textContent = d.body;
+    document.querySelector('.alert-local')?.remove();
     ui.setSources(d.sources || []);
     $('card-actions').hidden = true;
     $('card-actions').replaceChildren();
