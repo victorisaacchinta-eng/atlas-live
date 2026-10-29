@@ -147,12 +147,15 @@ export async function chat(body: Record<string, unknown>) {
     } catch (err) {
       last = `${p.label} ${model}: no reply in ${limit / 1000} s (${err instanceof Error ? err.name : 'error'})`;
       trace(op, p, model, 'timeout', Date.now() - t0);
+      // A model that stalls once is probably overloaded: skip it for a few minutes on this instance.
+      EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 3 * 60 * 1000);
       continue;
     }
     trace(op, p, model, r.status, Date.now() - t0);
     if (r.ok) { const j = await r.json(); j.servedBy = `${p.label} · ${model}`; j.servedMs = Date.now() - t0; j.servedProvider = p.id; return j; }
     last = `${p.label} ${r.status}: ${(await r.text()).replace(/\s+/g, ' ').slice(0, 300)}`;
     if (r.status === 429) EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 15 * 60 * 1000);
+    if (r.status === 503) EXHAUSTED.set(`${p.id}:${model}`, Date.now() + 3 * 60 * 1000);
     if (![404, 429, 500, 503].includes(r.status)) throw new HttpError(r.status, last);
     if (r.status !== 429 && i === 0) await new Promise((res) => setTimeout(res, 600));
   }
