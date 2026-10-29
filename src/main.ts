@@ -897,6 +897,20 @@ async function post<T>(body: Record<string, unknown>, tries = 2): Promise<T> {
   }
 }
 
+const SAVED_BUILDS: Record<string, string> = { charminar: '/builds/charminar.json' };
+async function showSavedBuild(name: string) {
+  const key = Object.keys(SAVED_BUILDS).find((k) => name.toLowerCase().includes(k));
+  if (!key) return;
+  try {
+    const j = await (await fetch(SAVED_BUILDS[key])).json() as { name: string; summary: string; sources: { title: string; url: string }[]; parts: BuiltPart[]; models: { architect?: string }; built: string };
+    built = { name: j.name, parts: j.parts, model: stage.model!, sources: j.sources, summary: j.summary };
+    showBuilt();
+    stepRow('Saved', `Showing the saved build of ${j.name} from ${j.built} (${j.parts.length} parts, same pipeline).`, 'done', j.models.architect);
+    $('model-kind').textContent = `Saved build · ${j.built}`;
+    setTimeout(() => setExplode(0.55), 900);
+  } catch { /* nothing saved to show */ }
+}
+
 function showBuilt() {
   // A build keeps running if the viewer switches mode: keep its parts, draw it only in Build.
   if (!built || mode !== 'build') return;
@@ -986,8 +1000,12 @@ async function runConstruct(name: string, city: string) {
     $('card-index').textContent = 'BUILT BY ATLAS';
     setTimeout(() => setExplode(0.55), 900);
   } catch (err) {
-    stepRow('Stopped', err instanceof Error ? err.message.slice(0, 160) : String(err), 'bad');
-    ui.log(`build failed: ${err instanceof Error ? err.message.slice(0, 100) : err}`, 'hot');
+    const why = err instanceof Error ? err.message.slice(0, 120) : String(err);
+    stepRow('Stopped', why, 'bad');
+    ui.log(`build failed: ${why.slice(0, 100)}`, 'hot');
+    // A free endpoint can drop a request mid-build. For a landmark with a saved build, show that,
+    // labelled as saved, rather than an empty stage.
+    await showSavedBuild(name);
   } finally {
     building = false;
   }
