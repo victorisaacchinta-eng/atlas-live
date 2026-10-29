@@ -1,5 +1,7 @@
 import JSZip from 'jszip';
 import { ui } from './ui';
+import { LANG_BY_CODE } from '../api/_langs';
+import { t } from './i18n';
 
 /**
  * The Short director: Discover (the globe) -> Create (this workspace) -> Deliver (the export kit).
@@ -23,8 +25,8 @@ interface Check { beat: number; verdict: Verdict; evidence: string; reason: stri
 interface Shot { shot: Draft['shot']; focus: string; lat: number; lon: number; range: number; tilt: number; heading: number; seconds: number }
 export interface Beat extends Draft, Shot { check: Check | null }
 
-export type ShortLang = 'en' | 'hi' | 'te';
-export const LANG_LABEL: Record<ShortLang, string> = { en: 'English', hi: 'हिन्दी', te: 'తెలుగు' };
+export type ShortLang = string;
+const langLabel = (c?: string) => { const l = LANG_BY_CODE[c ?? 'en'] ?? LANG_BY_CODE.en; return l.code === 'en' ? 'English' : `${l.native} (${l.name})`; };
 export interface ShortInput {
   topic: string; lat?: number; lon?: number; lang?: ShortLang;
   signal?: { id?: string; layer?: string; kind?: string; title: string; lat: number; lon: number; time?: string; mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url?: string;
@@ -111,7 +113,10 @@ export class Director {
     this.beats = []; this.cut = []; this.selected = 0;
     this.root.hidden = false;
     // Captions and the storyboard are in the Short's language; the rest of the UI stays English.
-    this.root.dataset.lang = input.lang ?? 'en';
+    const L = LANG_BY_CODE[input.lang ?? 'en'] ?? LANG_BY_CODE.en;
+    this.root.dataset.lang = L.code;
+    // Script content (captions, storyboard lines, title) carries its own language and direction for screen readers.
+    for (const id of ['dir-caption', 'dir-title']) { const e = document.getElementById(id); if (e) { e.lang = L.code; e.dir = L.rtl ? 'rtl' : 'ltr'; } }
     document.body.classList.add('directing');
     this.deps.onOpen();
     $('dir-topic').textContent = input.topic;
@@ -248,7 +253,10 @@ export class Director {
       li.tabIndex = 0;
       const head = el('div', 'bh');
       head.append(el('span', 'n', String(i + 1).padStart(2, '0')), el('span', 'tc', `${fmt(t)} · ${b.seconds.toFixed(1)} s`), el('span', 'shot', `${b.shot}${b.focus !== 'subject' ? ` · ${b.focus}` : ''}`));
-      li.append(head, el('p', 'cap', b.caption), el('p', 'say', b.say));
+      const cap = el('p', 'cap', b.caption), say = el('p', 'say', b.say);
+      const L = LANG_BY_CODE[this.run?.input.lang ?? 'en'] ?? LANG_BY_CODE.en;
+      for (const x of [cap, say]) { x.lang = L.code; x.dir = L.rtl ? 'rtl' : 'ltr'; }
+      li.append(head, cap, say);
       if (b.check) li.append(pill(b.check.verdict));
       else li.append(el('span', 'pill none', 'No factual claim'));
       li.addEventListener('click', () => { this.select(i); if (!this.playing) this.play(i, true); });
@@ -382,7 +390,7 @@ export class Director {
   async play(from = 0, single = false) {
     if (!this.run?.shots || !this.beats.length) return;
     const token = ++this.playing;
-    $('dir-play').textContent = 'Stop';
+    $('dir-play').textContent = t('stop');
     $('dir-frame').classList.add('rolling');
     const end = single ? from + 1 : this.beats.length;
     for (let i = from; i < end; i++) {
@@ -409,7 +417,7 @@ export class Director {
 
   stop(silence = true) {
     this.playing = 0;
-    $('dir-play').textContent = 'Play preview';
+    $('dir-play').textContent = t('play_preview');
     $('dir-frame').classList.remove('rolling');
     this.deps.setOrbit(false);
     if (silence) this.deps.stopSpeaking();
@@ -534,7 +542,7 @@ function srt(k: Kit) {
 
 function script(k: Kit) {
   let t = 0;
-  const L = [`# ${k.title}`, '', `Topic: ${k.topic}  `, `Language: ${LANG_LABEL[k.run.input.lang ?? 'en']}  `, `Length: about ${k.metrics.seconds} s, ${k.beats.length} beats  `,
+  const L = [`# ${k.title}`, '', `Topic: ${k.topic}  `, `Language: ${langLabel(k.run.input.lang)}  `, `Length: about ${k.metrics.seconds} s, ${k.beats.length} beats  `,
     `Source check: ${k.metrics.supported} of ${k.metrics.surviving} remaining claims supported by their cited source, ${k.metrics.partly} partly, ${k.metrics.review} need review, ${k.metrics.cut} cut. This checks that the source says it, not that it is true.  `,
     `Written by ${shortModel(k.run.models.writer)}, checked by ${shortModel(k.run.models.checker)}${provider(k.run.models.writer) ? `, on ${provider(k.run.models.writer)}` : ''}`, '', '## Beats', ''];
   k.beats.forEach((b, i) => {

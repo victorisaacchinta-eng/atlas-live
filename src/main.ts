@@ -3,6 +3,19 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/noto-sans-telugu';
 import '@fontsource-variable/noto-sans-devanagari';
+// Every script of the 22 scheduled languages. Each file carries a unicode-range, so a browser only
+// downloads the scripts a page actually shows.
+import '@fontsource-variable/noto-sans-bengali';
+import '@fontsource-variable/noto-sans-gurmukhi';
+import '@fontsource-variable/noto-sans-gujarati';
+import '@fontsource-variable/noto-sans-oriya';
+import '@fontsource-variable/noto-sans-tamil';
+import '@fontsource-variable/noto-sans-kannada';
+import '@fontsource-variable/noto-sans-malayalam';
+import '@fontsource-variable/noto-nastaliq-urdu';
+import '@fontsource-variable/noto-sans-ol-chiki';
+import '@fontsource-variable/noto-sans-meetei-mayek';
+import '@fontsource-variable/noto-naskh-arabic';
 import './style.css';
 import * as THREE from 'three';
 import { Stage } from './stage';
@@ -12,7 +25,9 @@ import { ui } from './ui';
 import { applyCss, theme, resolve, savedMode, saveMode, onSystemChange, type ThemeMode } from './theme';
 import { GestureControl } from './gestures';
 import { ask, listen, refreshStatus, speak, setMuted } from './agent';
-import { Director, LANG_LABEL, type Beat, type ShortInput, type ShortLang } from './director';
+import { Director, type Beat, type ShortInput, type ShortLang } from './director';
+import { LANGS, LANG_BY_CODE } from '../api/_langs';
+import { t, tag, lang as uiLang, savedLang as savedUiLang, setLang, mountMenu, onLangChange } from './i18n';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
@@ -240,7 +255,7 @@ const agentCtx = {
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
-const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? 'Ask ATLAS: "any flood alerts in Andhra Pradesh?"' : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
+const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? t('ask_placeholder') : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -1031,6 +1046,11 @@ async function runConstruct(name: string, city: string) {
   apply();
 }
 
+// ---------- language: the corner menu sets the interface and the default Short language ----------
+mountMenu(document.querySelector<HTMLElement>('header .status')!);
+onLangChange(() => { askInput.placeholder = askHint(); });
+void setLang(savedUiLang(), false);
+
 // ---------- sound: answers are read aloud only when the viewer turns it on ----------
 const soundBtn = $('sound-btn');
 function setSound(on: boolean) {
@@ -1080,7 +1100,7 @@ function makeShortFor(topic: string, lat?: number, lon?: number, asked?: string)
   const hit = all.find((x) => x.title.toLowerCase() === t)
     || (Number.isFinite(lat) && Number.isFinite(lon) ? all.find((x) => Math.abs(x.lat - lat!) < 0.05 && Math.abs(x.lon - lon!) < 0.05) : undefined)
     || all.find((x) => t.includes(x.title.toLowerCase()));
-  const want = asked === 'hi' || asked === 'te' || asked === 'en' ? asked as ShortLang : undefined;
+  const want = asked && LANG_BY_CODE[asked] ? asked as ShortLang : undefined;
   const input: ShortInput = hit ? { topic: hit.title, signal: hit, lang: want ?? langFor(hit) } : { topic, lat, lon, lang: want ?? savedLang() };
   director.make(input);
 }
@@ -1102,17 +1122,15 @@ const LAYER_META: Record<LayerId, { label: string; blurb: string }> = {
 };
 const LAYERS: LayerId[] = ['india', 'quakes', 'events'];
 
-// The language a Short is written in. Remembered per viewer; an alert published in Telugu or
-// Hindi suggests that language the first time.
-const LANG_KEY = 'atlas-short-lang';
-function savedLang(): ShortLang { try { const v = localStorage.getItem(LANG_KEY); return v === 'hi' || v === 'te' ? v : 'en'; } catch { return 'en'; } }
-function saveLang(l: ShortLang) { try { localStorage.setItem(LANG_KEY, l); } catch { /* per-viewer only */ } }
+// The language a Short is written in: the viewer's language from the corner menu. A viewer who
+// has never picked one gets the language the alert was published in, when it has one.
+const savedLang = (): ShortLang => uiLang();
 function langFor(s: Signal): ShortLang {
-  let stored: string | null = null;
-  try { stored = localStorage.getItem(LANG_KEY); } catch { /* none */ }
-  if (stored) return savedLang();
-  const langs = (s.texts ?? []).map((t) => t.lang.slice(0, 2).toLowerCase());
-  return langs.includes('te') ? 'te' : langs.includes('hi') ? 'hi' : 'en';
+  let picked = false;
+  try { picked = !!localStorage.getItem('atlas-lang'); } catch { /* none */ }
+  if (picked || uiLang() !== 'en') return uiLang();
+  const regional = (s.texts ?? []).map((x) => x.lang).find((c) => c !== 'en' && LANG_BY_CODE[c]);
+  return regional ?? 'en';
 }
 
 async function goGlobe(focus?: { lat: number; lon: number }) {
@@ -1177,6 +1195,7 @@ for (const id of LAYERS) {
   b.setAttribute('aria-pressed', 'false');
   b.innerHTML = '<i class="dot" aria-hidden="true"></i><span class="t"></span><span class="m"></span>';
   b.querySelector('.t')!.textContent = LAYER_META[id].label;
+  (b.querySelector('.t') as HTMLElement).dataset.i18n = `layer_${id}`;
   b.addEventListener('click', () => {
     const st = signals.state(id);
     setLayer(id, st.status === 'failed' ? true : !st.on);
@@ -1227,7 +1246,7 @@ function openSignal(s: Signal) {
     q.lang = local.lang.slice(0, 2).toLowerCase();
     q.textContent = local.headline;
     const cap = document.createElement('cite');
-    cap.textContent = `As issued, in ${local.language}`;
+    cap.textContent = `${t('as_issued')} ${local.language}`;
     q.append(cap);
     cardBody.after(q);
   }
@@ -1235,7 +1254,7 @@ function openSignal(s: Signal) {
   const acts = $('card-actions');
   acts.replaceChildren();
   const fly = document.createElement('button');
-  fly.type = 'button'; fly.className = 'iso-btn'; fly.textContent = 'Fly here';
+  fly.type = 'button'; fly.className = 'iso-btn'; fly.textContent = t('fly_here'); tag(fly);
   fly.addEventListener('click', async () => {
     // A live signal keeps its own sourced card; the web-facts card is for landmarks.
     await selectLandmark({ id: `sig-${s.id}`, name: s.title.replace(/^M [\d.]+ - /, ''), city: s.layer === 'quakes' ? `M${s.mag} earthquake · ${ago(s.time)}` : `${s.kind} · ${ago(s.time)}`, lat: s.lat, lon: s.lon, view: 26000, lift: 20 }, { facts: false });
@@ -1243,27 +1262,27 @@ function openSignal(s: Signal) {
     $('card-actions').hidden = true;
   });
   const askB = document.createElement('button');
-  askB.type = 'button'; askB.className = 'iso-btn'; askB.textContent = 'Ask ATLAS';
+  askB.type = 'button'; askB.className = 'iso-btn'; askB.textContent = t('ask_atlas'); tag(askB);
   askB.addEventListener('click', () => ask(`Tell me about this ${s.kind}: ${s.title} (${s.time.slice(0, 10)}). What happened and what is nearby?`, agentCtx));
   const shortB = document.createElement('button');
-  shortB.type = 'button'; shortB.className = 'iso-btn short-btn'; shortB.textContent = 'Make a Short';
-  // Language for the Short: English, Hindi or Telugu.
+  shortB.type = 'button'; shortB.className = 'iso-btn short-btn'; shortB.textContent = t('make_short'); tag(shortB);
+  // Language for this Short: any scheduled language. Defaults to the viewer's language.
   let lang = langFor(s);
-  const pick = document.createElement('div');
+  const pick = document.createElement('label');
   pick.className = 'lang-pick';
-  pick.setAttribute('role', 'radiogroup');
-  pick.setAttribute('aria-label', 'Language of the Short');
-  for (const l of ['en', 'hi', 'te'] as ShortLang[]) {
-    const o = document.createElement('button');
-    o.type = 'button'; o.lang = l; o.textContent = LANG_LABEL[l];
-    o.setAttribute('role', 'radio');
-    o.setAttribute('aria-checked', String(l === lang));
-    o.addEventListener('click', () => {
-      lang = l; saveLang(l);
-      pick.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === o)));
-    });
-    pick.append(o);
+  const pl = tag(document.createElement('span'));
+  pl.textContent = t('short_in');
+  const sel = document.createElement('select');
+  sel.setAttribute('aria-label', 'Language of the Short');
+  for (const L of LANGS) {
+    const o = document.createElement('option');
+    o.value = L.code; o.lang = L.code;
+    o.textContent = L.code === 'en' ? 'English' : `${L.native} · ${L.name}${L.beta ? ' (beta)' : ''}`;
+    sel.append(o);
   }
+  sel.value = lang;
+  sel.addEventListener('change', () => { lang = sel.value; });
+  pick.append(pl, sel);
   shortB.addEventListener('click', () => director.make({ topic: s.title, signal: s, lang }));
   acts.append(pick, shortB, fly, askB);
   acts.hidden = false;

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ATLAS Live</title>
-    <meta name="description" content="India's official disaster alerts on a live globe, turned into a 60-second explainer in Telugu, Hindi or English where every claim is checked against the official alert." />
+    <meta name="description" content="India's official disaster alerts on a live globe, turned into a 60-second explainer in any of India's 22 scheduled languages where every claim is checked against the official alert." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#0B0D0B" />
     <script>
@@ -81,15 +81,15 @@
     </section>
 
     <section class="place-panel" id="place-panel" hidden aria-label="Explore a place">
-      <p class="eyebrow">Official alerts, explained</p>
-      <h2 class="lede-head">A warning just went out. Explain it in Telugu within the hour, straight from the official alert.</h2>
-      <p class="lede">Every alert India's disaster authorities have in force right now, on the globe. Pick one and ATLAS writes a 60-second Short in Telugu, Hindi or English. Each claim is checked against the alert itself, and anything the alert does not say is cut.</p>
+      <p class="eyebrow" data-i18n="eyebrow">Official alerts, explained</p>
+      <h2 class="lede-head" data-i18n="headline">A warning just went out. Explain it in your language within the hour, straight from the official alert.</h2>
+      <p class="lede" data-i18n="lede">Every alert India's disaster authorities have in force right now, on the globe. Pick one and ATLAS writes a 60-second Short in your language. Each claim is checked against the alert itself, and anything the alert does not say is cut.</p>
       <form id="place-form" class="ask place-ask" autocomplete="off">
         <label class="visually-hidden" for="place-input">Place name</label>
-        <input id="place-input" placeholder="Go to any place, e.g. Golconda Fort" />
+        <input id="place-input" data-i18n-ph="place_placeholder" placeholder="Go to any place, e.g. Golconda Fort" />
         <button type="submit" class="send">Go</button>
       </form>
-      <div class="sig-head"><span class="eyebrow">Live signals</span><button type="button" id="globe-btn" class="iso-btn" title="Back out to the whole planet (key G)"><span class="lk">G</span>Whole Earth</button></div>
+      <div class="sig-head"><span class="eyebrow" data-i18n="live_signals">Live signals</span><button type="button" id="globe-btn" class="iso-btn" title="Back out to the whole planet (key G)"><span class="lk">G</span><span data-i18n="whole_earth">Whole Earth</span></button></div>
       <div class="signals" id="signals" role="group" aria-label="Live signal layers"></div>
       <div class="look" id="lenses" role="group" aria-label="Lens (keys 1 to 5)"></div>
       <div class="place-actions">
@@ -153,11 +153,11 @@
         <button type="button" class="dir-tab" role="tab" data-tab="deliver" aria-selected="false">Deliver</button>
       </div>
       <section class="dir-story" aria-label="Storyboard">
-        <p class="eyebrow">Storyboard</p>
+        <p class="eyebrow" data-i18n="storyboard">Storyboard</p>
         <ol class="dir-beats" id="dir-beats"></ol>
         <div class="dir-actions">
-          <button type="button" id="dir-play" class="btn-solid" disabled>Play preview</button>
-          <button type="button" id="dir-close" class="btn-line">Back to Earth</button>
+          <button type="button" id="dir-play" class="btn-solid" disabled data-i18n="play_preview">Play preview</button>
+          <button type="button" id="dir-close" class="btn-line" data-i18n="back_to_earth">Back to Earth</button>
         </div>
       </section>
       <div class="dir-frame" id="dir-frame" aria-label="9:16 preview (not a rendered video)">
@@ -169,16 +169,16 @@
       <section class="dir-timeline" id="dir-timeline" aria-label="Timeline"></section>
       <aside class="dir-side" aria-label="Evidence and delivery">
         <section class="dir-evidence-wrap">
-          <p class="eyebrow">Source check</p>
+          <p class="eyebrow" data-i18n="source_check">Source check</p>
           <div class="dir-evidence" id="dir-evidence"></div>
         </section>
         <section class="dir-deliver">
-          <p class="eyebrow">Deliver</p>
+          <p class="eyebrow" data-i18n="deliver">Deliver</p>
           <div class="dir-metrics" id="dir-metrics"></div>
           <ul class="dir-files" aria-label="Files in the kit">
             <li><b>tour.kml</b> Google Earth tour</li><li><b>script.md</b> script and sources</li><li><b>evidence.md</b> claim report</li><li><b>captions.srt</b> subtitles</li><li><b>voiceover.txt</b> narration</li><li><b>run.json</b> models and timings</li>
           </ul>
-          <button type="button" id="dir-export" class="btn-solid" disabled>Download kit</button>
+          <button type="button" id="dir-export" class="btn-solid" disabled data-i18n="download_kit">Download kit</button>
           <p class="dir-note">Render the footage in Google Earth, which is licensed for online video. ATLAS plans the shots and never records Google’s 3D tiles.</p>
         </section>
       </aside>
