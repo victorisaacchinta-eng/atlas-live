@@ -26,7 +26,8 @@ const PROVIDERS: Provider[] = [
     vision: 'meta-llama/llama-4-scout-17b-16e-instruct', agent: 'openai/gpt-oss-120b', fast: 'openai/gpt-oss-20b' },
 ];
 
-export const PROVIDER: Provider | undefined = PROVIDERS.find((p) => p.key);
+// ATLAS_PROVIDER picks the primary when several keys are set; the others stay as cross-provider failover.
+export const PROVIDER: Provider | undefined = PROVIDERS.find((p) => p.key && p.id === process.env.ATLAS_PROVIDER) ?? PROVIDERS.find((p) => p.key);
 
 export const MODELS = {
   vision: process.env.ATLAS_VISION_MODEL || PROVIDER?.vision || 'unset',
