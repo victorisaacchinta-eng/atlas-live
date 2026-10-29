@@ -77,7 +77,7 @@ export function ensureModels() {
  * The model that writes Hindi and Telugu. Nemotron is tuned for English, so on providers that list
  * them, models trained on Indian languages go first. Override with ATLAS_INDIC_MODEL.
  */
-const INDIC_PREFER = [/sarvam-m\b/i, /sarvam/i, /gemini-3(\.\d)?-flash$/, /gemini-flash-latest/, /gemma-3-27b/i, /llama-4-maverick/i, /qwen3-235b/i, /llama-3\.3-70b/i];
+const INDIC_PREFER = [/sarvam-m\b/i, /sarvam/i, /^gemini-flash-latest$/, /gemini-3(\.\d)?-flash$/, /gemma-3-27b/i, /llama-4-maverick/i, /qwen3-235b/i, /llama-3\.3-70b/i];
 export async function indicModel() {
   if (process.env.ATLAS_INDIC_MODEL) return process.env.ATLAS_INDIC_MODEL;
   await ensureModels();
@@ -108,7 +108,8 @@ function trace(op: string, p: Provider, model: string, status: number | string, 
 export async function chat(body: Record<string, unknown>) {
   const op = String(body.op || 'chat');
   const perModel = Number(body.timeout_ms) || 0;
-  delete body.op; delete body.timeout_ms;
+  const preferred = Array.isArray(body.fallbacks) ? (body.fallbacks as string[]) : [];
+  delete body.op; delete body.timeout_ms; delete body.fallbacks;
   if (!PROVIDER) throw new HttpError(503, 'No model key is set on the server (NEBIUS_API_KEY, NVIDIA_API_KEY, GEMINI_API_KEY or GROQ_API_KEY)');
   await ensureModels();
   // Callers pass the id they read earlier; map a retired id to its live replacement.
@@ -119,7 +120,7 @@ export async function chat(body: Record<string, unknown>) {
   const role = (['agent', 'vision', 'fast'] as const).find((k) => body.model === MODELS[k]) ?? 'agent';
   // Overloaded (503), rate-limited or out of quota (429), retired (404): try the next live model,
   // then any other provider that has a key. Each model has its own quota on free tiers.
-  const plan: { p: Provider; model: string }[] = [String(body.model), ...ALTS[role].filter((id) => id !== body.model)].slice(0, 6).map((model) => ({ p: PROVIDER!, model }));
+  const plan: { p: Provider; model: string }[] = [...new Set([String(body.model), ...preferred, ...ALTS[role]])].slice(0, 6).map((model) => ({ p: PROVIDER!, model }));
   for (const other of PROVIDERS) if (other.key && other !== PROVIDER) plan.push({ p: other, model: other[role] });
   let last = '';
   // Models that just said "quota used up" are skipped for a while (per warm instance).
