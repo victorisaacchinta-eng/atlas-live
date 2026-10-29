@@ -29,6 +29,7 @@ export interface IndiaAlert {
   effective?: string;
   expires?: string;
   areaDesc: string;
+  state: string;
   districts: District[];
   lat: number;
   lon: number;
@@ -48,7 +49,32 @@ function decode(s: string) {
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, '&');
 }
 const LANG: Record<string, string> = { hi: 'Hindi', te: 'Telugu', ta: 'Tamil', kn: 'Kannada', ml: 'Malayalam', bn: 'Bengali', mr: 'Marathi', gu: 'Gujarati', or: 'Odia', pa: 'Punjabi', as: 'Assamese', ur: 'Urdu', en: 'English' };
-export const langName = (code: string) => LANG[code.slice(0, 2).toLowerCase()] || code;
+// SACHET's own language tags are not all ISO 639-1: Telugu arrives as "TL", Odia as "OD".
+const LANG_FIX: Record<string, string> = { tl: 'te', od: 'or', ori: 'or', tel: 'te', hin: 'hi', ben: 'bn', tam: 'ta', mal: 'ml', kan: 'kn', mar: 'mr', guj: 'gu', pun: 'pa', asm: 'as' };
+export const langCode = (raw: string) => { const c = raw.trim().toLowerCase().split(/[-_]/)[0]; return LANG_FIX[c] || c.slice(0, 2); };
+export const langName = (code: string) => LANG[langCode(code)] || code;
+
+// District names as they appear in alert text, for alerts that carry no LGD codes. Compact keys
+// ("rudraprayag" matches "Rudra Prayag"); a name used by two states is kept with both.
+const compact = (x: string) => x.toLowerCase().replace(/[^a-z]/g, '');
+const BY_NAME = new Map<string, number[]>();
+for (const [code, [name]] of Object.entries(LGD)) { const k = compact(name); if (k.length >= 4) BY_NAME.set(k, [...(BY_NAME.get(k) || []), Number(code)]); }
+const STATES = [...new Set(Object.values(LGD).map((v) => v[1]))];
+const stateIn = (t: string) => STATES.filter((st) => compact(t).includes(compact(st))).sort((a, b) => b.length - a.length)[0];
+
+/** District codes named in free text (one to three word runs), limited to one state when it is known. */
+function districtsIn(text: string, state?: string): number[] {
+  const w = text.replace(/[_/]/g, ' ').split(/[^A-Za-z]+/).filter(Boolean);
+  const found = new Set<number>();
+  for (let i = 0; i < w.length; i++) for (let n = 3; n >= 1; n--) {
+    const codes = BY_NAME.get(compact(w.slice(i, i + n).join('')));
+    if (!codes) continue;
+    const pick = state ? codes.filter((c) => LGD[c][1] === state) : codes.length === 1 ? codes : [];
+    pick.forEach((c) => found.add(c));
+    if (pick.length) break;
+  }
+  return [...found];
+}
 
 /** The CAP host is fixed. A URL from the browser is only fetched if it points there. */
 export function isSachetUrl(u: string) {
@@ -93,14 +119,20 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
   const infos = all(xml, 'info');
   if (!infos.length) return null;
   const texts: AlertText[] = infos.map((i) => ({
-    lang: tag(i, 'language') || 'en-IN', event: tag(i, 'event'), headline: tag(i, 'headline'),
+    lang: langCode(tag(i, 'language') || 'en'), event: tag(i, 'event'), headline: tag(i, 'headline'),
     description: tag(i, 'description'), instruction: tag(i, 'instruction'),
   }));
   const en = infos.find((i) => /^en/i.test(tag(i, 'language'))) || infos[0];
   const area = all(en, 'area')[0] || all(xml, 'area')[0] || '';
-  const codes = [...new Set(all(area || xml, 'geocode').map((g) => /LGD District/i.test(g) ? Number(tag(g, 'value')) : NaN).filter(Number.isFinite))];
+  const areaDesc0 = tag(area, 'areaDesc');
+  const sender0 = tag(xml, 'sender').replace(/[-_]/g, ' ');
+  let codes = [...new Set(all(area || xml, 'geocode').map((g) => /LGD District/i.test(g) ? Number(tag(g, 'value')) : NaN).filter(Number.isFinite))];
+  // No codes: find district names in the area description, then in the English headline.
+  const enText = `${tag(en, 'headline')} ${tag(en, 'description')}`;
+  const state0 = stateIn(areaDesc0) || stateIn(sender0) || stateIn(enText);
+  if (!codes.some((c) => LGD[c])) codes = [...new Set([...districtsIn(areaDesc0, state0), ...districtsIn(enText, state0)])];
   const districts: District[] = codes.map((code) => LGD[code] ? { code, name: LGD[code][0], state: LGD[code][1], lat: LGD[code][2], lon: LGD[code][3] } : null).filter(Boolean) as District[];
-  const areaDesc = tag(area, 'areaDesc');
+  const areaDesc = areaDesc0;
   const sender = tag(xml, 'sender');
   let lat = NaN, lon = NaN, located: IndiaAlert['located'] = 'districts';
   if (districts.length) {
@@ -110,14 +142,16 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
     // No known district code (a district created after the code table): use the names in areaDesc,
     // "Almora, Bageshwar districts of Uttarakhand", then the state, then the sender's state.
     const m = areaDesc.match(/^(.*?)\s+districts? of\s+(.+)$/i);
-    const state = (m?.[2] || sender.replace(/[-_]/g, ' ').replace(/^IMD\s+/i, '').replace(/\s*SDMA$/i, '')).trim();
-    const names = m && !/^\d+$/.test(m[1].trim()) ? m[1].split(/,|\band\b/).map((x) => x.trim()).filter(Boolean).slice(0, 4) : [];
-    const pts = (await Promise.all(names.map((n) => place(`${n} district, ${state}, India`)))).filter(Boolean) as { lat: number; lon: number }[];
+    const state = (m?.[2] || state0 || '').trim();
+    // "Palmanpeta To Bhimunipatnam", "Srikakulam, Narasannapeta, Tekkali", "vamsadhara_80000_cap_footprint"
+    const names = (m ? m[1] : areaDesc).replace(/_\d.*$/, '').replace(/_/g, ' ').split(/,|\s+to\s+|\band\b/i)
+      .map((x) => x.trim()).filter((x) => x.length > 2 && !/^\d+$/.test(x) && !/^(some|few|many) parts$|^districts? of/i.test(x) && /[a-z]/.test(x)).slice(0, 3);
+    const pts = state ? (await Promise.all(names.map((n) => place(`${n}, ${state}, India`)))).filter(Boolean) as { lat: number; lon: number }[] : [];
     if (pts.length) {
       lat = pts.reduce((s, p) => s + p.lat, 0) / pts.length; lon = pts.reduce((s, p) => s + p.lon, 0) / pts.length;
       located = 'area-name';
     } else {
-      const g = (areaDesc && !m ? await place(`${areaDesc}, India`) : null) || (state ? await place(`${state}, India`) : null);
+      const g = state ? await place(`${state}, India`) : null;
       if (!g) return null;
       ({ lat, lon } = g);
       located = 'state';
@@ -128,7 +162,7 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
     id: tag(xml, 'identifier'), sender: sender.replace(/[-_]/g, ' '), sent: tag(xml, 'sent'), msgType: tag(xml, 'msgType'),
     event, severity: tag(en, 'severity') || 'Unknown', urgency: tag(en, 'urgency'), certainty: tag(en, 'certainty'),
     effective: tag(en, 'effective') || undefined, expires: tag(en, 'expires') || undefined,
-    areaDesc, districts, lat: +lat.toFixed(4), lon: +lon.toFixed(4), located, texts, feedTitle: decode(feedTitle).trim(), url,
+    areaDesc, state: districts[0]?.state || state0 || '', districts, lat: +lat.toFixed(4), lon: +lon.toFixed(4), located, texts, feedTitle: decode(feedTitle).trim(), url,
   };
 }
 
