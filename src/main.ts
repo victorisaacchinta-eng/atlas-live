@@ -1,14 +1,13 @@
 import '@fontsource-variable/science-gothic/full.css';
-import '@fontsource-variable/mona-sans/wdth.css';
-import '@fontsource/monaspace-krypton/400.css';
-import '@fontsource/monaspace-krypton/600.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
 import './style.css';
 import * as THREE from 'three';
 import { Stage } from './stage';
 import { HoloModel, type Hologram } from './model';
 import { LIBRARY, type LibraryEntry } from './library';
 import { ui } from './ui';
-import { applyCss, theme } from './theme';
+import { applyCss, theme, resolve, savedMode, saveMode, onSystemChange, type ThemeMode } from './theme';
 import { GestureControl } from './gestures';
 import { ask, listen, refreshStatus, speak, setMuted } from './agent';
 import { Director, type Beat, type ShortInput } from './director';
@@ -806,6 +805,9 @@ async function searchPlace(q: string) {
   }
 }
 
+// Google's attribution must be on screen whenever its tiles are, including the whole-Earth view.
+stage.earth.onAttribution = (html) => { if (earthActive) $('credit').innerHTML = html; };
+
 // Keep the place marker pinned over the landmark.
 const prevFrame = stage.onFrame;
 stage.onFrame = (dt, t) => {
@@ -1009,6 +1011,22 @@ async function runConstruct(name: string, city: string) {
   } finally {
     building = false;
   }
+}
+
+// ---------- theme: light, dark or follow the system ----------
+{
+  let mode: ThemeMode = savedMode();
+  const btns = document.querySelectorAll<HTMLButtonElement>('.theme-switch button');
+  const apply = () => {
+    const t = resolve(mode);
+    applyCss(t);
+    stage.scene.background = new THREE.Color(t.ground);
+    if (stage.scene.fog) stage.scene.fog = new THREE.FogExp2(new THREE.Color(t.ground), 0.05);
+    btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+  };
+  btns.forEach((b) => b.addEventListener('click', () => { mode = b.dataset.mode as ThemeMode; saveMode(mode); apply(); }));
+  onSystemChange(() => { if (mode === 'system') apply(); });
+  apply();
 }
 
 // ---------- sound: answers are read aloud only when the viewer turns it on ----------
