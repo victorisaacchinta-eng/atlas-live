@@ -193,14 +193,14 @@ const sent = (a: Signal) => Date.parse(a.sent || a.time || '') || 0;
 // Views
 // ---------------------------------------------------------------------------------------------
 
-function render() {
+function render(force = false) {
   paintHeader();
   root.dataset.view = desk.view;
   const view = desk.view;
   if (view === 'verify') { panel.replaceChildren(renderVerify()); return; }
   if (view === 'learn') { panel.replaceChildren(renderLearn()); return; }
   // Keep a half-typed site form when the list refreshes underneath it.
-  if (view === 'site' && panel.querySelector('#dk-site-form') && panel.contains(document.activeElement)) { paintSiteStatus(); return; }
+  if (!force && view === 'site' && panel.querySelector('#dk-site-form') && panel.contains(document.activeElement)) { paintSiteStatus(); return; }
   const html = view === 'site' ? siteView() : view === 'alerts' ? alertsView() : logView();
   panel.innerHTML = html;
   if (view === 'site') wireSite();
@@ -306,7 +306,7 @@ function wireSite() {
     const langs = fd.getAll('langs').map(String).filter((l): l is DLang => l === 'en' || l === 'hi' || l === 'te');
     const crew = Number(fd.get('crew'));
     saveSite({ name: String(fd.get('name') || '').trim(), code: d.code, district: d.name, state: d.state, lat: d.lat, lon: d.lon, langs: langs.length ? langs : ['en'], supervisor: String(fd.get('supervisor') || '').trim(), crew: crew > 0 ? crew : null });
-    render();
+    render(true);
     const saved = $('.dk-saved', panel);
     if (saved) saved.textContent = T('saved');
     window.dispatchEvent(new CustomEvent('nayan:site', { detail: getSite() }));
@@ -320,7 +320,9 @@ function row(a: Signal, site: Site | null) {
   const S = summarise(a, L, site?.district ?? '');
   const sev = capTerm(L, 'severity', a.severity)[0], urg = capTerm(L, 'urgency', a.urgency)[0], cert = capTerm(L, 'certainty', a.certainty)[0];
   const left = desk.practice ? T('practice_tag') : a.expires ? `${T('until', { t: at(a.expires, L) })} · ${timeLeft(a.expires, L)}` : '';
-  const where = a.areaLevel === 'sub-district' ? (a.area ?? '') : (a.districts?.length ? `${a.districts.slice(0, 3).join(', ')}${a.districts.length > 3 ? ` +${a.districts.length - 3}` : ''}` : a.area ?? a.state ?? '');
+  const ds = a.districts ?? [];
+  const ordered = site && ds.includes(site.district) ? [site.district, ...ds.filter((d) => d !== site.district)] : ds;
+  const where = a.areaLevel === 'sub-district' ? (a.area ?? '') : (ordered.length ? `${ordered.slice(0, 3).join(', ')}${ordered.length > 3 ? ` +${ordered.length - 3}` : ''}` : a.area ?? a.state ?? '');
   const id = esc(a.id);
   return `<li class="dk-row" data-sev="${esc(a.severity ?? 'Unknown')}"><button type="button" data-open="${id}">
     <i class="nx-sev" aria-hidden="true"></i>

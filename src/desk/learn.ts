@@ -3,7 +3,7 @@ import { desk, T, esc } from './desk';
 import { CAP, IMD_COLOURS, IMD_SOURCE, ABBREV } from './explain';
 import { NDMA_PAGE } from './ndma';
 
-const CAP_SPEC = 'https://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html';
+const CAP_SPEC = 'https://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html';
 
 export function renderLearn() {
   const L = desk.lang;
