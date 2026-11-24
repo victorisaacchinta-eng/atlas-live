@@ -187,7 +187,7 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
 // SACHET's integration guide asks every consumer to cache each CAP document with its ETag and send
 // If-None-Match, using the cached copy on 304. A warm serverless instance keeps these between calls.
 // A document whose alert has expired is never fetched again: CAP messages do not change once expired.
-interface Cached { etag?: string; xml: string; alert: IndiaAlert | null; at: number }
+interface Cached { etag?: string; xml: string; alert: IndiaAlert | null; expires?: number; at: number }
 const capCache = new Map<string, Cached>();
 let rssCache: { etag?: string; modified?: string; text: string } | null = null;
 
@@ -218,13 +218,16 @@ export async function fetchSachet(max = 150): Promise<{ updated: string; alerts:
   await Promise.all(Array.from({ length: 16 }, async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
       const hit = capCache.get(it.link);
-      if (hit && hit.alert?.expires && Date.parse(hit.alert.expires) <= now) continue;
+      if (hit?.expires && hit.expires <= now) continue;
       try {
         const r = await getCond(it.link, 6000, hit?.etag);
         if (r.status === 304 && hit) { conditional++; if (hit.alert) out.push(hit.alert); continue; }
         const xml = r.text ?? hit?.xml ?? '';
+        // Expired documents are never placed on the map: placing can mean a rate-limited geocoder call.
+        const exp = Date.parse(tag(xml, 'expires'));
+        if (Number.isFinite(exp) && exp <= now) { capCache.set(it.link, { etag: r.etag, xml, alert: null, expires: exp, at: now }); continue; }
         const a = await parseCap(xml, it.link, it.title);
-        capCache.set(it.link, { etag: r.etag, xml, alert: a, at: now });
+        capCache.set(it.link, { etag: r.etag, xml, alert: a, expires: a?.expires ? Date.parse(a.expires) : undefined, at: now });
         if (a) out.push(a);
       } catch {
         failed++;
