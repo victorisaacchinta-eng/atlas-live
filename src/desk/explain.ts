@@ -150,6 +150,12 @@ const CHANCE: Phrase[] = [
 
 const NEXT: Record<DLang, string> = { en: 'in the next {n} hours', hi: 'अगले {n} घंटों में', te: 'రాబోయే {n} గంటల్లో' };
 
+/** The warning itself is the first sentence; later ones are often advice ("During thunderstorms, avoid trees"). */
+export function firstSentence(text: string) {
+  const m = text.match(/^(.+?[.!?])\s+(?=[A-Z])/);
+  return m ? m[1] : text;
+}
+
 /** What the glossary understood in the headline, and which NDMA guidance fits, in order. */
 export function readHeadline(plain: string) {
   let t = ` ${plain.toLowerCase()} `;
@@ -178,7 +184,7 @@ export const GUIDE_FOR: Record<G, { key: string; related?: boolean }> = {
 
 export function guidanceFor(s: Signal) {
   const ph = plainHeadline(s);
-  const r = readHeadline(`${ph.text} ${s.event ?? ''}`);
+  const r = readHeadline(`${firstSentence(ph.text)} ${s.event ?? ''}`);
   return r.guidance.slice(0, 2).map((g) => ({ g, ...GUIDE_FOR[g], hazard: NDMA[GUIDE_FOR[g].key] })).filter((x) => x.hazard);
 }
 
@@ -282,7 +288,8 @@ const FROM: Record<DLang, string> = { en: 'from {t}', hi: '{t} से', te: '{t}
 /** The What / Where / When lines in one language, from the official record and the glossary only. */
 export function summarise(s: Signal, lang: DLang, siteDistrict = '', now = Date.now()): Summary {
   const ph = plainHeadline(s);
-  const r = readHeadline(ph.text);
+  const first = readHeadline(firstSentence(ph.text));
+  const r = first.hazards.length ? first : readHeadline(ph.text);
   const words = r.hazards.map((h) => h[lang]);
   if (r.wind && r.hazards.some((h) => h.en === 'gusty winds' || h.en === 'squall')) {
     const i = r.hazards.findIndex((h) => h.en === 'gusty winds' || h.en === 'squall');
@@ -290,7 +297,8 @@ export function summarise(s: Signal, lang: DLang, siteDistrict = '', now = Date.
   }
   const understood = words.length > 0;
   // Nothing recognised: use the issuer's own event name, in quotes, untranslated.
-  const what = [understood ? words.join(SEP[lang]) : `“${s.event || s.title}”`, r.chance?.[lang]].filter(Boolean).join(' · ');
+  const what0 = [understood ? words.join(SEP[lang]) : `“${s.event || s.title}”`, r.chance?.[lang]].filter(Boolean).join(' · ');
+  const what = lang === 'en' ? what0.replace(/^([“"]?)([a-z])/, (_, q, c) => q + c.toUpperCase()) : what0;
 
   const sub = s.areaLevel === 'sub-district';
   let names = sub ? [s.area ?? ''] : [...(s.districts ?? [])];

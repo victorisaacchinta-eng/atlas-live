@@ -161,7 +161,8 @@ html:lang(te) .dk-h3, html:lang(hi) .dk-h3 { text-transform: none; letter-spacin
 html[data-theme="light"] .dk-card { background: rgba(252, 248, 240, .97); }
 @keyframes dk-in { from { opacity: 0; translate: 24px 0; } }
 .dk-card[hidden] { display: none; }
-.dk-card-head { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 16px 1fr auto; gap: 12px; align-items: start; padding: 18px 20px 14px; background: inherit; border-bottom: 1px solid var(--dk-line); }
+.dk-card-head { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 16px 1fr auto; gap: 12px; align-items: start; padding: 18px 20px 14px; background: #0C0D0F; border-bottom: 1px solid var(--dk-line); box-shadow: 0 8px 18px rgba(0, 0, 0, .35); }
+html[data-theme="light"] .dk-card-head { background: #FBF7EF; box-shadow: 0 8px 18px rgba(80, 50, 10, .08); }
 .dk-card-head .nx-sev { width: 16px; height: 18px; margin-top: 6px; }
 .dk-card-title { display: grid; gap: 6px; min-width: 0; }
 .dk-card-when { margin: 0; font: 500 12.5px/1.4 var(--mono); color: var(--nx-gold); }

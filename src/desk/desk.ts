@@ -218,10 +218,13 @@ function feedLine() {
   return `<p class="dk-feed">${esc(T('feed_ok', { n: liveAlerts().length, t }))}</p>`;
 }
 
+const waiting = () => !desk.practice && desk.feed.status !== 'failed' && !desk.feed.fetchedAt;
+
 function siteStatusHtml(site: Site | null) {
   if (!site) return `<p class="dk-muted">${esc(T('no_site'))}</p>`;
   const f = desk.feed;
   if (!desk.practice && f.status === 'failed') return `<div class="dk-status is-err"><p>${esc(T('status_unknown', { d: site.district }))}</p></div>`;
+  if (waiting()) return `<div class="dk-status"><p class="dk-muted">${esc(T('loading'))}</p></div>`;
   const mine = siteAlerts();
   const t = f.fetchedAt ? clock(f.fetchedAt, desk.lang) : '';
   const head = mine.length ? T(mine.length === 1 ? 'status_some' : 'status_some_n', { n: mine.length, d: site.district }) : T('status_none', { d: site.district });
@@ -334,10 +337,13 @@ function alertsView() {
   const rest = all.filter((a) => !mine.includes(a));
   const f = desk.feed;
   const unknown = !desk.practice && f.status === 'failed';
-  return `<section class="dk-view" aria-labelledby="dk-h">
-    <header class="dk-head"><p class="dk-eyebrow">02 · NDMA SACHET</p><h2 id="dk-h" tabindex="-1">${esc(T('alerts_title'))}</h2>${feedLine()}
+  const head = `<header class="dk-head"><p class="dk-eyebrow">02 · NDMA SACHET</p><h2 id="dk-h" tabindex="-1">${esc(T('alerts_title'))}</h2>${feedLine()}
       <div class="dk-actions"><button type="button" class="dk-btn is-small" data-practice aria-pressed="${desk.practice}">${esc(desk.practice ? T('live_alerts') : T('practice'))}</button></div>
-    </header>
+    </header>`;
+  // Before the first answer from SACHET there is nothing to say about any district.
+  if (waiting()) return `<section class="dk-view" aria-labelledby="dk-h">${head}</section>`;
+  return `<section class="dk-view" aria-labelledby="dk-h">
+    ${head}
     ${site ? `<h3 class="dk-h3">${esc(T('for_d', { d: site.district }))}</h3>${unknown ? `<p class="dk-status is-err">${esc(T('status_unknown', { d: site.district }))}</p>` : mine.length ? `<ul class="dk-rows">${mine.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(T('none_here', { d: site.district }))}</p>`}` : `<p class="dk-muted"><button type="button" class="dk-link" data-go="site">${esc(T('no_site'))}</button></p>`}
     <h3 class="dk-h3">${esc(T('elsewhere'))}</h3>
     ${unknown ? '' : rest.length ? `<ul class="dk-rows">${rest.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(desk.practice ? '' : T('none_india'))}</p>`}
