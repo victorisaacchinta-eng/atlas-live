@@ -232,7 +232,7 @@ export class SignalLayers {
     if (!l.on) return;
     const { wall, cap, rim } = grp.userData as { wall: THREE.InstancedMesh; cap: THREE.InstancedMesh; rim: THREE.InstancedMesh };
     const alt = Math.max(2e3, camLocal.length() - 6.37e6);
-    const r = THREE.MathUtils.clamp(alt * 0.0045, 120, 60000);
+    const r = THREE.MathUtils.clamp(alt * 0.006, 120, 140000);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
     l.data.signals.forEach((s, i) => {
       const p = l.ecef[i];
@@ -242,7 +242,7 @@ export class SignalLayers {
       const sev = SEVERITY_RANK[s.severity ?? ''] ?? 0.35;
       // Extreme and Severe alerts breathe slowly so the eye finds them first; reduced motion holds them still.
       const lift = 1 + (this.reduced || sev < 0.75 ? 0 : 0.08 * Math.sin(t * 1.6 + i));
-      const h = alt * (0.012 + 0.05 * sev) * lift;
+      const h = alt * (0.02 + 0.07 * sev) * lift;
       sc.set(r, h, r);
       m.compose(pos.copy(p), q, sc);
       wall.setMatrixAt(i, m);
