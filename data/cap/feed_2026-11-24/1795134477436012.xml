@@ -1,0 +1,111 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795134477436012_12</cap:identifier>
+<cap:sender>Odisha-SDMA</cap:sender>
+<cap:sent>2026-11-20T06:52:41+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Bhubaneswar,IN-1795134477436012_50,2026-11-20T05:57:14+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Cyclone</cap:event>
+<cap:urgency>Immediate</cap:urgency>
+<cap:severity>Extreme</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T05:53:00+05:30</cap:effective>
+<cap:onset>2026-11-20T06:52:41+05:30</cap:onset>
+<cap:expires>2026-11-20T08:53:00+05:30</cap:expires>
+<cap:headline>The CYCLONIC STORM Akvan with maximum wind speed of 80-90 gusting to 100 Kmph lays centred at 0230 IST of 20.11.26 near latitude 17.7N and longitude 84.9E, 170 Km south of Gopalpur, Odisha. Cyclone Warning for Gajapati, Ganjam, Jagatsinghapur, Kandhamal, Kendrapara, Puri.</cap:headline>
+<cap:description>The Severe Cyclonic Storm Akvan [Pronunciation: Akvan] over the westcentral Bay of Bengal moved north-northwestwards with the speed of 21 kmph during past 06 hours, weakened into a Cyclonic Storm and lay centered at 0230 hours IST of today, the 20th November, 2026 over the same region, near Latitude 17.7N and Longitude 84.9E, about 110 km southeast of Kalingapatnam (Andhra Pradesh),  170 km east of Visakhapatnam (Andhra Pradesh), 170 km south of Gopalpur (Odisha), 250 km south-southwest of Puri (Odisha) and 370 km east-northeast of Narsapur (Andhra Pradesh). It is likely to continue to move north-northwestward and cross North Andhra Pradesh and South Odisha coasts close to Gopalpur, by forenoon of today, the 20th November, 2026 with the maximum sustained wind speed of 70-80 kmph gusting to 90 kmph. Latest Satellite imagery indicates the Land interaction commenced as the sheared cloud mass associated with the Cyclonic Storm Akvan entered into north Andhra Pradesh-south Odisha coas</cap:description>
+<cap:instruction/>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795134477436012</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>6 districts of Odisha</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>354</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>359</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>353</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>360</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>355</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>369</cap:value>
+</cap:geocode>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>OD</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Cyclone</cap:event>
+<cap:urgency>Immediate</cap:urgency>
+<cap:severity>Extreme</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T05:53:00+05:30</cap:effective>
+<cap:onset>2026-11-20T06:52:41+05:30</cap:onset>
+<cap:expires>2026-11-20T08:53:00+05:30</cap:expires>
+<cap:headline>ଭାରତ ପାଣିପାଗ ବିଭାଗର ତଥ୍ୟ ଅନୁଯାୟୀ, ଆପଣଙ୍କ ଅଞ୍ଚଳରେ ପ୍ରବଳ ବର୍ଷା ହେବାର ସମ୍ଭାବନା ରହିଛି । ଏଥିପ୍ରତି ସତର୍କ ରହିବାକୁ ଅନୁରୋଧ । SRC, Odisha</cap:headline>
+<cap:description>The Severe Cyclonic Storm Akvan [Pronunciation: Akvan] over the westcentral Bay of Bengal moved north-northwestwards with the speed of 21 kmph during past 06 hours, weakened into a Cyclonic Storm and lay centered at 0230 hours IST of today, the 20th November, 2026 over the same region, near Latitude 17.7N and Longitude 84.9E, about 110 km southeast of Kalingapatnam (Andhra Pradesh),  170 km east of Visakhapatnam (Andhra Pradesh), 170 km south of Gopalpur (Odisha), 250 km south-southwest of Puri (Odisha) and 370 km east-northeast of Narsapur (Andhra Pradesh). It is likely to continue to move north-northwestward and cross North Andhra Pradesh and South Odisha coasts close to Gopalpur, by forenoon of today, the 20th November, 2026 with the maximum sustained wind speed of 70-80 kmph gusting to 90 kmph. Latest Satellite imagery indicates the Land interaction commenced as the sheared cloud mass associated with the Cyclonic Storm Akvan entered into north Andhra Pradesh-south Odisha coas</cap:description>
+<cap:instruction/>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795134477436012</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>6 districts of Odisha</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>354</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>359</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>353</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>360</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>355</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>369</cap:value>
+</cap:geocode>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

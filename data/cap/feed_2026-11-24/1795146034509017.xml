@@ -1,0 +1,63 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795146034509017_17</cap:identifier>
+<cap:sender>West-Bengal-SDMA</cap:sender>
+<cap:sent>2026-11-20T09:20:33+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Kolkata,IN-1795146034509017_45,2026-11-20T09:10:10+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>BN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Light Thunderstorm with surface wind</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T08:45:00+05:30</cap:effective>
+<cap:onset>2026-11-20T09:20:33+05:30</cap:onset>
+<cap:expires>2026-11-20T11:45:00+05:30</cap:expires>
+<cap:headline>২০-১১-২০২৬ (০৮:৪৫) থেকে পরবর্তী ২-৩ ঘণ্টায় ঝাড়গ্রাম, পশ্চিম ও পূর্ব মেদিনীপুর, উত্তর ও দক্ষিণ ২৪ পরগনার কিছু অংশে বজ্রপাতসহ প্রবল বৃষ্টির প্রবল সম্ভাবনা রয়েছে।</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795146034509017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>JhargramWest MidnaporeEast MidnaporeNorth 24 ParganasSouth 24 Parganas</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Light Thunderstorm with surface wind</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T08:45:00+05:30</cap:effective>
+<cap:onset>2026-11-20T09:20:33+05:30</cap:onset>
+<cap:expires>2026-11-20T11:45:00+05:30</cap:expires>
+<cap:headline>Light to moderate Thunderstorm  lightning accompanied with light to moderate rain, intense rain. very likely to affect over some parts of Jhargram, West Midnapore, East Midnapore, North 24 Parganas, South 24 Parganas districts during next 2-3 hours from 08:45, 20-11-2026.</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795146034509017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>JhargramWest MidnaporeEast MidnaporeNorth 24 ParganasSouth 24 Parganas</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

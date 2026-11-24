@@ -1,0 +1,63 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795084881627021_21</cap:identifier>
+<cap:sender>Madhya-Pradesh-SDMA</cap:sender>
+<cap:sent>2026-11-20T10:20:00+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>FSI,IN-1795084881627021_103,2026-11-19T16:08:32+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Pre Fire Alert</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-19T16:06:00+05:30</cap:effective>
+<cap:onset>2026-11-20T10:20:00+05:30</cap:onset>
+<cap:expires>2026-11-26T16:06:00+05:30</cap:expires>
+<cap:headline>Very High Forest Fire Risk is likely to occur over forest area near you, in next 7 days.</cap:headline>
+<cap:description/>
+<cap:instruction/>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795084881627021</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>Madhya Pradesh</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>HI</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Pre Fire Alert</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-19T16:06:00+05:30</cap:effective>
+<cap:onset>2026-11-20T10:20:00+05:30</cap:onset>
+<cap:expires>2026-11-26T16:06:00+05:30</cap:expires>
+<cap:headline>अगले 7 दिनों में आपके आस-पास के वन क्षेत्रों में जंगल की आग का बहुत अधिक खतरा होने की संभावना है।</cap:headline>
+<cap:description/>
+<cap:instruction/>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795084881627021</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>Madhya Pradesh</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

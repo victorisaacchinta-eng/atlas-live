@@ -18,10 +18,20 @@ const UA = 'Nayan/0.3 (github.com/victorisaacchinta-eng/atlas-live)';
 export interface AlertText { lang: string; event: string; headline: string; description: string; instruction: string }
 export interface District { code: number; name: string; state: string; lat: number; lon: number }
 export interface IndiaAlert {
-  id: string;
+  id: string;               // the CAP identifier, e.g. "IN-1795483307084007_43"
   sender: string;           // e.g. "IMD Visakhapatnam", "Andhra Pradesh SDMA"
   sent: string;             // ISO with offset, as published
   msgType: string;          // Alert | Update | Cancel
+  status: string;           // Actual (others are dropped)
+  scope: string;            // Public (others are dropped)
+  category: string;         // Met, Geo, Hydro...
+  onset?: string;
+  references: string[];     // CAP identifiers of earlier messages this one updates or cancels
+  geocodes: { name: string; value: string }[]; // exactly as published, with their code system
+  districtSource: 'lgd' | 'text' | 'none';     // where the district list came from
+  unknownCodes: number[];   // LGD codes Nayan's table cannot name
+  areaLevel: 'district' | 'sub-district';      // mandal, tehsil or block level areas cover part of a district
+  polygonUrl?: string;
   event: string;            // English event name, e.g. "Heavy Rain"
   severity: string;         // Extreme | Severe | Moderate | Minor | Unknown
   urgency: string;
@@ -81,12 +91,6 @@ export function isSachetUrl(u: string) {
   try { const x = new URL(u); return x.protocol === 'https:' && x.hostname === 'sachet.ndma.gov.in' && x.pathname.startsWith('/cap_public_website/'); } catch { return false; }
 }
 
-async function get(url: string, ms: number) {
-  const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/xml,text/xml,*/*' }, signal: AbortSignal.timeout(ms) });
-  if (!r.ok) throw new HttpError(502, `SACHET answered ${r.status}`);
-  return r.text();
-}
-
 const KIND: [RegExp, string][] = [
   [/cyclon|depression|storm surge/i, 'cyclone'], [/flood|inundat|dam|barrage|river/i, 'flood'], [/tsunami/i, 'tsunami'],
   [/landslide|mudslide/i, 'landslide'], [/avalanche/i, 'avalanche'], [/earthquake/i, 'earthquake'],
@@ -126,11 +130,19 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
   const area = all(en, 'area')[0] || all(xml, 'area')[0] || '';
   const areaDesc0 = tag(area, 'areaDesc');
   const sender0 = tag(xml, 'sender').replace(/[-_]/g, ' ');
+  const geocodes = all(xml, 'geocode').map((g) => ({ name: tag(g, 'valueName'), value: tag(g, 'value') })).filter((g) => g.name || g.value);
+  const geoSeen = new Set<string>();
+  const geocodesU = geocodes.filter((g) => { const k = `${g.name}|${g.value}`; if (geoSeen.has(k)) return false; geoSeen.add(k); return true; });
   let codes = [...new Set(all(area || xml, 'geocode').map((g) => /LGD District/i.test(g) ? Number(tag(g, 'value')) : NaN).filter(Number.isFinite))];
+  const unknownCodes = codes.filter((c) => !LGD[c]);
+  let districtSource: IndiaAlert['districtSource'] = codes.some((c) => LGD[c]) ? 'lgd' : 'none';
   // No codes: find district names in the area description, then in the English headline.
   const enText = `${tag(en, 'headline')} ${tag(en, 'description')}`;
   const state0 = stateIn(areaDesc0) || stateIn(sender0) || stateIn(enText);
-  if (!codes.some((c) => LGD[c])) codes = [...new Set([...districtsIn(areaDesc0, state0), ...districtsIn(enText, state0)])];
+  if (!codes.some((c) => LGD[c])) {
+    codes = [...new Set([...districtsIn(areaDesc0, state0), ...districtsIn(enText, state0)])];
+    if (codes.length) districtSource = 'text';
+  }
   const districts: District[] = codes.map((code) => LGD[code] ? { code, name: LGD[code][0], state: LGD[code][1], lat: LGD[code][2], lon: LGD[code][3] } : null).filter(Boolean) as District[];
   const areaDesc = areaDesc0;
   const sender = tag(xml, 'sender');
@@ -158,41 +170,80 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
     }
   }
   const event = tag(en, 'event') || texts[0].event;
+  const polygon = all(en, 'parameter').find((p) => /polygon/i.test(tag(p, 'valueName')));
+  const references = tag(xml, 'references').split(/\s+/).map((t) => t.split(',')[1]).filter(Boolean);
   return {
     id: tag(xml, 'identifier'), sender: sender.replace(/[-_]/g, ' '), sent: tag(xml, 'sent'), msgType: tag(xml, 'msgType'),
+    status: tag(xml, 'status'), scope: tag(xml, 'scope'), category: tag(en, 'category'), onset: tag(en, 'onset') || undefined,
+    references, geocodes: geocodesU, districtSource, unknownCodes,
+    areaLevel: /\b(mandals?|tehsils?|taluk[as]?|blocks?|villages?|sub-?divisions?|circles?|gram panchayats?)\b/i.test(areaDesc) ? 'sub-district' : 'district',
+    polygonUrl: polygon ? tag(polygon, 'value') : undefined,
     event, severity: tag(en, 'severity') || 'Unknown', urgency: tag(en, 'urgency'), certainty: tag(en, 'certainty'),
     effective: tag(en, 'effective') || undefined, expires: tag(en, 'expires') || undefined,
     areaDesc, state: districts[0]?.state || state0 || '', districts, lat: +lat.toFixed(4), lon: +lon.toFixed(4), located, texts, feedTitle: decode(feedTitle).trim(), url,
   };
 }
 
-/** Pull the RSS index and the CAP documents behind it. Expired, cancelled and duplicate alerts are dropped. */
-export async function fetchSachet(max = 60): Promise<{ updated: string; alerts: IndiaAlert[]; failed: number }> {
-  const rss = await get(SACHET_RSS, 12000);
+// SACHET's integration guide asks every consumer to cache each CAP document with its ETag and send
+// If-None-Match, using the cached copy on 304. A warm serverless instance keeps these between calls.
+// A document whose alert has expired is never fetched again: CAP messages do not change once expired.
+interface Cached { etag?: string; xml: string; alert: IndiaAlert | null; at: number }
+const capCache = new Map<string, Cached>();
+let rssCache: { etag?: string; modified?: string; text: string } | null = null;
+
+async function getCond(url: string, ms: number, etag?: string, modified?: string) {
+  const headers: Record<string, string> = { 'User-Agent': UA, Accept: 'application/xml,text/xml,*/*' };
+  if (etag) headers['If-None-Match'] = etag;
+  if (modified) headers['If-Modified-Since'] = modified;
+  const r = await fetch(url, { headers, signal: AbortSignal.timeout(ms) });
+  if (r.status === 304) return { status: 304 as const };
+  if (!r.ok) throw new HttpError(502, `SACHET answered ${r.status}`);
+  return { status: 200 as const, text: await r.text(), etag: r.headers.get('etag') || undefined, modified: r.headers.get('last-modified') || undefined };
+}
+
+/** Pull the RSS index and the CAP documents behind it. Expired, cancelled, superseded and duplicate alerts are dropped. */
+export async function fetchSachet(max = 150): Promise<{ updated: string; alerts: IndiaAlert[]; failed: number; listed: number; conditional: number }> {
+  const got = await getCond(SACHET_RSS, 12000, rssCache?.etag, rssCache?.modified);
+  if (got.status === 200) rssCache = { etag: got.etag, modified: got.modified, text: got.text! };
+  const rss = rssCache?.text ?? '';
   const items = rss.split(/<item>/).slice(1).map((it) => ({
     title: tag(it, 'title'), link: tag(it, 'link'), pub: tag(it, 'pubDate'), author: tag(it, 'author'),
   })).filter((x) => isSachetUrl(x.link)).slice(0, max);
-  let failed = 0;
+  let failed = 0, conditional = 0;
   const out: IndiaAlert[] = [];
   const queue = [...items];
-  await Promise.all(Array.from({ length: 10 }, async () => {
+  const now = Date.now();
+  await Promise.all(Array.from({ length: 8 }, async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
+      const hit = capCache.get(it.link);
+      if (hit && hit.alert?.expires && Date.parse(hit.alert.expires) <= now) continue;
       try {
-        const a = await parseCap(await get(it.link, 7000), it.link, it.title);
+        const r = await getCond(it.link, 7000, hit?.etag);
+        if (r.status === 304 && hit) { conditional++; if (hit.alert) out.push(hit.alert); continue; }
+        const xml = r.text ?? hit?.xml ?? '';
+        const a = await parseCap(xml, it.link, it.title);
+        capCache.set(it.link, { etag: r.etag, xml, alert: a, at: now });
         if (a) out.push(a);
-      } catch { failed++; }
+      } catch {
+        failed++;
+        if (hit?.alert) out.push(hit.alert); // the last good copy of this document
+      }
     }
   }));
-  const now = Date.now();
   const live = out.filter((a) => a.msgType !== 'Cancel' && (!a.expires || Date.parse(a.expires) > now));
-  // Updates re-issue the same warning: keep the newest per sender, event and set of districts.
+  // A message that updates or cancels another removes the one it names. SACHET serves the newest
+  // version of each alert at its own link, so updates usually name an earlier version of themselves.
+  const base = (id: string) => id.replace(/^IN-/, '').replace(/_\d+$/, '');
+  const replaced = new Set(out.flatMap((a) => a.references.filter((r) => base(r) !== base(a.id)).map(base)));
+  const current = live.filter((a) => !replaced.has(base(a.id)));
+  // Same warning re-issued: keep the newest per sender, event and set of districts.
   const seen = new Map<string, IndiaAlert>();
-  for (const a of live.sort((x, y) => Date.parse(y.sent) - Date.parse(x.sent))) {
+  for (const a of current.sort((x, y) => Date.parse(y.sent) - Date.parse(x.sent))) {
     const k = `${a.sender}|${a.event}|${a.districts.map((d) => d.code).sort().join(',') || a.areaDesc}`;
     if (!seen.has(k)) seen.set(k, a);
   }
   const newest = items.map((x) => Date.parse(x.pub)).filter(Number.isFinite).sort((a, b) => b - a)[0];
-  return { updated: new Date(newest || now).toISOString(), alerts: [...seen.values()], failed };
+  return { updated: new Date(newest || now).toISOString(), alerts: [...seen.values()], failed, listed: items.length, conditional };
 }
 
 /** The alert as a plain-text official record for the writer and the checker. */

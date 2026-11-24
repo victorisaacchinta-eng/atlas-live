@@ -16,12 +16,19 @@ export interface Signal {
   mag?: number; magUnit?: string; depthKm?: number; alert?: string | null; tsunami?: boolean; url: string;
   // India (NDMA SACHET) alerts
   severity?: string; sender?: string; expires?: string; area?: string; districts?: string[]; located?: string;
-  texts?: { lang: string; language: string; headline: string }[];
+  event?: string; urgency?: string; certainty?: string; effective?: string; onset?: string; state?: string;
+  sent?: string; msgType?: string; category?: string; references?: string[];
+  geocodes?: { name: string; value: string }[];
+  districtCodes?: { code: number; name: string; state: string }[];
+  districtSource?: 'lgd' | 'text' | 'none'; unknownCodes?: number[]; areaLevel?: 'district' | 'sub-district';
+  polygonUrl?: string; feedTitle?: string;
+  texts?: { lang: string; language: string; event?: string; headline: string; description?: string; instruction?: string }[];
 }
 
 export interface LayerData {
   layer: LayerId; name: string; source: string; sourceUrl: string; license: string;
   updated: string; fetchedAt: string; signals: Signal[];
+  stale?: boolean; error?: string; listed?: number;
 }
 
 export type LayerStatus = 'off' | 'loading' | 'ok' | 'failed';

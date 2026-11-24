@@ -1,0 +1,69 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795162562135030_56</cap:identifier>
+<cap:sender>IMD-Hyderabad</cap:sender>
+<cap:sent>2026-11-20T13:45:33+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Alert</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Lightning, Gusty winds, and Thunderstorm</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T13:42:00+05:30</cap:effective>
+<cap:onset>2026-11-20T13:46:02+05:30</cap:onset>
+<cap:expires>2026-11-21T08:30:00+05:30</cap:expires>
+<cap:headline>Thunderstorm accompanied with lightning and Gusty winds (30-40 kmph) is very likely to occur  at isolated places over Adilabad, Bhadradri Kothagudem, Jayashankar Bhupalapally, Karimnagar, Kumuram Bheem Asifabad, Mancherial, Mulugu, Peddapalli in next 24 hours.</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795162562135030</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>Adilabad, Bhadradri Kothagudem, Jayashankar Bhupalapally, Karimnagar, Kumuram Bheem Asifabad, Mancherial, Mulugu, Peddapalli districts of Telangana</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>720</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>699</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>687</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>508</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>501</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>684</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>682</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>690</cap:value>
+</cap:geocode>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

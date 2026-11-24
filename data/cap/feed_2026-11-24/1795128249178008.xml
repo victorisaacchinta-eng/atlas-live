@@ -1,0 +1,41 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795128249178008_68</cap:identifier>
+<cap:sender>IMD-Visakhapatnam</cap:sender>
+<cap:sent>2026-11-20T04:13:44+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Alert</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Heavy Rain</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T04:13:00+05:30</cap:effective>
+<cap:onset>2026-11-20T04:14:09+05:30</cap:onset>
+<cap:expires>2026-11-20T07:13:00+05:30</cap:expires>
+<cap:headline>Heavy Rain is very likely to occur at a few places over Kakinada district in next 3 hours.</cap:headline>
+<cap:description/>
+<cap:instruction>Avoid going to areas that face the water logging problems often.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795128249178008</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>Kakinada district of Andhra Pradesh</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>746</cap:value>
+</cap:geocode>
+<cap:altitude>0.0</cap:altitude>
+<cap:ceiling>0.0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

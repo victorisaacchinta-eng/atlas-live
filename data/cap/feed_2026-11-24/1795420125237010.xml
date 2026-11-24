@@ -1,0 +1,54 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795420125237010_10</cap:identifier>
+<cap:sender>Assam-SDMA</cap:sender>
+<cap:sent>2026-11-23T13:22:48+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Guwahati,IN-1795420125237010_44,2026-11-23T13:17:27+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Thunderstorm with Lightning</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-23T13:13:00+05:30</cap:effective>
+<cap:onset>2026-11-23T13:22:48+05:30</cap:onset>
+<cap:expires>2026-11-23T16:13:00+05:30</cap:expires>
+<cap:headline>IMD Guwahati has issued forecast for Thunderstorms with Lightning accompanied with gusty wind and light to moderate rain which is very likely to occur at a few places over Cachar, Dima Hasao, Hailakandi and Sribhumi in next 3 hours. Issued in Public Interest by ASDMA.</cap:headline>
+<cap:description/>
+<cap:instruction>Take safe shelters, do not take shelter under trees.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795420125237010</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>4 districts of Assam</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>282</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>289</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>299</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>293</cap:value>
+</cap:geocode>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

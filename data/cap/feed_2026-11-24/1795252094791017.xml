@@ -1,0 +1,63 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795252094791017_17</cap:identifier>
+<cap:sender>West-Bengal-SDMA</cap:sender>
+<cap:sent>2026-11-21T14:41:58+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Kolkata,IN-1795252094791017_45,2026-11-21T14:37:45+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Thunderstorm with Lightning</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-21T14:37:00+05:30</cap:effective>
+<cap:onset>2026-11-21T14:41:58+05:30</cap:onset>
+<cap:expires>2026-11-21T17:37:00+05:30</cap:expires>
+<cap:headline>Light to moderate Rain or thundershower accompanied with light to moderate rain. likely to affect over some parts of South 24 Parganas district during next 2-3 hours from 14:35, 21-11-2026.</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795252094791017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>some parts</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>BN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Thunderstorm with Lightning</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-21T14:37:00+05:30</cap:effective>
+<cap:onset>2026-11-21T14:41:58+05:30</cap:onset>
+<cap:expires>2026-11-21T17:37:00+05:30</cap:expires>
+<cap:headline>২১-১১-২০২৬ ১৪:৩৫ থেকে আগামী ২-৩ ঘণ্টা দক্ষিণ ২৪ পরগনার কিছু অংশে হালকা থেকে মাঝারি বৃষ্টি বা বজ্রসহ বৃষ্টি হতে পারে।</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795252094791017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>some parts</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

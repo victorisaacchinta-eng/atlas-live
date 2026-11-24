@@ -144,19 +144,21 @@ export default async function handler(req: { method: string; body: Body }, res: 
     const { question, machine, parts = [], focused, history = [], mode = 'object', layers = [] } = req.body || ({} as Body);
     if (!question || !machine) throw new HttpError(400, 'question and machine are required');
     const earth = mode === 'earth';
-    const tools = earth ? EARTH_TOOLS : SCENE_TOOLS;
+    // Nayan's desk: no model building, lens tricks or isolation, only what serves an alert.
+    const DESK = new Set(['build_model', 'set_lens', 'isolate', 'orbit']);
+    const tools = earth ? EARTH_TOOLS.filter((t) => !DESK.has(t.function.name)) : SCENE_TOOLS;
 
     const partList = parts.map((p, i) => `${i + 1}. ${p}`).join('\n');
-    const system = earth ? `You are Nayan, an intelligence guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
+    const system = earth ? `You are Nayan, a disaster-alert desk that helps people understand India's official warnings and act on them. The camera is over: ${machine}.
 Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC): ${new Date().toISOString().slice(0, 16)}.
 Rules:
-- Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
-- India alerts: for any warning, rain, flood, cyclone, thunderstorm or heat question about India, call find_signals with layer india. These are official alerts from NDMA SACHET. Name the issuing authority and say until when the alert is in force (IST). Never add damage, injuries or deaths the alert does not state.
+- Places: fly_to a specific place name. globe_view pulls back to the whole Earth.
+- India alerts: for any warning, rain, flood, cyclone, thunderstorm or heat question about India, call find_signals with layer india. These are official alerts from NDMA SACHET. Name the issuing authority and say until when the alert is in force (IST). Never add damage, injuries or deaths the alert does not state. Expand short forms (TSL is thunderstorm and lightning). Tell people what to do only in general safety terms, and point them to the alert card for the official guidance.
+- If someone asks whether a forwarded message is real, tell them to paste it into Verify. Never call a message true or fake yourself.
 - Live data: for earthquakes, wildfires, storms or sea ice, call find_signals (and show_layer so the viewer sees them). When your answer is about one specific item, also fly_to its lat and lon so the viewer sees it. For weather, call get_weather.
 - find_signals items are real. NASA EONET marks events "open" until it closes them, so say "open in NASA EONET" and give each one's last_observed date and days_since_observed. Never say "burning now", "active right now" or "currently". Never say there are none when items came back.
 - To make a Short, Reel or explainer video, call make_short.
 - History, architecture and other facts: call web_search first. Only state what tool results support; say which source (USGS, NASA EONET, Open-Meteo, or the web) a fact came from.
-- To build or take apart a structure, call build_model.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
 - Only say you did something if the tool result says it worked. If a tool failed or found nothing, say so plainly.` : `You are Nayan, a guide inside a hologram of a real machine: ${machine}.
 Parts on screen (index. name):

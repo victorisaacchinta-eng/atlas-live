@@ -1,5 +1,5 @@
 import { HttpError } from './_nebius.js';
-import { fetchSachet, kindOf, SEVERITY_RANK, langName } from './_sachet.js';
+import { fetchSachet, kindOf, SEVERITY_RANK, langName, type IndiaAlert } from './_sachet.js';
 
 /**
  * Live signals on the globe. Two layers, both keyless public-domain feeds, plus weather on demand:
@@ -33,7 +33,13 @@ export interface Signal {
   area?: string;
   districts?: string[];
   located?: string;
-  texts?: { lang: string; language: string; headline: string }[];
+  event?: string; urgency?: string; certainty?: string; effective?: string; onset?: string; state?: string;
+  sent?: string; msgType?: string; category?: string; references?: string[];
+  geocodes?: { name: string; value: string }[];
+  districtCodes?: { code: number; name: string; state: string }[];
+  districtSource?: 'lgd' | 'text' | 'none'; unknownCodes?: number[]; areaLevel?: 'district' | 'sub-district';
+  polygonUrl?: string; feedTitle?: string;
+  texts?: { lang: string; language: string; event?: string; headline: string; description?: string; instruction?: string }[];
 }
 
 export interface LayerData {
@@ -43,8 +49,11 @@ export interface LayerData {
   sourceUrl: string;
   license: string;
   updated: string;       // when the source says the data was generated
-  fetchedAt: string;
+  fetchedAt: string;     // when Nayan last read the source successfully
   signals: Signal[];
+  stale?: boolean;       // the source failed just now; this is the last good copy
+  error?: string;        // why the source failed, when stale
+  listed?: number;       // India: items in SACHET's RSS index that were checked
 }
 
 const META: Record<LayerId, Omit<LayerData, 'updated' | 'fetchedAt' | 'signals' | 'layer'> & { ttl: number }> = {
@@ -80,21 +89,28 @@ async function fetchQuakes(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
 /** "vamsadhara_80000_cap_footprint" -> "Vamsadhara"; codes like "MTS WITH MR" -> nothing. */
 const clean = (x: string) => { const t = x.replace(/_\d.*$/, '').replace(/_/g, ' ').trim(); return /[a-z]/.test(t) ? t.replace(/^\w/, (c) => c.toUpperCase()) : ''; };
 
-async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals'>> {
-  const { updated, alerts } = await fetchSachet();
+/** One SACHET alert as the browser receives it. The whole official record travels with the alert:
+ *  the plain card is built from it in the browser, by code, so it still works when every model is down. */
+export function toSignal(a: IndiaAlert): Signal {
   return {
-    updated,
-    signals: alerts.map((a) => ({
-      id: a.id, layer: 'india' as const, kind: kindOf(a.event, a.texts[0]?.headline), lat: a.lat, lon: a.lon, time: a.sent,
-      title: `${a.event}: ${a.districts.length ? a.districts.slice(0, 3).map((d) => d.name).join(', ') + (a.districts.length > 3 ? ` and ${a.districts.length - 3} more` : '') + `, ${a.districts[0].state}`
-        : clean(a.areaDesc) ? `${clean(a.areaDesc)}${a.state && !a.areaDesc.includes(a.state) ? `, ${a.state}` : ''}` : a.state || a.sender}`,
-      mag: SEVERITY_RANK[a.severity] ?? 1, magUnit: 'severity',
-      severity: a.severity, sender: a.sender, expires: a.expires, area: a.areaDesc, located: a.located,
-      districts: a.districts.map((d) => d.name),
-      texts: a.texts.map((t) => ({ lang: t.lang, language: langName(t.lang), headline: t.headline.slice(0, 400) })),
-      url: a.url,
-    })),
+    id: a.id, layer: 'india' as const, kind: kindOf(a.event, a.texts[0]?.headline), lat: a.lat, lon: a.lon, time: a.sent,
+    title: `${a.event}: ${a.districts.length ? a.districts.slice(0, 3).map((d) => d.name).join(', ') + (a.districts.length > 3 ? ` and ${a.districts.length - 3} more` : '') + `, ${a.districts[0].state}`
+      : clean(a.areaDesc) ? `${clean(a.areaDesc)}${a.state && !a.areaDesc.includes(a.state) ? `, ${a.state}` : ''}` : a.state || a.sender}`,
+    mag: SEVERITY_RANK[a.severity] ?? 1, magUnit: 'severity',
+    severity: a.severity, sender: a.sender, expires: a.expires, area: a.areaDesc, located: a.located,
+    event: a.event, urgency: a.urgency, certainty: a.certainty, effective: a.effective, onset: a.onset, state: a.state,
+    sent: a.sent, msgType: a.msgType, category: a.category, references: a.references,
+    geocodes: a.geocodes, districtCodes: a.districts.map((d) => ({ code: d.code, name: d.name, state: d.state })),
+    districtSource: a.districtSource, unknownCodes: a.unknownCodes, areaLevel: a.areaLevel, polygonUrl: a.polygonUrl, feedTitle: a.feedTitle,
+    districts: a.districts.map((d) => d.name),
+    texts: a.texts.map((t) => ({ lang: t.lang, language: langName(t.lang), event: t.event, headline: t.headline.slice(0, 1500), description: t.description.slice(0, 1500), instruction: t.instruction.slice(0, 800) })),
+    url: a.url,
   };
+}
+
+async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals' | 'listed'>> {
+  const { updated, alerts, listed } = await fetchSachet();
+  return { updated, listed, signals: alerts.map(toSignal) };
 }
 
 const KIND: Record<string, string> = { wildfires: 'wildfire', severeStorms: 'storm', seaLakeIce: 'ice', volcanoes: 'volcano', floods: 'flood', drought: 'drought', dustHaze: 'dust', landslides: 'landslide', snow: 'snow', tempExtremes: 'heat', waterColor: 'water', manmade: 'manmade', earthquakes: 'earthquake' };
@@ -141,9 +157,11 @@ export async function layer(id: LayerId): Promise<LayerData> {
     cache.set(id, { at: Date.now(), data });
     return data;
   } catch (err) {
-    // Serve the last good copy rather than nothing, but only if it is under 6 hours old; the client shows its age.
-    if (hit && Date.now() - hit.at < 6 * 3600e3) return hit.data;
-    throw err instanceof HttpError ? err : new HttpError(502, `${meta.source} is not responding (${err instanceof Error ? err.name : 'error'})`);
+    const why = err instanceof HttpError ? err.message : `${meta.source} is not responding (${err instanceof Error ? err.name : 'error'})`;
+    // Serve the last good copy rather than nothing, but only if it is under 6 hours old, and say so:
+    // the desk must never present an old list as the current one.
+    if (hit && Date.now() - hit.at < 6 * 3600e3) return { ...hit.data, stale: true, error: why };
+    throw err instanceof HttpError ? err : new HttpError(502, why);
   }
 }
 

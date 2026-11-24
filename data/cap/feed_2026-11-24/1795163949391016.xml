@@ -1,0 +1,63 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795163949391016_16</cap:identifier>
+<cap:sender>Bihar-SDMA</cap:sender>
+<cap:sent>2026-11-20T14:34:16+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Patna,IN-1795163949391016_59,2026-11-20T14:07:56+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Light Rain</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T14:06:00+05:30</cap:effective>
+<cap:onset>2026-11-20T14:34:16+05:30</cap:onset>
+<cap:expires>2026-11-20T17:06:00+05:30</cap:expires>
+<cap:headline>During next 3 hours (02:10 PM to 05:10 PM), some parts of your area are likely to experience light to moderate rain accompanied with Gusty wind (30-40 kmph).</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795163949391016</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>ARWAL, AURANGABAD, BHOJPUR, GAYA and ROHTAS districts</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>HI</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Light Rain</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Moderate</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T14:06:00+05:30</cap:effective>
+<cap:onset>2026-11-20T14:34:16+05:30</cap:onset>
+<cap:expires>2026-11-20T17:06:00+05:30</cap:expires>
+<cap:headline>अगले 3 घंटों (02:10 PM से 05:10 PM) में आपके क्षेत्र में कुछ स्थानों पर हल्के से मध्यम दर्जे की वर्षा के साथ (30-40 kmph) तेज हवा होने की संभावना है।</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795163949391016</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>ARWAL, AURANGABAD, BHOJPUR, GAYA and ROHTAS districts</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

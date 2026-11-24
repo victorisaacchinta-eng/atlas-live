@@ -1,0 +1,45 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795141515464008_68</cap:identifier>
+<cap:sender>IMD-Visakhapatnam</cap:sender>
+<cap:sent>2026-11-20T07:54:43+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Alert</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Cyclone</cap:event>
+<cap:urgency>Immediate</cap:urgency>
+<cap:severity>Extreme</cap:severity>
+<cap:certainty>Possible</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T07:51:00+05:30</cap:effective>
+<cap:onset>2026-11-20T07:55:15+05:30</cap:onset>
+<cap:expires>2026-11-20T10:51:00+05:30</cap:expires>
+<cap:headline>The CYCLONIC STORM Akvan with maximum wind speed of 80-90 gusting to 100 Kmph lays centred at 0530 IST of 20.11.26 near latitude 18.3N and longitude 84.8E, 70 Km east of Kalingapatnam, Andhra Pradesh. Cyclone Warning for Parvathipuram Manyam, Srikakulam.</cap:headline>
+<cap:description>The Cyclonic Storm Akvan [Pronunciation: Akvan] over the westcentral Bay of Bengal moved north-northwestwards with the speed of 23 kmph during past 06 hours and lay centered at 0530 hours IST of today, the 20th November, 2026 over westcentral Bay of Bengal near north Andhra Pradesh  south Odisha coasts (Latitude 18.3N and Longitude 84.8E), about 70 km east of Kalingapatnam (Andhra Pradesh), 110 km south of Gopalpur (Odisha), 170 km east-northeast of Visakhapatnam (Andhra Pradesh), and 200 km south-southwest of Puri (Odisha). It is likely to continue to move north-northwestward and cross North Andhra Pradesh and South Odisha coasts close to Gopalpur, by forenoon of 20th November, 2026 with the maximum sustained wind speed of 70-80 kmph gusting to 90 kmph. Latest Satellite imagery indicates the land interaction commenced as the outer rain cloud band entered into the land and the Landfall process will commence during next 2 hours.</cap:description>
+<cap:instruction/>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795141515464008</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>Parvathipuram Manyam, Srikakulam districts of Andhra Pradesh</cap:areaDesc>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>743</cap:value>
+</cap:geocode>
+<cap:geocode>
+<cap:valueName>LGD District Code</cap:valueName>
+<cap:value>519</cap:value>
+</cap:geocode>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

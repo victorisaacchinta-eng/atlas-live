@@ -1,0 +1,63 @@
+<cap:alert xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+<cap:identifier>IN-1795148105188017_17</cap:identifier>
+<cap:sender>West-Bengal-SDMA</cap:sender>
+<cap:sent>2026-11-20T09:46:55+05:30</cap:sent>
+<cap:status>Actual</cap:status>
+<cap:msgType>Update</cap:msgType>
+<cap:scope>Public</cap:scope>
+<cap:restriction/>
+<cap:addresses/>
+<cap:note/>
+<cap:references>IMD-Kolkata,IN-1795148105188017_45,2026-11-20T09:44:48+05:30</cap:references>
+<cap:incidents/>
+<cap:info>
+<cap:language>en-IN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Heavy Rain</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T09:35:00+05:30</cap:effective>
+<cap:onset>2026-11-20T09:46:55+05:30</cap:onset>
+<cap:expires>2026-11-20T12:35:00+05:30</cap:expires>
+<cap:headline>Light to moderate Thunderstorm  lightning accompanied with intense rain. very likely to affect over some parts of Howrah, Hooghly, Kolkata districts during next 1-2 hours from 09:35, 20-11-2026.</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795148105188017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>HowrahHooghlyKolkata</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+<cap:info>
+<cap:language>BN</cap:language>
+<cap:category>Met</cap:category>
+<cap:event>Heavy Rain</cap:event>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Severe</cap:severity>
+<cap:certainty>Likely</cap:certainty>
+<cap:audience>1</cap:audience>
+<cap:effective>2026-11-20T09:35:00+05:30</cap:effective>
+<cap:onset>2026-11-20T09:46:55+05:30</cap:onset>
+<cap:expires>2026-11-20T12:35:00+05:30</cap:expires>
+<cap:headline>২০-১১-২০২৬ তারিখের ০৯:৩৫ থেকে পরবর্তী ১-২ ঘণ্টার মধ্যে হাওড়া, হুগলি, কলকাতা জেলার কিছু অংশে হালকা থেকে মাঝারি বজ্রপাতসহ তীব্র বৃষ্টিপাতের প্রবল সম্ভাবনা রয়েছে।</cap:headline>
+<cap:description/>
+<cap:instruction>Please follow SDMA guidelines.</cap:instruction>
+<cap:contact/>
+<cap:parameter>
+<cap:valueName>Polygon URL</cap:valueName>
+<cap:value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=1795148105188017</cap:value>
+</cap:parameter>
+<cap:area>
+<cap:areaDesc>HowrahHooghlyKolkata</cap:areaDesc>
+<cap:altitude>0</cap:altitude>
+<cap:ceiling>0</cap:ceiling>
+</cap:area>
+</cap:info>
+</cap:alert>

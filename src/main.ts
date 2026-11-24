@@ -3,19 +3,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/noto-sans-telugu';
 import '@fontsource-variable/noto-sans-devanagari';
-// Every script of the 22 scheduled languages. Each file carries a unicode-range, so a browser only
-// downloads the scripts a page actually shows.
-import '@fontsource-variable/noto-sans-bengali';
-import '@fontsource-variable/noto-sans-gurmukhi';
-import '@fontsource-variable/noto-sans-gujarati';
-import '@fontsource-variable/noto-sans-oriya';
-import '@fontsource-variable/noto-sans-tamil';
-import '@fontsource-variable/noto-sans-kannada';
-import '@fontsource-variable/noto-sans-malayalam';
-import '@fontsource-variable/noto-nastaliq-urdu';
-import '@fontsource-variable/noto-sans-ol-chiki';
-import '@fontsource-variable/noto-sans-meetei-mayek';
-import '@fontsource-variable/noto-naskh-arabic';
+// Nayan writes in English, Hindi and Telugu, so only those scripts ship.
 import './style.css';
 import * as THREE from 'three';
 import { Stage } from './stage';
@@ -27,7 +15,7 @@ import { GestureControl } from './gestures';
 import { ask, listen, refreshStatus, speak, setMuted } from './agent';
 import { Director, type Beat, type ShortInput, type ShortLang } from './director';
 import { LANGS, LANG_BY_CODE } from '../api/_langs';
-import { t, tag, lang as uiLang, savedLang as savedUiLang, setLang, mountMenu, onLangChange } from './i18n';
+import { t, tag, lang as uiLang, onLangChange } from './i18n';
 import { ScanModel, identify } from './scan';
 import { buildPlace, fetchPlace, sunDirection, type PlaceData } from './places';
 import { LANDMARKS, type Landmark } from './landmarks';
@@ -37,8 +25,7 @@ import { toHologram, applyFixes, type BuiltPart } from './construct';
 import { loadSplat, disposeSplat } from './splat';
 import { SignalLayers, ago, type Signal, type LayerId } from './signals';
 import { initNav } from './nav';
-import { initCatalog } from './catalog';
-import { initNayanConsole } from './console/nayan';
+import { initDesk } from './desk/desk';
 
 applyCss(theme);
 const LAB = new URLSearchParams(location.search).has('lab');
@@ -54,21 +41,28 @@ const state = {
 
 const explodeInput = $('explode') as HTMLInputElement;
 
-// ---------- library shelf and catalog ----------
+// ---------- library shelf ----------
 const shelf = $('shelf');
-const catalog = initCatalog({ shelf, onPick: (e) => void loadEntry(e) });
+for (const e of LIBRARY) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.id = e.id;
+  b.innerHTML = `<span class="t">${e.title}</span><span class="k">${e.kind}</span>`;
+  b.addEventListener('click', () => loadEntry(e));
+  shelf.appendChild(b);
+}
 
 async function loadEntry(e: LibraryEntry) {
   if (state.loading || state.entry?.id === e.id) return;
   state.loading = true;
-  catalog.setActive(e.id);
+  shelf.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === e.id));
   // A place link opens straight into Places: the library model loads quietly behind it.
   if (!/[?&](place|at)=/.test(location.search) || state.entry) ui.log(`loading ${e.title.toLowerCase()}`, 'sys');
   try {
-    const m = await HoloModel.load(e.url, e.parts);
+    const m = await HoloModel.load(e.url);
     // Opened straight into another mode (a ?place= link, say): don't let a late library model take over.
     // Library loads it again on entry.
-    if (mode !== 'library') { catalog.clearActive(); return; }
+    if (mode !== 'library') { shelf.querySelectorAll('button').forEach((b) => b.classList.remove('is-on')); return; }
     state.entry = e;
     stage.setModel(m);
     stage.frame('object');
@@ -1057,9 +1051,7 @@ async function runConstruct(name: string, city: string) {
 }
 
 // ---------- language: the corner menu sets the interface and the default Short language ----------
-mountMenu(document.querySelector<HTMLElement>('header .status')!);
 onLangChange(() => { askInput.placeholder = askHint(); });
-void setLang(savedUiLang(), false);
 
 // ---------- sound: answers are read aloud only when the viewer turns it on ----------
 const soundBtn = $('sound-btn');
@@ -1178,7 +1170,7 @@ async function goGlobe(focus?: { lat: number; lon: number }) {
     stage.rise(globeDist(), 2.2, enter);
   }
   // First visit: switch the live layers on so the planet is never an empty ball.
-  for (const id of LAYERS) if (signals.state(id).status === 'off') setLayer(id, true);
+  if (signals.state('india').status === 'off') setLayer('india', true);
 }
 
 function leaveGlobe() {
@@ -1238,38 +1230,43 @@ signals.onChange = renderLayers;
 window.addEventListener('nayan:open-signal', (e) => {
   const s = (e as CustomEvent<Signal>).detail;
   if (mode !== 'places') setMode('places');
-  openSignal(s);
+  // The desk opens India alerts itself; here the planet only turns to the alert and marks it.
+  if (s.layer === 'india') signals.select(s);
+  else openSignal(s);
   if (globe) { globe.lat = THREE.MathUtils.clamp(s.lat, -75, 75); globe.lon = s.lon; globe.spin = false; }
 });
+// The desk asks for a fresh read of SACHET every few minutes and on "Try again".
+window.addEventListener('nayan:reload-india', () => { if (signals.state('india').on) void signals.load('india'); else setLayer('india', true); });
+// "Show my site on the globe": the district's own point from the LGD table.
+window.addEventListener('nayan:fly-site', (e) => {
+  const st = (e as CustomEvent<{ name: string; district: string; state: string; lat: number; lon: number }>).detail;
+  void selectLandmark({ id: `site-${st.district}`, name: st.name || st.district, city: `${st.district}, ${st.state}`, lat: st.lat, lon: st.lon, view: 90000, lift: 20 }, { facts: false });
+});
 window.addEventListener('nayan:whole-earth', () => void goGlobe());
+// "Show on the globe": fly to the alert's area. Many districts get a regional view.
+window.addEventListener('nayan:fly', (e) => {
+  const s = (e as CustomEvent<Signal>).detail;
+  const n = s.districts?.length ?? 0;
+  void selectLandmark({ id: `sig-${s.id}`, name: s.districts?.[0] ?? s.title, city: s.state || s.sender || 'India', lat: s.lat, lon: s.lon, view: n > 6 ? 420000 : n > 2 ? 160000 : 60000, lift: 20 }, { facts: false });
+});
+window.addEventListener('nayan:short', (e) => {
+  const { signal, lang } = (e as CustomEvent<{ signal: Signal; lang: string }>).detail;
+  director.make({ topic: signal.title, signal, lang });
+});
 renderLayers();
 setInterval(renderLayers, 60e3);
 
 // Inspect a signal: what it is, when, how big, and the source's own page.
 function openSignal(s: Signal) {
   signals.select(s);
+  // An official India alert opens the Nayan alert card: plain words, what to do, a message pack.
+  if (s.layer === 'india') { ui.closeCard(); window.dispatchEvent(new CustomEvent('nayan:alert', { detail: s })); return; }
   const d = signals.state(s.layer).data;
   const when = `${ago(s.time)} (${s.time.slice(0, 16).replace('T', ' ')} UTC)`;
-  const local = (s.texts ?? []).find((t) => !/^en/i.test(t.lang));
-  const body = s.layer === 'india'
-    ? `${s.severity ?? 'Unrated'} alert from ${s.sender ?? 'an issuing authority'}, issued ${ago(s.time)}${s.expires ? `, in force until ${new Date(s.expires).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST` : ''}. ${(s.texts ?? []).find((t) => /^en/i.test(t.lang))?.headline ?? ''}${s.located === 'state' ? ' (Shown at the state centre: the districts could not be placed.)' : ''}`
-    : s.layer === 'quakes'
+  const body = s.layer === 'quakes'
     ? `Magnitude ${s.mag}${s.depthKm !== undefined ? `, ${Math.round(s.depthKm)} km deep` : ''}, ${when}.${s.tsunami ? ' USGS set its tsunami flag for this event.' : ''}${s.alert ? ` USGS PAGER alert level: ${s.alert}.` : ''} Epicentre ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`
     : `${s.kind[0].toUpperCase()}${s.kind.slice(1)}${s.mag ? `, ${s.mag.toLocaleString()} ${s.magUnit ?? ''}` : ''}. Last observed ${when}. Position ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}.`;
-  ui.openCard({ index: 1, total: 1, title: s.title, body, sources: [{ title: s.layer === 'india' ? 'NDMA SACHET: the official alert (CAP)' : `${d?.source ?? 'Source'}: this ${s.kind}`, url: s.url }] });
-  // The alert in the language it was published in, exactly as issued.
-  const cardBody = $('card-body');
-  cardBody.querySelector('.alert-local')?.remove();
-  if (s.layer === 'india' && local?.headline) {
-    const q = document.createElement('blockquote');
-    q.className = 'alert-local';
-    q.lang = local.lang.slice(0, 2).toLowerCase();
-    q.textContent = local.headline;
-    const cap = document.createElement('cite');
-    cap.textContent = `${t('as_issued')} ${local.language}`;
-    q.append(cap);
-    cardBody.after(q);
-  }
+  ui.openCard({ index: 1, total: 1, title: s.title, body, sources: [{ title: `${d?.source ?? 'Source'}: this ${s.kind}`, url: s.url }] });
   $('card-index').textContent = `${s.kind.toUpperCase()} · ${(d?.source ?? '').replace(' Earthquake Hazards Program', '').toUpperCase()}`;
   const acts = $('card-actions');
   acts.replaceChildren();
@@ -1409,7 +1406,7 @@ if (new URLSearchParams(location.search).has('debug')) (window as unknown as Rec
 
 // Keys and the NAV pad move the camera on every 3D station; the console wraps the panels.
 nav = initNav(stage, () => true);
-initNayanConsole();
+initDesk();
 
 // Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
 {
