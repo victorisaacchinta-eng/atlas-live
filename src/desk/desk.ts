@@ -70,7 +70,9 @@ export function initDesk() {
   });
   // A click on an alert on the globe opens the same card.
   window.addEventListener('nayan:alert', (e) => openCard((e as CustomEvent<Signal>).detail, { practice: false }));
-  // Read SACHET again every four minutes; the server answers from its cache within its own limits.
+  // The alerts never wait for the globe: read SACHET now, then every four minutes (the server
+  // answers from its own cache within SACHET's rules).
+  window.dispatchEvent(new CustomEvent('nayan:reload-india'));
   setInterval(() => window.dispatchEvent(new CustomEvent('nayan:reload-india')), 4 * 60e3);
   // Times left and "checked at" age while the page stays open.
   setInterval(() => { paintLamp(); if (desk.view === 'alerts' || desk.view === 'site') render(); }, 60e3);

@@ -1238,7 +1238,11 @@ window.addEventListener('nayan:open-signal', (e) => {
   if (globe) { globe.lat = THREE.MathUtils.clamp(s.lat, -75, 75); globe.lon = s.lon; globe.spin = false; }
 });
 // The desk asks for a fresh read of SACHET every few minutes and on "Try again".
-window.addEventListener('nayan:reload-india', () => { if (signals.state('india').on) void signals.load('india'); else setLayer('india', true); });
+window.addEventListener('nayan:reload-india', () => {
+  const st = signals.state('india');
+  if (st.status === 'loading') return;
+  if (st.on) void signals.load('india'); else setLayer('india', true);
+});
 // "Show my site on the globe": the district's own point from the LGD table.
 window.addEventListener('nayan:fly-site', (e) => {
   const st = (e as CustomEvent<{ name: string; district: string; state: string; lat: number; lon: number }>).detail;

@@ -278,7 +278,7 @@ html[data-desk-app].dk-card-open .nav-pad { display: none; }
   .dk-nav { order: 3; width: 100%; }
   .dk-key { padding: 0 12px 0 10px; }
   .dk-rail .nx-clock { display: none; }
-  .dk-panel { left: 8px; right: 8px; width: auto; top: auto; height: 58dvh; bottom: 8px; padding: 16px; }
+  .dk-panel { left: 8px; right: 8px; width: auto; top: calc(var(--rail) + 8px); bottom: 8px; padding: 16px; }
   .dk-card { left: 0; right: 0; top: var(--rail); bottom: 0; width: auto; clip-path: none; z-index: 30; }
   .dk-two { grid-template-columns: 1fr; }
   .dk-terms > div { grid-template-columns: 1fr; gap: 2px; }
