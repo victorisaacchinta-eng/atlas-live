@@ -213,12 +213,14 @@ export async function fetchSachet(max = 150): Promise<{ updated: string; alerts:
   const out: IndiaAlert[] = [];
   const queue = [...items];
   const now = Date.now();
-  await Promise.all(Array.from({ length: 8 }, async () => {
+  // A cold server has no copies yet and must read every listed document once; 16 at a time keeps
+  // that first read near ten seconds. After that, almost every request is a 304 or skipped.
+  await Promise.all(Array.from({ length: 16 }, async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
       const hit = capCache.get(it.link);
       if (hit && hit.alert?.expires && Date.parse(hit.alert.expires) <= now) continue;
       try {
-        const r = await getCond(it.link, 7000, hit?.etag);
+        const r = await getCond(it.link, 6000, hit?.etag);
         if (r.status === 304 && hit) { conditional++; if (hit.alert) out.push(hit.alert); continue; }
         const xml = r.text ?? hit?.xml ?? '';
         const a = await parseCap(xml, it.link, it.title);
