@@ -128,8 +128,10 @@ function unfocus() {
   ui.closeCard();
 }
 document.getElementById('card-close')!.addEventListener('click', unfocus);
+// On the site desk only the globe keys (W A S D, G, T) stay live; the ATLAS model keys are retired.
+const deskApp = () => 'deskApp' in document.documentElement.dataset;
 window.addEventListener('keydown', (ev) => {
-  if ((ev.target as HTMLElement).tagName === 'INPUT') return;
+  if ((ev.target as HTMLElement).tagName === 'INPUT' || deskApp()) return;
   if (ev.key === 'Escape') unfocus();
   if (ev.key.toLowerCase() === 'e') setExplode(state.explodeTarget > 0.5 ? 0 : 1);
 });
@@ -578,7 +580,7 @@ function setIsolate(on: boolean) {
 }
 isoBtn.addEventListener('click', () => setIsolate(!isolate));
 window.addEventListener('keydown', (e) => {
-  if (!earthActive || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (!earthActive || e.metaKey || e.ctrlKey || e.altKey || deskApp()) return;
   const el = e.target as HTMLElement | null;
   if (el?.closest?.('input, textarea, [contenteditable]')) return;
   const hit = LENSES.find((x) => x.key === e.key);
@@ -699,7 +701,7 @@ reconBtn.addEventListener('click', () => {
   else showReconstruction(currentLandmark);
 });
 window.addEventListener('keydown', (e) => {
-  if (mode !== 'places' || e.metaKey || e.ctrlKey || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
+  if (mode !== 'places' || e.metaKey || e.ctrlKey || deskApp() || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
   if ((e.key === 'r' || e.key === 'R') && splatFor(currentLandmark)) reconBtn.click();
 });
 
@@ -867,7 +869,7 @@ document.getElementById('build-form')!.addEventListener('submit', (e) => {
 });
 document.getElementById('build-this')!.addEventListener('click', () => { if (currentLandmark) runConstruct(currentLandmark.name, currentLandmark.city); });
 window.addEventListener('keydown', (e) => {
-  if (!earthActive || !currentLandmark || e.metaKey || e.ctrlKey || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
+  if (!earthActive || !currentLandmark || e.metaKey || e.ctrlKey || deskApp() || (e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
   if (e.key === 'b' || e.key === 'B') runConstruct(currentLandmark.name, currentLandmark.city);
 });
 
