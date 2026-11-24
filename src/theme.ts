@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
 /**
- * ATLAS themes. Semantic tokens, two modes (dark and light) plus "system".
+ * Nayan themes. Semantic tokens, two modes (dark and light) plus "system".
  * Brand reference: NVIDIA Green #76B900 (from NVIDIA's published brand guide). Every other value is
- * an ATLAS project token, not an official NVIDIA palette.
+ * an Nayan project token, not an official NVIDIA palette.
  */
 export interface Theme {
   id: 'dark' | 'light';

@@ -4,7 +4,7 @@ import { layer, weather, km, type LayerId, type Signal } from './_signals.js';
 import { LANGS } from './_langs.js';
 
 /**
- * The ATLAS agent. Nemotron reads the question, the machine and its parts, and answers by
+ * The Nayan agent. Nemotron reads the question, the machine and its parts, and answers by
  * calling tools: web_search runs here (Tavily), scene tools are handed back to the browser,
  * which runs them on the hologram. Every fact in the answer must come from a search result.
  */
@@ -89,7 +89,7 @@ const EARTH_TOOLS = [
     type: 'function',
     function: {
       name: 'build_model',
-      description: 'Hand a real structure to the ATLAS build team: Nemotron agents research it, model it from simple shapes, check it against a real photo, and the viewer can take it apart. Use when the viewer asks to build, reconstruct, model or take apart a structure.',
+      description: 'Hand a real structure to the Nayan build team: Nemotron agents research it, model it from simple shapes, check it against a real photo, and the viewer can take it apart. Use when the viewer asks to build, reconstruct, model or take apart a structure.',
       parameters: { type: 'object', properties: { name: { type: 'string', description: 'The structure, e.g. "Charminar, Hyderabad"' } }, required: ['name'] },
     },
   },
@@ -97,7 +97,7 @@ const EARTH_TOOLS = [
     type: 'function',
     function: {
       name: 'make_short',
-      description: 'Open the Short director: ATLAS writes a 60-second, cited, shot-by-shot explainer script about a live signal or a place, plays it in a 9:16 frame and exports it for Google Earth. Use when the viewer asks to make a Short, a Reel, a video, an explainer or a script. For a live signal, call find_signals first and pass its title, lat and lon.',
+      description: 'Open the Short director: Nayan writes a 60-second, cited, shot-by-shot explainer script about a live signal or a place, plays it in a 9:16 frame and exports it for Google Earth. Use when the viewer asks to make a Short, a Reel, a video, an explainer or a script. For a live signal, call find_signals first and pass its title, lat and lon.',
       parameters: { type: 'object', properties: { topic: { type: 'string', description: 'What the Short is about, e.g. "M 6.1 - 24 km SW of Hualien City, Taiwan" or "Charminar, Hyderabad"' }, lat: { type: 'number' }, lon: { type: 'number' }, lang: { type: 'string', enum: LANGS.map((l) => l.code), description: `Language of the Short, any of India's 22 scheduled languages or English: ${LANGS.map((l) => `${l.code} ${l.name}`).join(', ')}. Use the language the viewer asks for or writes in.` } }, required: ['topic'] },
     },
   },
@@ -105,7 +105,7 @@ const EARTH_TOOLS = [
     type: 'function',
     function: {
       name: 'set_lens',
-      description: 'Re-render the world through a sensor lens. photo: real colours. hologram: ATLAS blueprint with height contours. thermal: ironbow heat map. night: night-vision green. riso: two-ink halftone print.',
+      description: 'Re-render the world through a sensor lens. photo: real colours. hologram: Nayan blueprint with height contours. thermal: ironbow heat map. night: night-vision green. riso: two-ink halftone print.',
       parameters: { type: 'object', properties: { lens: { type: 'string', enum: ['photo', 'hologram', 'thermal', 'night', 'riso'] } }, required: ['lens'] },
     },
   },
@@ -147,7 +147,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
     const tools = earth ? EARTH_TOOLS : SCENE_TOOLS;
 
     const partList = parts.map((p, i) => `${i + 1}. ${p}`).join('\n');
-    const system = earth ? `You are ATLAS, an intelligence guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
+    const system = earth ? `You are Nayan, an intelligence guide flying a camera over the real Earth in photoreal 3D. The camera is over: ${machine}.
 Live layers on screen: ${layers.length ? layers.join(', ') : 'none'}. Now (UTC): ${new Date().toISOString().slice(0, 16)}.
 Rules:
 - Places: fly_to a specific place name. globe_view pulls back to the whole Earth. set_lens re-renders the view, orbit circles, isolate cuts the landmark out.
@@ -158,7 +158,7 @@ Rules:
 - History, architecture and other facts: call web_search first. Only state what tool results support; say which source (USGS, NASA EONET, Open-Meteo, or the web) a fact came from.
 - To build or take apart a structure, call build_model.
 - Answer in at most 3 short sentences of plain spoken English, no markdown, no lists. It will be read aloud.
-- Only say you did something if the tool result says it worked. If a tool failed or found nothing, say so plainly.` : `You are ATLAS, a guide inside a hologram of a real machine: ${machine}.
+- Only say you did something if the tool result says it worked. If a tool failed or found nothing, say so plainly.` : `You are Nayan, a guide inside a hologram of a real machine: ${machine}.
 Parts on screen (index. name):
 ${partList}
 ${focused && focused > 0 ? `The viewer has part ${focused} selected.` : ''}

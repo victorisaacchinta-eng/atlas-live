@@ -8,7 +8,7 @@ import { HOLO } from './hologram';
  * Real places in real 3D: Google Photorealistic 3D Tiles, streamed through Cesium ion
  * (asset 2275207) or straight from Google's Map Tiles API. Two looks:
  * - Photo: the tiles as Google captured them.
- * - Hologram: the same geometry redrawn in ATLAS inks, with height contours and edge light.
+ * - Hologram: the same geometry redrawn in Nayan inks, with height contours and edge light.
  * Tiles are never cached or analysed, only rendered (Google's tile policies).
  */
 

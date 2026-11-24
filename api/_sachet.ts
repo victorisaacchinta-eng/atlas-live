@@ -5,7 +5,7 @@ import { LGD } from './_lgd.js';
 /**
  * India's official alerts: NDMA SACHET, the national Common Alerting Protocol (CAP 1.2) feed.
  * IMD, CWC, INCOIS and the state disaster authorities publish through it, in English and in the
- * regional language. ATLAS reads the public RSS index, then each alert's own CAP document.
+ * regional language. Nayan reads the public RSS index, then each alert's own CAP document.
  *
  * Location: CAP areas here carry LGD district codes, not polygons (the polygon endpoint refuses
  * automated requests). Each code maps to a district point from the Census 2011 boundaries, or an
@@ -13,7 +13,7 @@ import { LGD } from './_lgd.js';
  */
 
 export const SACHET_RSS = 'https://sachet.ndma.gov.in/cap_public_website/rss/rss_india.xml';
-const UA = 'ATLAS-Live/0.3 (github.com/victorisaacchinta-eng/atlas-live)';
+const UA = 'Nayan/0.3 (github.com/victorisaacchinta-eng/atlas-live)';
 
 export interface AlertText { lang: string; event: string; headline: string; description: string; instruction: string }
 export interface District { code: number; name: string; state: string; lat: number; lon: number }

@@ -21,7 +21,7 @@ export default async function handler(req: { method: string; query: Record<strin
       const r = await chat({
         op: 'ui.translate', model: await indicModel(), fallbacks: await indicFallbacks(), temperature: 0.2, max_tokens: 2400, timeout_ms: 25_000,
         messages: [
-          { role: 'system', content: `You translate a web app's interface into ${L.name} (${L.native}), written in the ${L.script} script. Use the words a ${L.name} speaker sees on government and news apps: clear, short, everyday. Keep "ATLAS" and place names as they are. Keep the meaning exact.` },
+          { role: 'system', content: `You translate a web app's interface into ${L.name} (${L.native}), written in the ${L.script} script. Use the words a ${L.name} speaker sees on government and news apps: clear, short, everyday. Keep "Nayan" and place names as they are. Keep the meaning exact.` },
           { role: 'user', content: `Translate every value. Return JSON only, with exactly the same keys:\n${JSON.stringify(UI_STRINGS, null, 1)}` },
         ],
       });

@@ -3,7 +3,7 @@ import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
 
 /**
  * Photo reconstructions: Gaussian splats trained from public photos of a landmark (see
- * tools/reconstruct.ipynb). Shown on the ATLAS stage like any hologram: centred, standing on the
+ * tools/reconstruct.ipynb). Shown on the Nayan stage like any hologram: centred, standing on the
  * pad, turning slowly. Spark (World Labs, MIT) renders the splats inside the normal three.js
  * pipeline, so the lenses still apply.
  */

@@ -15,7 +15,7 @@ import { t } from './i18n';
  * truth check. Claims marked unsupported or contradicted are cut and listed with the reason.
  *
  * Deliver packs what a creator needs to finish the video in Google Earth, which is licensed for
- * online video. ATLAS never records or exports Google's 3D tiles.
+ * online video. Nayan never records or exports Google's 3D tiles.
  */
 
 export type Verdict = 'supported' | 'partly' | 'contradicted' | 'unsupported' | 'needs_review';
@@ -576,7 +576,7 @@ function kml(k: Kit) {
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <name>${esc(k.title)}</name>
-    <description>${esc(`Camera plan written by ATLAS Live. ${k.beats.length} beats, ${k.metrics.seconds} s.`)}</description>
+    <description>${esc(`Camera plan written by Nayan. ${k.beats.length} beats, ${k.metrics.seconds} s.`)}</description>
     <Placemark>
       <name>${esc(k.topic)}</name>
       <Point><coordinates>${k.subject.lon},${k.subject.lat},0</coordinates></Point>
@@ -611,7 +611,7 @@ function script(k: Kit) {
   L.push('## Sources', '');
   k.sources.forEach((s, i) => L.push(`${i + 1}. [${s.title}](${s.url}) (${s.kind === 'record' ? 'official record' : s.publisher}${s.published ? `, dated ${day(s.published)}` : ''}, retrieved ${day(s.retrieved)})`));
   L.push('', '## Description for YouTube', '', k.title, '', 'Sources:', ...k.sources.map((s) => `${s.title}: ${s.url}`), '',
-    `Map footage: Google Earth. Script researched and source-checked with ATLAS Live (written by ${shortModel(k.run.models.writer)}, checked by ${shortModel(k.run.models.checker)}${provider(k.run.models.writer) ? `, on ${provider(k.run.models.writer)}` : ''}; web search by Tavily).`, '');
+    `Map footage: Google Earth. Script researched and source-checked with Nayan (written by ${shortModel(k.run.models.writer)}, checked by ${shortModel(k.run.models.checker)}${provider(k.run.models.writer) ? `, on ${provider(k.run.models.writer)}` : ''}; web search by Tavily).`, '');
   return L.join('\n');
 }
 
@@ -645,9 +645,9 @@ function runInfo(k: Kit) {
 }
 
 function readme(k: Kit) {
-  return `ATLAS Live export kit: ${k.title}
+  return `Nayan export kit: ${k.title}
 
-What ATLAS made: the script, the evidence report, the camera plan and the captions.
+What Nayan made: the script, the evidence report, the camera plan and the captions.
 What you still do: render the footage in Google Earth and record the voice.
 
 1. Open tour.kml in Google Earth Pro (File > Open). Double-click the tour to preview it.

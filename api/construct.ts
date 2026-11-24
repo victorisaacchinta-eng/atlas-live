@@ -1,7 +1,7 @@
 import { chat, tavily, extractJson, send, MODELS, HttpError, type ChatMessage, type TavilyResult } from './_nebius.js';
 
 /**
- * CONSTRUCT: ATLAS builds a 3D model of a real structure that you can take apart.
+ * CONSTRUCT: Nayan builds a 3D model of a real structure that you can take apart.
  * A team of agents, in the spirit of an architect's office:
  *   plan     - a researcher reads the web (Tavily) for real dimensions and features, and a planner
  *              splits the structure into 3 to 5 zones, each with a bounding box and named parts.
@@ -255,7 +255,7 @@ function slug(s: string) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g,
 const SOCIAL = /(instagram|facebook|tiktok|pinterest|twitter|x)\.com|youtube\.com|reddit\.com/i;
 function dedupe(rs: TavilyResult[]) { const seen = new Set<string>(); return rs.filter((r) => !SOCIAL.test(new URL(r.url).hostname) && !seen.has(r.url) && seen.add(r.url)); }
 
-const UA = { 'User-Agent': 'ATLAS-Live/1.0 (https://atlas-live-xi.vercel.app; hackathon demo)' };
+const UA = { 'User-Agent': 'Nayan/1.0 (https://atlas-live-xi.vercel.app; hackathon demo)' };
 
 /** A real photo of the structure from Wikipedia's lead image (Wikimedia Commons), for the critic and the viewer. */
 async function referencePhoto(subject: string) {

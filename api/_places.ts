@@ -1,6 +1,6 @@
 import { chat, tavily, extractJson, MODELS, HttpError, hasModel, type TavilyResult } from './_nebius.js';
 
-const UA = 'ATLAS-Live/0.1 (hackathon project; github.com/victorisaacchinta-eng)';
+const UA = 'Nayan/0.1 (hackathon project; github.com/victorisaacchinta-eng)';
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 
 interface Feature { n: string; h: number | null; l: number | null; t: string; p: [number, number][] }

@@ -91,7 +91,7 @@ async function indiaRecord(sig: SignalIn): Promise<Source> {
   const retrieved = new Date().toISOString();
   if (sig.url && isSachetUrl(sig.url)) {
     try {
-      const r = await fetch(sig.url, { headers: { 'User-Agent': 'ATLAS-Live/0.3' }, signal: AbortSignal.timeout(8000) });
+      const r = await fetch(sig.url, { headers: { 'User-Agent': 'Nayan/0.3' }, signal: AbortSignal.timeout(8000) });
       if (r.ok) {
         const a = await parseCap(await r.text(), sig.url);
         if (a) return { title: `NDMA SACHET alert from ${a.sender}: ${a.event}`, url: sig.url, kind: 'record', publisher: `NDMA SACHET · ${a.sender}`, published: a.sent, retrieved, text: alertRecord(a) };
@@ -162,7 +162,7 @@ export default async function handler(req: { method: string; body: Body }, res: 
         : [`${topic} history`, `${topic} facts`];
       const [record, found] = await Promise.all([sig ? recordFor(sig) : Promise.resolve(null), web(queries)]);
       const sources = [...(record ? [record] : []), ...found];
-      if (!sources.length) throw new HttpError(502, 'No sources could be retrieved for this topic, so ATLAS will not write about it.');
+      if (!sources.length) throw new HttpError(502, 'No sources could be retrieved for this topic, so Nayan will not write about it.');
       res.status(200).json({ topic, subject, sources, live: !!sig, ms: Date.now() - t0 });
       return;
     }

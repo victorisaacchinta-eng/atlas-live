@@ -6,7 +6,7 @@ import { fetchSachet, kindOf, SEVERITY_RANK, langName } from './_sachet.js';
  * - quakes: USGS, magnitude 2.5+ over the past 7 days (updated every few minutes by USGS)
  * - events: NASA EONET open natural events of the last 60 days (wildfires, storms, sea ice)
  * - weather: Open-Meteo current conditions at a point (CC BY 4.0)
- * Every response says when the source last updated and when ATLAS fetched it. Nothing is invented:
+ * Every response says when the source last updated and when Nayan fetched it. Nothing is invented:
  * if a feed fails, the layer reports the failure instead of showing old or made-up points.
  */
 
@@ -56,7 +56,7 @@ const META: Record<LayerId, Omit<LayerData, 'updated' | 'fetchedAt' | 'signals' 
 const cache = new Map<LayerId, { at: number; data: LayerData }>();
 
 async function getJson(url: string, ms: number) {
-  const r = await fetch(url, { headers: { 'User-Agent': 'ATLAS-Live/0.2 (github.com/victorisaacchinta-eng/atlas-live)' }, signal: AbortSignal.timeout(ms) });
+  const r = await fetch(url, { headers: { 'User-Agent': 'Nayan/0.2 (github.com/victorisaacchinta-eng/atlas-live)' }, signal: AbortSignal.timeout(ms) });
   if (!r.ok) throw new HttpError(502, `${new URL(url).host} answered ${r.status}`);
   return r.json();
 }

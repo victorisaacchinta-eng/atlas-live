@@ -138,7 +138,7 @@ export async function chat(body: Record<string, unknown>) {
     const payload: Record<string, unknown> = { ...body, model };
     // Only Gemini's own models take reasoning_effort; Gemma on the same API rejects it.
     if (p.id !== 'gemini' || /^gemma/i.test(model)) delete payload.reasoning_effort;
-    // Nemotron 3.x reasons at length by default (minutes on long JSON); ATLAS needs fast, structured
+    // Nemotron 3.x reasons at length by default (minutes on long JSON); Nayan needs fast, structured
     // answers, so thinking is off unless a caller asks for it. NIM / vLLM read chat_template_kwargs.
     if ((p.id === 'nvidia' || p.id === 'nebius') && payload.chat_template_kwargs === undefined) payload.chat_template_kwargs = { enable_thinking: false };
     // Free endpoints occasionally stall a request for minutes: give up on that model and try the next.

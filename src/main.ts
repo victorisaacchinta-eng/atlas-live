@@ -194,7 +194,7 @@ stage.onFrame = (dt) => {
 };
 
 // ---------- boot ----------
-ui.log('ATLAS online', 'sys');
+ui.log('Nayan online', 'sys');
 refreshStatus();
 
 // Expose a small handle for the hand controller and agent modules.
@@ -214,7 +214,7 @@ export { gestures };
 
 // ---------- ask (text + voice) ----------
 const agentCtx = {
-  machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model ATLAS built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : earthActive ? `the whole Earth seen from orbit, centred near ${originLL ? `${originLL.lat.toFixed(1)}, ${originLL.lon.toFixed(1)}` : 'India'}` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
+  machine: () => (mode === 'build' && built) ? `${built.name} (a 3D model Nayan built from research; parts are the model's sections)` : (earthActive && currentLandmark) ? `${currentLandmark.name}, ${currentLandmark.city} (a real place, shown in 3D)` : earthActive ? `the whole Earth seen from orbit, centred near ${originLL ? `${originLL.lat.toFixed(1)}, ${originLL.lon.toFixed(1)}` : 'India'}` : state.entry ? `${state.entry.title} (${state.entry.kind})` : 'machine',
   layers: () => (earthActive ? signals.active : []),
   globeView: () => goGlobe(),
   showLayer: (id: string, on: boolean) => { if (id === 'quakes' || id === 'events' || id === 'india') setLayer(id, on); },
@@ -255,7 +255,7 @@ const agentCtx = {
 };
 const askForm = document.getElementById('ask') as HTMLFormElement;
 const askInput = document.getElementById('ask-input') as HTMLInputElement;
-const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? t('ask_placeholder') : state.entry ? `Ask about ${state.entry.title}` : 'Ask ATLAS');
+const askHint = () => (mode === 'build' && built ? `Ask about ${built.name}` : earthActive ? t('ask_placeholder') : state.entry ? `Ask about ${state.entry.title}` : 'Ask Nayan');
 askForm.addEventListener('submit', (ev) => {
   ev.preventDefault();
   const q = askInput.value.trim();
@@ -661,7 +661,7 @@ async function showReconstruction(l: Landmark) {
   $('model-kind').textContent = sp.photos ? `Reconstructed from ${sp.photos} public photos` : 'Photo reconstruction';
   $('parts-n').textContent = '1';
   const credit = $('credit');
-  credit.textContent = sp.credit === 'preview' ? 'Preview splat' : `Gaussian splat trained by ATLAS from ${sp.credit} · `;
+  credit.textContent = sp.credit === 'preview' ? 'Preview splat' : `Gaussian splat trained by Nayan from ${sp.credit} · `;
   if (sp.credit !== 'preview') {
     const a = document.createElement('a');
     a.href = sp.url.replace(/\.splat$/, '.credits.json'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'photo credits';
@@ -737,11 +737,11 @@ async function selectLandmark(l: Landmark, opts: { facts?: boolean } = {}) {
       applyIsolate();
       if (l.lowDetail && splatFor(l)) {
         // Google's mesh is flat here: show the site for a beat, then hand over to the reconstruction.
-        placeStatus.textContent = `Google’s 3D is coarse at ${l.name}. Switching to ATLAS’s reconstruction from ${l.splat?.photos || 'public'} photos…`;
+        placeStatus.textContent = `Google’s 3D is coarse at ${l.name}. Switching to Nayan’s reconstruction from ${l.splat?.photos || 'public'} photos…`;
         setTimeout(() => { if (currentLandmark === l && !recon && mode === 'places') showReconstruction(l); }, 2200);
         return;
       }
-      placeStatus.textContent = l.lowDetail ? `Google’s 3D is coarse at ${l.name}. Press B and ATLAS agents will build a model you can take apart.` : '';
+      placeStatus.textContent = l.lowDetail ? `Google’s 3D is coarse at ${l.name}. Press B and Nayan agents will build a model you can take apart.` : '';
     });
   };
   stage.earth.onGround = (y) => {
@@ -941,7 +941,7 @@ function showBuilt() {
   labels.rebuild(m);
   intro.hidden = false;
   setTitle(built.name);
-  $('model-kind').textContent = 'Built by ATLAS agents';
+  $('model-kind').textContent = 'Built by Nayan agents';
   $('parts-n').textContent = String(m.parts.length);
   $('credit').textContent = `Model built live from cited research · ${built.sources.length} sources`;
 }
@@ -1016,7 +1016,7 @@ async function runConstruct(name: string, city: string) {
     stepRow('Done', `${built.parts.length} parts. Pull it apart with the slider, an open palm, or ask about any part.`, 'done');
     ui.log(`${built.name}: ${built.parts.length} parts built`, 'sys');
     ui.openCard({ index: 1, total: 1, title: built.name, body: built.summary || '', sources: built.sources.slice(0, 4) });
-    $('card-index').textContent = 'BUILT BY ATLAS';
+    $('card-index').textContent = 'BUILT BY Nayan';
     setTimeout(() => setExplode(0.55), 900);
   } catch (err) {
     const why = err instanceof Error ? err.message.slice(0, 120) : String(err);
@@ -1150,7 +1150,7 @@ async function goGlobe(focus?: { lat: number; lon: number }) {
   setTitle('Earth');
   document.body.classList.add('globe');
   updateGlobeKind();
-  placeStatus.textContent = 'Drag to turn the globe, scroll to zoom. Click a dot to inspect it, or ask ATLAS.';
+  placeStatus.textContent = 'Drag to turn the globe, scroll to zoom. Click a dot to inspect it, or ask Nayan.';
   shareState(null);
   const at = focus ?? originLL ?? { lat: 18, lon: 78 };
   const look = lens === 'hologram' ? 'hologram' : 'photo';
@@ -1365,7 +1365,7 @@ window.addEventListener('keydown', (e) => {
 // Test hook for automated checks (?debug only).
 if (new URLSearchParams(location.search).has('debug')) (window as unknown as Record<string, unknown>).atlas = { signals, openSignal, goGlobe, get globe() { return globe; } };
 
-// Example questions under the ask box: a one-tap way into what ATLAS can do.
+// Example questions under the ask box: a one-tap way into what Nayan can do.
 {
   const chips = $('chips');
   const EXAMPLES = ['Any flood or rain alerts in Andhra Pradesh?', 'Make a Telugu Short about the latest Andhra Pradesh alert', 'What was the biggest earthquake this week?', 'Take me to Charminar and build it'];
