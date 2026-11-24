@@ -80,6 +80,16 @@ export class EarthView {
   private time = 0;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  /**
+   * The tile frame is not the world's frame: the reorientation plugin puts the selected
+   * surface point at the local origin and turns the planet so that +z is north and -x is
+   * east, which is *not* the same as +y being up. The camera has to follow these axes or
+   * the map comes out upside down and mirrored.
+   */
+  readonly center = new THREE.Vector3(0, -6371000, 0);
+  readonly upAxis = new THREE.Vector3(0, 1, 0);
+  readonly northAxis = new THREE.Vector3(0, 0, 1);
+  readonly eastAxis = new THREE.Vector3(-1, 0, 0);
   /** Ground height (local y) under the origin, found by ray once tiles arrive. */
   ground: number | null = null;
   /** Called each time the measured ground moves; `first` is true for the first reading after a move. */
@@ -144,7 +154,42 @@ export class EarthView {
   setOrigin(lat: number, lon: number) {
     if (!this.reorient || !this.tiles) return false;
     this.reorient.transformLatLonHeightToOrigin(lat * THREE.MathUtils.DEG2RAD, lon * THREE.MathUtils.DEG2RAD, 0);
+    this.updateFrame(lat, lon);
     return true;
+  }
+
+  /**
+   * Read the local frame out of the reoriented tiles: where the Earth's centre ended up,
+   * which way is up out of the surface, and where north and east point. The camera uses
+   * these so the map is always north up and east right.
+   */
+  private updateFrame(lat: number, lon: number) {
+    const tiles = this.tiles;
+    if (!tiles) return;
+    const ell = (tiles as unknown as { ellipsoid?: { getCartographicToPosition: (la: number, lo: number, h: number, t: THREE.Vector3) => void; getEastNorthUpAxes: (la: number, lo: number, e: THREE.Vector3, n: THREE.Vector3, u: THREE.Vector3) => void } }).ellipsoid;
+    const mw = tiles.group.matrixWorld;
+    if (!ell) return;
+    const la = lat * THREE.MathUtils.DEG2RAD;
+    const lo = lon * THREE.MathUtils.DEG2RAD;
+    const surface = new THREE.Vector3();
+    ell.getCartographicToPosition(la, lo, 0, surface);
+    const world = surface.applyMatrix4(mw);
+    const center = new THREE.Vector3(0, 0, 0).applyMatrix4(mw);
+    this.center.copy(center);
+    this.upAxis.copy(world).sub(center);
+    if (this.upAxis.lengthSq() < 1e-9) this.upAxis.set(0, 1, 0);
+    this.upAxis.normalize();
+    const east = new THREE.Vector3();
+    const north = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    ell.getEastNorthUpAxes(la, lo, east, north, up);
+    this.northAxis.copy(north).transformDirection(mw).normalize();
+    this.eastAxis.copy(east).transformDirection(mw).normalize();
+    // Keep the headings orthogonal to the local up so the camera never rolls.
+    this.northAxis.addScaledVector(this.upAxis, -this.northAxis.dot(this.upAxis));
+    if (this.northAxis.lengthSq() < 1e-9) this.northAxis.set(0, 0, 1);
+    this.northAxis.normalize();
+    this.eastAxis.crossVectors(this.northAxis, this.upAxis).normalize();
   }
 
   setLook(look: EarthLook) {

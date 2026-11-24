@@ -6,13 +6,13 @@
     <title>Nayan</title>
     <meta name="description" content="India's official disaster alerts on a live globe, turned into a 60-second explainer in any of India's 22 scheduled languages where every claim is checked against the official alert." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#0B0D0B" />
+    <meta name="theme-color" content="#07090B" />
     <script>
       // Set the theme before first paint so there is no flash of the wrong one.
-      (function () { var m = 'system'; try { m = localStorage.getItem('atlas-theme') || 'system'; } catch (e) {}
+      (function () { var m = 'dark'; try { m = localStorage.getItem('nayan-theme') || 'dark'; } catch (e) {}
         var q = new URLSearchParams(location.search).get('theme'); if (q === 'light' || q === 'dark') m = q;
         var d = m === 'dark' || (m !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.dataset.theme = d ? 'dark' : 'light'; document.documentElement.style.background = d ? '#0B0D0B' : '#F5F6F3'; })();
+        document.documentElement.dataset.theme = d ? 'dark' : 'light'; document.documentElement.style.background = d ? '#07090B' : '#F5F6F3'; })();
     </script>
   </head>
   <body>

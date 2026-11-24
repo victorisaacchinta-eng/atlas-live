@@ -128,7 +128,7 @@ button { cursor: pointer; }
 .credit { position: fixed; z-index: 4; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); margin: 0; font-family: var(--mono); font-size: 10.5px; color: var(--muted); text-align: right; max-width: 46vw; }
 .cam:not([hidden]) ~ .credit { display: none; }
 
-.tag { position: absolute; transform: translate(-50%, -50%); font-family: var(--mono); font-size: 11px; color: var(--bone); display: flex; align-items: center; gap: 6px; transition: opacity .25s; white-space: nowrap; }
+.tag { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); font-family: var(--mono); font-size: 11px; color: var(--bone); display: flex; align-items: center; gap: 6px; transition: opacity .25s; white-space: nowrap; }
 .tag i { font-style: normal; width: 22px; height: 22px; border: 1px solid currentColor; display: grid; place-items: center; font-size: 10px; background: color-mix(in srgb, var(--ground) 80%, transparent); }
 .tag span { opacity: 0; transition: opacity .2s; text-shadow: 0 0 8px var(--ground); }
 .tag.hot { color: var(--signal-text, var(--signal)); }
@@ -241,7 +241,7 @@ body.recon .intro, body.earth .intro { top: auto; bottom: calc(220px + env(safe-
 body.earth .credit { max-width: 60vw; }
 .credit a { color: inherit; }
 .credit .attr-logo { height: 14px; vertical-align: middle; margin-right: 6px; filter: brightness(0) invert(1); opacity: .85; }
-.place-tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--bone); text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.place-tag { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--bone); text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 .place-tag::after { content: ""; width: 1px; height: var(--stem, 46px); background: var(--signal); }
 .place-tag::before { content: ""; position: absolute; bottom: -3px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--signal); order: 2; }
 @media (max-width: 760px) {

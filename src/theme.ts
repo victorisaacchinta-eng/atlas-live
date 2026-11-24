@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 /**
  * Nayan themes. Semantic tokens, two modes (dark and light) plus "system".
- * Brand reference: NVIDIA Green #76B900 (from NVIDIA's published brand guide). Every other value is
- * an Nayan project token, not an official NVIDIA palette.
+ * Saffron honeycomb: a near-black operations room lit by saffron and amber, the colours India's
+ * weather warnings already use. Dark is the default; light is a paper print of the same desk.
  */
 export interface Theme {
   id: 'dark' | 'light';
@@ -28,28 +28,29 @@ export interface Theme {
 
 export const THEMES: Record<Theme['id'], Theme> = {
   dark: {
-    id: 'dark', ground: '#0B0D0B', surface: '#111411', surfaceRaised: '#191D18', surfaceSubtle: '#20251E',
-    ink: '#E8F5D0', text: '#F7F8F5', text2: '#B7BDB2', muted: '#939B8D', line: '#30372B', lineStrong: '#41483D',
-    selection: '#25331A', focus: '#A3E635', accent: '#76B900', accentText: '#8BCB22', accentInk: '#0B0D0B',
+    id: 'dark', ground: '#07090B', surface: '#0E1114', surfaceRaised: '#14181C', surfaceSubtle: '#1A1F24',
+    ink: '#FFC870', text: '#F4EDE1', text2: '#C9C0B2', muted: '#9C9385', line: '#2A2621', lineStrong: '#4A3D2C',
+    selection: '#3A2610', focus: '#FFB547', accent: '#FF9A2E', accentText: '#FFB04F', accentInk: '#1A0E02',
     ok: '#22C55E', warn: '#F59E0B', bad: '#EF4444', info: '#38BDF8', agent: '#A78BFA', glow: true,
   },
   light: {
     id: 'light', ground: '#F5F6F3', surface: '#FFFFFF', surfaceRaised: '#FFFFFF', surfaceSubtle: '#ECEFE9',
     ink: '#2F4A06', text: '#181B17', text2: '#525A50', muted: '#6C7468', line: '#D8DDD4', lineStrong: '#B8C0B3',
-    selection: '#E7F2D6', focus: '#4D7C0F', accent: '#76B900', accentText: '#3B6100', accentInk: '#0B0D0B',
+    selection: '#FCE7CF', focus: '#B45309', accent: '#E8740C', accentText: '#9A4A06', accentInk: '#FFFFFF',
     ok: '#15803D', warn: '#B45309', bad: '#B91C1C', info: '#0369A1', agent: '#6D28D9', glow: false,
   },
 };
 
 export type ThemeMode = 'light' | 'dark' | 'system';
-const KEY = 'atlas-theme';
+const KEY = 'nayan-theme';
 const media = window.matchMedia('(prefers-color-scheme: dark)');
 
 export function savedMode(): ThemeMode {
   const q = new URLSearchParams(location.search).get('theme');
   if (q === 'light' || q === 'dark') return q;
   try { const v = localStorage.getItem(KEY); if (v === 'light' || v === 'dark' || v === 'system') return v; } catch { /* storage blocked */ }
-  return 'system';
+  // The desk is a dark room unless someone asks for paper.
+  return 'dark';
 }
 export function resolve(mode: ThemeMode): Theme { return THEMES[mode === 'system' ? (media.matches ? 'dark' : 'light') : mode]; }
 export function saveMode(mode: ThemeMode) { try { localStorage.setItem(KEY, mode); } catch { /* storage blocked */ } }

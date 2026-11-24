@@ -36,6 +36,9 @@ import { LENSES, type Lens } from './lens';
 import { toHologram, applyFixes, type BuiltPart } from './construct';
 import { loadSplat, disposeSplat } from './splat';
 import { SignalLayers, ago, type Signal, type LayerId } from './signals';
+import { initNav } from './nav';
+import { initCatalog } from './catalog';
+import { initNayanConsole } from './console/nayan';
 
 applyCss(theme);
 const LAB = new URLSearchParams(location.search).has('lab');
@@ -51,28 +54,21 @@ const state = {
 
 const explodeInput = $('explode') as HTMLInputElement;
 
-// ---------- library shelf ----------
+// ---------- library shelf and catalog ----------
 const shelf = $('shelf');
-for (const e of LIBRARY) {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.dataset.id = e.id;
-  b.innerHTML = `<span class="t">${e.title}</span><span class="k">${e.kind}</span>`;
-  b.addEventListener('click', () => loadEntry(e));
-  shelf.appendChild(b);
-}
+const catalog = initCatalog({ shelf, onPick: (e) => void loadEntry(e) });
 
 async function loadEntry(e: LibraryEntry) {
   if (state.loading || state.entry?.id === e.id) return;
   state.loading = true;
-  shelf.querySelectorAll('button').forEach((b) => b.classList.toggle('is-on', (b as HTMLElement).dataset.id === e.id));
+  catalog.setActive(e.id);
   // A place link opens straight into Places: the library model loads quietly behind it.
   if (!/[?&](place|at)=/.test(location.search) || state.entry) ui.log(`loading ${e.title.toLowerCase()}`, 'sys');
   try {
-    const m = await HoloModel.load(e.url);
+    const m = await HoloModel.load(e.url, e.parts);
     // Opened straight into another mode (a ?place= link, say): don't let a late library model take over.
     // Library loads it again on entry.
-    if (mode !== 'library') { shelf.querySelectorAll('button').forEach((b) => b.classList.remove('is-on')); return; }
+    if (mode !== 'library') { catalog.clearActive(); return; }
     state.entry = e;
     stage.setModel(m);
     stage.frame('object');
@@ -171,14 +167,17 @@ const labels = (() => {
         if (!el) return;
         const focused = m.focused === i;
         const visible = showAll || focused;
-        if (!visible) { el.style.opacity = '0'; return; }
+        // Write only what changed, and move with transform: per-frame left/top meant a layout
+        // per label per frame.
+        const set = (k: 'opacity' | 'transform', val: string) => { if (el.style[k] !== val) el.style[k] = val; };
+        if (!visible) { set('opacity', '0'); return; }
         const s = stage.project(m.anchor(i, v));
-        if (!s) { el.style.opacity = '0'; return; }
-        el.style.opacity = m.focused >= 0 && !focused ? '0.25' : String(Math.min(1, (explode - 0.35) * 4 + (focused ? 1 : 0)));
-        el.style.left = `${s.x}px`;
-        el.style.top = `${s.y}px`;
-        el.classList.toggle('hot', focused);
-        el.classList.toggle('named', named && explode > 0.7);
+        if (!s) { set('opacity', '0'); return; }
+        set('opacity', m.focused >= 0 && !focused ? '0.25' : String(+Math.min(1, (explode - 0.35) * 4 + (focused ? 1 : 0)).toFixed(2)));
+        set('transform', `translate3d(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px, 0) translate(-50%, -50%)`);
+        if (el.classList.contains('hot') !== focused) el.classList.toggle('hot', focused);
+        const nm = named && explode > 0.7;
+        if (el.classList.contains('named') !== nm) el.classList.toggle('named', nm);
       });
     },
   };
@@ -291,7 +290,9 @@ const scanPanel = document.getElementById('scan-panel') as HTMLElement;
 const intro = document.getElementById('intro') as HTMLElement;
 document.querySelectorAll<HTMLButtonElement>('.mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode as Mode)));
 
+let nav: ReturnType<typeof initNav> | null = null;
 function setMode(m: Mode) {
+  if (m !== mode) nav?.release();
   mode = m;
   document.body.className = [`mode-${m}`, LAB ? 'lab' : '', director?.open ? 'directing' : ''].filter(Boolean).join(' ');
   document.querySelectorAll<HTMLButtonElement>('.mode').forEach((b) => {
@@ -311,7 +312,12 @@ function setMode(m: Mode) {
   placePanel.hidden = m !== 'places';
   sunBox.hidden = m !== 'places' || !place || earthActive;
   if (m === 'places') enterPlaces();
+  // Scan and Build start on an empty stage: the library's model behind them read as a bug.
+  const stale = (m === 'scan' && !scanned) || (m === 'build' && !built);
+  stage.showHologram(!stale);
+  $('labels').classList.toggle('is-stale', stale);
   askInput.placeholder = askHint();
+  window.dispatchEvent(new CustomEvent('nayan:mode', { detail: m }));
 }
 
 // ---------- scan ----------
@@ -364,6 +370,7 @@ async function runScan(image: string) {
     }
     const m = await ScanModel.build(image, scan, step);
     stage.setModel(m);
+    $('labels').classList.remove('is-stale');
     stage.frame('scan');
     stage.userZoomed = false;
     scanned = true;
@@ -422,7 +429,9 @@ let sunLine: THREE.Line | null = null;
 
 (document.getElementById('place-form') as HTMLFormElement).addEventListener('submit', (ev) => {
   ev.preventDefault();
-  const q = (document.getElementById('place-input') as HTMLInputElement).value.trim();
+  const input = document.getElementById('place-input') as HTMLInputElement;
+  const q = input.value.trim();
+  input.blur(); // keys go back to the camera
   if (q) searchPlace(q);
 });
 
@@ -837,10 +846,10 @@ stage.onFrame = (dt, t) => {
   if (!base || !top) { placeTag.hidden = true; return; }
   placeTag.hidden = false;
   if (placeTag.textContent !== currentLandmark.name) placeTag.textContent = currentLandmark.name;
-  const stem = THREE.MathUtils.clamp(base.y - top.y, 24, 220);
-  placeTag.style.setProperty('--stem', `${stem}px`);
-  placeTag.style.left = `${base.x}px`;
-  placeTag.style.top = `${base.y}px`;
+  const stem = Math.round(THREE.MathUtils.clamp(base.y - top.y, 24, 220));
+  // Transform only, and the stem only when it changes: left/top every frame cost a layout.
+  if (placeTag.style.getPropertyValue('--stem') !== `${stem}px`) placeTag.style.setProperty('--stem', `${stem}px`);
+  placeTag.style.transform = `translate3d(${base.x.toFixed(1)}px, ${base.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
 };
 
 // ---------- build: agents construct a model you can take apart ----------
@@ -936,6 +945,7 @@ function showBuilt() {
   const m = toHologram(built.parts);
   built.model = m;
   stage.setModel(m);
+  $('labels').classList.remove('is-stale');
   stage.frame('object');
   state.entry = null;
   labels.rebuild(m);
@@ -1161,8 +1171,8 @@ async function goGlobe(focus?: { lat: number; lon: number }) {
     signals.rebuild();
     earthStarted = true;
     originLL = { ...at };
-    stage.holdTopDown(globeDist());
-    stage.holdUntil(globeDist(), () => stage.earth.visibleTiles > 4, 0.4, 4, enter);
+    stage.holdWholeEarth(globeDist());
+    stage.holdUntil(globeDist(), () => stage.earth.visibleTiles > 4, 0.4, 4, enter, true);
   } else {
     stage.rise(globeDist(), 2.2, enter);
   }
@@ -1173,7 +1183,7 @@ async function goGlobe(focus?: { lat: number; lon: number }) {
 function leaveGlobe() {
   globe = null;
   document.body.classList.remove('globe');
-  stage.camera.clearViewOffset();
+  stage.setShift(0, 0);
   stage.controls.autoRotate = !reducedMotion;
 }
 
@@ -1220,8 +1230,17 @@ function renderLayers() {
     } else m.textContent = LAYER_META[id].blurb;
   }
   updateGlobeKind();
+  window.dispatchEvent(new CustomEvent('nayan:signals', { detail: { india: signals.state('india'), quakes: signals.state('quakes'), events: signals.state('events') } }));
 }
 signals.onChange = renderLayers;
+// The console's alert board opens an alert the same way a click on its dot does, and turns the planet to it.
+window.addEventListener('nayan:open-signal', (e) => {
+  const s = (e as CustomEvent<Signal>).detail;
+  if (mode !== 'places') setMode('places');
+  openSignal(s);
+  if (globe) { globe.lat = THREE.MathUtils.clamp(s.lat, -75, 75); globe.lon = s.lon; globe.spin = false; }
+});
+window.addEventListener('nayan:whole-earth', () => void goGlobe());
 renderLayers();
 setInterval(renderLayers, 60e3);
 
@@ -1332,17 +1351,27 @@ window.addEventListener('keydown', (e) => {
     if (!earthActive) return;
     signals.update(t);
     if (globe && !stage.flying) {
-      if (globe.spin && !globeDrag) globe.lon = ((globe.lon + dt * 2.2 + 540) % 360) - 180;
+      // Eastward rotation: the ground moves left as the planet turns under the camera.
+      if (globe.spin && !globeDrag) globe.lon = ((globe.lon - dt * 2.2 + 540) % 360) - 180;
+      // Keys and the NAV pad fly over the planet: forward heads north, sideways and turn head east.
+      const n = stage.nav;
+      if (stage.navigating) {
+        const k = 38 * (globe.dist / ORBIT) * (n.fast ? 3 : 1) * dt;
+        globe.lat = THREE.MathUtils.clamp(globe.lat + n.fwd * k, -75, 75);
+        globe.lon = ((globe.lon + (n.side + n.turn) * k + 540) % 360) - 180;
+        if (n.zoom) globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(-n.zoom * 1.4 * dt), 3.2e6, 3.4e7);
+        globe.spin = false;
+      }
       stage.controls.autoRotate = false;
       stage.controls.enabled = false;
       stage.earth.setOrigin(globe.lat, globe.lon);
       originLL = { lat: globe.lat, lon: globe.lon };
-      stage.holdTopDown(globe.dist);
+      stage.holdWholeEarth(globe.dist);
       // On wide screens, centre the planet in the space right of the panel, not behind it.
-      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const { w, h } = stage.viewSize;
       // Phones: the panel sits on top, so lower the planet into the space under it instead.
       const shiftX = w > 900 ? Math.min(230, w * 0.15) : 0, shiftY = w <= 760 ? h * 0.17 : 0;
-      if (shiftX || shiftY) stage.camera.setViewOffset(w, h, -shiftX, -shiftY, w, h); else stage.camera.clearViewOffset();
+      stage.setShift(shiftX, shiftY);
     }
   };
 }
@@ -1355,10 +1384,10 @@ window.addEventListener('keydown', (e) => {
   stage.onFrame = (dt, t) => {
     prev?.(dt, t);
     if (director.open && earthActive && !globe) {
-      const r = frame.getBoundingClientRect(), w = canvas.clientWidth, h = canvas.clientHeight;
-      stage.camera.setViewOffset(w, h, w / 2 - (r.left + r.width / 2), h / 2 - (r.top + r.height / 2), w, h);
+      const r = frame.getBoundingClientRect(), { w, h } = stage.viewSize;
+      stage.setShift(r.left + r.width / 2 - w / 2, r.top + r.height / 2 - h / 2);
       offset = true;
-    } else if (offset && !globe) { stage.camera.clearViewOffset(); offset = false; }
+    } else if (offset && !globe) { stage.setShift(0, 0); offset = false; }
   };
 }
 
@@ -1376,6 +1405,10 @@ if (new URLSearchParams(location.search).has('debug')) (window as unknown as Rec
     chips.appendChild(b);
   }
 }
+
+// Keys and the NAV pad move the camera on every 3D station; the console wraps the panels.
+nav = initNav(stage, () => true);
+initNayanConsole();
 
 // Open straight into a shared view: ?place=taj&lens=thermal or ?at=lat,lon,Name
 {

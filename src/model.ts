@@ -24,6 +24,8 @@ export interface Hologram {
   anchor(i: number, target?: THREE.Vector3): THREE.Vector3;
   update(dt: number, time: number): void;
   dispose(): void;
+  /** Bounding sphere of the model assembled (0) and fully exploded (1), for camera framing. */
+  extent?: { c0: THREE.Vector3; r0: number; c1: THREE.Vector3; r1: number };
 }
 
 export interface Part extends HoloPart {
@@ -53,6 +55,7 @@ export class HoloModel implements Hologram {
   readonly root = new THREE.Group();
   parts: Part[] = [];
   explode = 0;
+  extent?: { c0: THREE.Vector3; r0: number; c1: THREE.Vector3; r1: number };
   private hot = -1;
   private focus = -1;
   private revealTop = 3;
@@ -87,7 +90,18 @@ export class HoloModel implements Hologram {
     this.root.add(holder);
     this.root.updateMatrixWorld(true);
 
-    const groups = pickPartGroups(scene);
+    let groups = pickPartGroups(scene);
+    // Parts given the same display name become one piece (four solar panels, a boom in segments).
+    if (partNames) {
+      const merged = new Map<string, Group>();
+      for (const g of groups) {
+        const label = partNames[g.name];
+        const key = label ? `name:${label}` : `id:${g.name}`;
+        const m = merged.get(key);
+        if (m) m.objects.push(...g.objects); else merged.set(key, { name: g.name, objects: [...g.objects] });
+      }
+      groups = [...merged.values()];
+    }
     const modelCenter = new THREE.Box3().setFromObject(this.root).getCenter(new THREE.Vector3());
 
     groups.forEach((g) => {
@@ -143,6 +157,13 @@ export class HoloModel implements Hologram {
     const top = new THREE.Box3().setFromObject(this.root);
     this.revealTop = top.max.y + 0.2;
     this.reveal = top.min.y - 0.1;
+
+    // Measure once how big the model gets when exploded, so the camera can keep it all in view.
+    const s0 = top.getBoundingSphere(new THREE.Sphere());
+    const ex = new THREE.Box3();
+    for (const p of this.parts) ex.union(new THREE.Box3().setFromObject(p.object).translate(p.out));
+    const s1 = ex.getBoundingSphere(new THREE.Sphere());
+    this.extent = { c0: s0.center, r0: Math.max(s0.radius, 1e-3), c1: s1.center, r1: Math.max(s1.radius, 1e-3) };
   }
 
   /** Index of the part under a ray, or -1. */

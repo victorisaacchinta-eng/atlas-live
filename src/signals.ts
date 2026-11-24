@@ -33,6 +33,7 @@ interface LayerState {
   error?: string;
   data?: LayerData;
   points?: THREE.Points;
+  pillars?: THREE.Group;
   ecef: THREE.Vector3[];
 }
 
@@ -88,12 +89,14 @@ const KIND_COLOR: Record<string, THREE.Color> = {
   ice: new THREE.Color('#9FD8FF'),
   volcano: new THREE.Color('#FB7185'),
 };
+/** Pillar height, 0 to 1, by the issuer's severity. */
+const SEVERITY_RANK: Record<string, number> = { Extreme: 1, Severe: 0.78, Moderate: 0.5, Minor: 0.28 };
 /** India alerts are coloured by the issuer's own severity, the way IMD colour-codes its warnings. */
 const SEVERITY_COLOR: Record<string, THREE.Color> = {
-  Extreme: new THREE.Color('#EF4444'),
-  Severe: new THREE.Color('#F97316'),
-  Moderate: new THREE.Color('#F59E0B'),
-  Minor: new THREE.Color('#38BDF8'),
+  Extreme: new THREE.Color('#FF4B3E'),
+  Severe: new THREE.Color('#FF8A1F'),
+  Moderate: new THREE.Color('#FFC24A'),
+  Minor: new THREE.Color('#6FE3A5'),
 };
 
 export class SignalLayers {
@@ -106,11 +109,17 @@ export class SignalLayers {
   private selected: THREE.Mesh;
   private selectedAt: THREE.Vector3 | null = null;
   onChange: (() => void) | null = null;
+  /** India alerts stand on the globe as hexagonal pillars: height by severity, glow by colour. */
+  private pillarGeo = (() => { const g = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true); g.translate(0, 0.5, 0); return g; })();
+  private capGeo = (() => { const g = new THREE.CircleGeometry(1, 6); g.rotateX(-Math.PI / 2); return g; })();
+  private rimGeo = (() => { const g = new THREE.RingGeometry(0.86, 1, 6, 1); g.rotateX(-Math.PI / 2); return g; })();
+  private reduced: boolean;
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, tiles: () => TilesRenderer | null, reducedMotion: boolean) {
     this.camera = camera;
     this.renderer = renderer;
     this.tiles = tiles;
+    this.reduced = reducedMotion;
     this.group.matrixAutoUpdate = false;
     this.group.renderOrder = 20;
     this.material = new THREE.ShaderMaterial({
@@ -132,6 +141,7 @@ export class SignalLayers {
     const l = this.layers.get(id)!;
     l.on = on;
     if (l.points) l.points.visible = on;
+    if (l.pillars) l.pillars.visible = on;
     if (on && (!l.data || Date.now() - Date.parse(l.data.fetchedAt) > 5 * 60e3)) await this.load(id);
     this.onChange?.();
   }
@@ -159,6 +169,7 @@ export class SignalLayers {
 
   private build(l: LayerState) {
     if (l.points) { this.group.remove(l.points); l.points.geometry.dispose(); l.points = undefined; }
+    if (l.pillars) { this.group.remove(l.pillars); l.pillars.traverse((o) => { if (o instanceof THREE.InstancedMesh) (o.material as THREE.Material).dispose(); }); l.pillars = undefined; }
     const tiles = this.tiles();
     if (!tiles || !l.data) return;
     const n = l.data.signals.length;
@@ -188,7 +199,59 @@ export class SignalLayers {
     pts.renderOrder = 20;
     l.points = pts;
     this.group.add(pts);
+    if (l.id === 'india' && n) this.buildPillars(l);
     if (!this.selected.parent) this.group.add(this.selected);
+  }
+
+  private buildPillars(l: LayerState) {
+    const n = l.data!.signals.length;
+    const mk = (geo: THREE.BufferGeometry, opacity: number) => {
+      const m = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false }), n);
+      m.frustumCulled = false;
+      m.renderOrder = 19;
+      return m;
+    };
+    const wall = mk(this.pillarGeo, 0.38), cap = mk(this.capGeo, 0.55), rim = mk(this.rimGeo, 1);
+    l.data!.signals.forEach((s, i) => {
+      const c = (SEVERITY_COLOR[s.severity ?? ''] || SEVERITY_COLOR.Minor).clone();
+      wall.setColorAt(i, c); cap.setColorAt(i, c); rim.setColorAt(i, c.clone().lerp(new THREE.Color('#FFFFFF'), 0.25));
+    });
+    const grp = new THREE.Group();
+    grp.add(wall, cap, rim);
+    grp.visible = l.on;
+    grp.userData = { wall, cap, rim };
+    l.pillars = grp;
+    this.group.add(grp);
+  }
+
+  /** Size the pillars to the camera height so they read the same from orbit and from a district. */
+  private placePillars(l: LayerState, camLocal: THREE.Vector3, t: number) {
+    const grp = l.pillars;
+    if (!grp || !l.data) return;
+    grp.visible = l.on;
+    if (!l.on) return;
+    const { wall, cap, rim } = grp.userData as { wall: THREE.InstancedMesh; cap: THREE.InstancedMesh; rim: THREE.InstancedMesh };
+    const alt = Math.max(2e3, camLocal.length() - 6.37e6);
+    const r = THREE.MathUtils.clamp(alt * 0.0045, 120, 60000);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
+    l.data.signals.forEach((s, i) => {
+      const p = l.ecef[i];
+      if (!p) return;
+      up.copy(p).normalize();
+      q.setFromUnitVectors(Y, up);
+      const sev = SEVERITY_RANK[s.severity ?? ''] ?? 0.35;
+      // Extreme and Severe alerts breathe slowly so the eye finds them first; reduced motion holds them still.
+      const lift = 1 + (this.reduced || sev < 0.75 ? 0 : 0.08 * Math.sin(t * 1.6 + i));
+      const h = alt * (0.012 + 0.05 * sev) * lift;
+      sc.set(r, h, r);
+      m.compose(pos.copy(p), q, sc);
+      wall.setMatrixAt(i, m);
+      sc.set(r, 1, r);
+      m.compose(pos.copy(p).addScaledVector(up, h), q, sc);
+      cap.setMatrixAt(i, m);
+      rim.setMatrixAt(i, m);
+    });
+    wall.instanceMatrix.needsUpdate = cap.instanceMatrix.needsUpdate = rim.instanceMatrix.needsUpdate = true;
   }
 
   /** Rebuild after the globe restarted (positions live in the tiles' frame). */
@@ -209,6 +272,8 @@ export class SignalLayers {
     u.uLift.value = THREE.MathUtils.clamp(h * 0.004, 30, 40000);
     u.uTime.value = t;
     u.uPixel.value = this.renderer.getPixelRatio();
+    const india = this.layers.get('india');
+    if (india) this.placePillars(india, camLocal, t);
     if (this.selectedAt && this.selected.visible) {
       const up = this.selectedAt.clone().normalize();
       this.selected.position.copy(this.selectedAt).addScaledVector(up, u.uLift.value);
