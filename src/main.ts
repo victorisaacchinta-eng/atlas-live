@@ -1122,9 +1122,10 @@ stage.earth.group.add(signals.group);
 /** Non-null while the camera is out in orbit showing the whole planet. */
 let globe: { lat: number; lon: number; dist: number; spin: boolean } | null = null;
 /** Far enough out that the whole disc fits on screen. */
-const GLOBE_DIST = 1.85e7;
+// Measured from the Earth's centre (the whole-Earth hold aims at the centre).
+const GLOBE_DIST = 2.6e7;
 /** Tall, narrow screens need the planet further away to fit across. */
-const globeDist = () => GLOBE_DIST * (innerWidth / innerHeight < 0.8 ? 2.1 : 1);
+const globeDist = () => GLOBE_DIST * (innerWidth / innerHeight < 0.8 ? 1.5 : 1);
 const LAYER_META: Record<LayerId, { label: string; blurb: string }> = {
   quakes: { label: 'Earthquakes', blurb: 'M2.5+ · past 7 days' },
   events: { label: 'Natural events', blurb: 'Wildfires, storms, sea ice' },
@@ -1334,7 +1335,7 @@ canvas.addEventListener('pointerup', (ev) => {
 });
 canvas.addEventListener('wheel', (ev) => {
   if (!globe || stage.flying) return;
-  globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(ev.deltaY * 0.0012), 3.2e6, 3.4e7);
+  globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(ev.deltaY * 0.0012), 8.5e6, 4.4e7);
   ev.preventDefault();
 }, { passive: false });
 $('globe-btn').addEventListener('click', () => goGlobe());
@@ -1359,7 +1360,7 @@ window.addEventListener('keydown', (e) => {
         const k = 38 * (globe.dist / ORBIT) * (n.fast ? 3 : 1) * dt;
         globe.lat = THREE.MathUtils.clamp(globe.lat + n.fwd * k, -75, 75);
         globe.lon = ((globe.lon + (n.side + n.turn) * k + 540) % 360) - 180;
-        if (n.zoom) globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(-n.zoom * 1.4 * dt), 3.2e6, 3.4e7);
+        if (n.zoom) globe.dist = THREE.MathUtils.clamp(globe.dist * Math.exp(-n.zoom * 1.4 * dt), 8.5e6, 4.4e7);
         globe.spin = false;
       }
       stage.controls.autoRotate = false;
