@@ -8,6 +8,7 @@ Nayan's Hindi and Telugu come from three places. Each needs a native speaker's s
 | IMD phrase glossary (hazards, "at isolated places", "in next N hours") | `src/desk/explain.ts` (`HAZARDS`, `SPREAD`, `CHANCE`) | Draft. Review every Hindi and Telugu term. |
 | Interface strings | `src/desk/strings.ts` | Draft. Review. |
 | CAP term meanings | `src/desk/explain.ts` (`CAP`) | Draft translation of the OASIS CAP 1.2 definitions. Review. |
+| Practice-mode district summary | `src/desk/strings.ts` (`practice_none`, `practice_some`, `practice_some_n`) | Hindi and Telugu wording drafted to say these alerts are expired and for practice only. Native-speaker sign-off pending. |
 
 How to review: open the app with `?view=learn`, switch to हि or తె, and read every screen; then open each
 practice alert and read the crew message in all three formats. Note any line a site worker would misread.
