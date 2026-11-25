@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:crew-message": "node tools/crew-message-test.mjs"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.1.1",

@@ -229,7 +229,10 @@ function siteStatusHtml(site: Site | null) {
   if (waiting()) return `<div class="dk-status"><p class="dk-muted">${esc(T('loading'))}</p></div>`;
   const mine = siteAlerts();
   const t = f.fetchedAt ? clock(f.fetchedAt, desk.lang) : '';
-  const head = mine.length ? T(mine.length === 1 ? 'status_some' : 'status_some_n', { n: mine.length, d: site.district }) : T('status_none', { d: site.district });
+  const statusKey = desk.practice
+    ? mine.length === 0 ? 'practice_none' : mine.length === 1 ? 'practice_some' : 'practice_some_n'
+    : mine.length === 0 ? 'status_none' : mine.length === 1 ? 'status_some' : 'status_some_n';
+  const head = T(statusKey, { n: mine.length, d: site.district });
   return `<div class="dk-status ${mine.length ? 'is-hot' : 'is-calm'}">
     <p class="dk-status-h">${esc(head)}</p>
     ${desk.practice ? `<p class="dk-muted">${esc(T('practice_tag'))}</p>` : t ? `<p class="dk-muted">${esc(T('as_of', { t }))}${f.stale ? ` ${esc(T('feed_stale', { t }))}` : ''}</p>` : ''}
@@ -348,7 +351,7 @@ function alertsView() {
   if (waiting()) return `<section class="dk-view" aria-labelledby="dk-h">${head}</section>`;
   return `<section class="dk-view" aria-labelledby="dk-h">
     ${head}
-    ${site ? `<h3 class="dk-h3">${esc(T('for_d', { d: site.district }))}</h3>${unknown ? `<p class="dk-status is-err">${esc(T('status_unknown', { d: site.district }))}</p>` : mine.length ? `<ul class="dk-rows">${mine.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(T('none_here', { d: site.district }))}</p>`}` : `<p class="dk-muted"><button type="button" class="dk-link" data-go="site">${esc(T('no_site'))}</button></p>`}
+    ${site ? `<h3 class="dk-h3">${esc(T('for_d', { d: site.district }))}</h3>${unknown ? `<p class="dk-status is-err">${esc(T('status_unknown', { d: site.district }))}</p>` : mine.length ? `<ul class="dk-rows">${mine.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(desk.practice ? T('practice_none', { d: site.district }) : T('none_here', { d: site.district }))}</p>`}` : `<p class="dk-muted"><button type="button" class="dk-link" data-go="site">${esc(T('no_site'))}</button></p>`}
     <h3 class="dk-h3">${esc(T('elsewhere'))}</h3>
     ${unknown ? '' : rest.length ? `<ul class="dk-rows">${rest.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(desk.practice ? '' : T('none_india'))}</p>`}
   </section>`;
