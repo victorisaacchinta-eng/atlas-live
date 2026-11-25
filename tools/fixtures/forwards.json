@@ -1,0 +1,61 @@
+{
+  "about": "Forwards for Check a forward. Real cases copy the headline of a SACHET CAP alert kept in public/practice.json, with the sender added. Fake cases are written for this test: each adds a detail the official alert does not say. The checker is given the alerts in alertIds as its feed; they had expired by the time this runs, so the test checks the reading and comparison, not expiry.",
+  "source": "NDMA SACHET CAP 1.2, saved 24 Nov 2026; raw XML in data/cap/",
+  "alertIds": [
+    "IN-1795162562135030_56",
+    "IN-1795138125725008_68",
+    "IN-1795134477436012_12",
+    "IN-1795483307084007_43",
+    "IN-1795134717088012_12"
+  ],
+  "cases": [
+    {
+      "id": "real-telangana-thunderstorm",
+      "kind": "real",
+      "text": "IMD Hyderabad: Thunderstorm accompanied with lightning and Gusty winds (30-40 kmph) is very likely to occur at isolated places over Adilabad, Bhadradri Kothagudem, Jayashankar Bhupalapally, Karimnagar, Kumuram Bheem Asifabad, Mancherial, Mulugu, Peddapalli in next 24 hours.",
+      "note": "Headline of IN-1795162562135030_56, sender added."
+    },
+    {
+      "id": "real-srikakulam-extreme-rain",
+      "kind": "real",
+      "text": "IMD Visakhapatnam: Extremely Heavy Rain accompained with gale winds 80-90 kmph gusting to 100 kmph is very likely to occur at a few places over Srikakulam, Vizianagaram districts in next 3 hours.",
+      "note": "Headline of IN-1795138125725008_68, sender added. The official text spells it 'accompained'."
+    },
+    {
+      "id": "real-odisha-flash-flood",
+      "kind": "real",
+      "text": "Odisha SDMA: Flash Flood is very likely to occur at a few places over Anugul, Baleshwar, Bhadrak, Boudh, Cuttack, Dhenkanal, Gajapati, Ganjam, Jagatsinghapur, Jajapur, Kandhamal, Kendrapara, Kendujhar, Khordha, Mayurbhanj, Nayagarh, Puri, Rayagada in next 6 hours.",
+      "note": "Headline of IN-1795134717088012_12, sender added."
+    },
+    {
+      "id": "real-chennai-light-rain",
+      "kind": "real",
+      "text": "IMD Chennai: Light to moderate Rain with TSL is likely to occur at isolated places over Cpattu, Chennai, Clore, Kallakurichi, Kanche, Mayiladuthurai, Npattinam, Namakkal, Perambalur, Pudukkottai, Ramanathapuram, Rpet, Thanjavur, Tvallur, Thiruvarur, Tvmalai, Viluppuram, Karaikal, Pondicherry in next 3 hours.",
+      "note": "Headline of IN-1795483307084007_43, sender added. Short forms kept as issued."
+    },
+    {
+      "id": "fake-karimnagar-red-alert",
+      "kind": "fake",
+      "text": "RED ALERT: IMD Hyderabad has issued a red alert for Karimnagar. A severe thunderstorm with winds up to 150 km/h will hit tonight. Schools and construction sites will stay closed for the next 3 days.",
+      "note": "Synthetic. The official alert IN-1795162562135030_56 is Moderate, 30-40 kmph, next 24 hours, and says nothing about closures."
+    },
+    {
+      "id": "fake-srikakulam-300mm",
+      "kind": "fake",
+      "text": "Extremely heavy rain of 300 mm is expected in Srikakulam tonight. All dams in the district have been opened and low-lying areas must be evacuated immediately. - AP government",
+      "note": "Synthetic. The official alert IN-1795138125725008_68 gives no rainfall amount and says nothing about dams or evacuation."
+    },
+    {
+      "id": "fake-odisha-cyclone-200kmph",
+      "kind": "fake",
+      "text": "Cyclone Akvan has intensified to 200 km/h and is now 500 km south of Gopalpur. A red alert is in force for the entire Odisha coast for the next 5 days. All schools are closed.",
+      "note": "Synthetic. The official alert IN-1795134477436012_12 has 80-90 gusting 100 kmph, 170 km south of Gopalpur, and a warning for six districts, not the whole coast."
+    },
+    {
+      "id": "fake-chennai-tsunami",
+      "kind": "fake",
+      "text": "TSUNAMI WARNING: A 10-metre tsunami will hit the Chennai coast tonight at 11 pm. Evacuate Marina Beach immediately. - NDMA",
+      "note": "Synthetic. There is no tsunami alert in the feed; the nearest Chennai alert is light rain."
+    }
+  ]
+}
