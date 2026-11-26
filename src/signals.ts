@@ -25,9 +25,11 @@ export interface Signal {
   texts?: { lang: string; language: string; event?: string; headline: string; description?: string; instruction?: string }[];
 }
 
+export interface AlertChange { id: string; msgType: 'Update' | 'Cancel'; references: string[]; sender: string; sent: string; event: string; title: string; url: string }
+
 export interface LayerData {
   layer: LayerId; name: string; source: string; sourceUrl: string; license: string;
-  updated: string; fetchedAt: string; signals: Signal[];
+  updated: string; fetchedAt: string; signals: Signal[]; changes?: AlertChange[];
   stale?: boolean; error?: string; listed?: number;
 }
 

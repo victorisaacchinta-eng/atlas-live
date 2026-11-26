@@ -88,7 +88,7 @@ Also: **practice mode** with eight real, expired SACHET alerts (including IMD Hy
 Source-of-truth order (from the audit): the issuing authority's alert, then official updates or local instructions, then NDMA guidance, then Nayan's rendering, then the supervisor's own notes. Model output is never a safety fact.
 - Nayan never calls a forward fake, never says "no alerts" when it could not read SACHET, never fills a missing field, and never implies NDMA endorsement.
 - Privacy: no accounts; the site and the log stay on the device. A forward checked by "Check a forward" is sent to the model provider for that one check; Nayan stores nothing on its server.
-- **Known gap:** if an alert is updated or cancelled after a message was shared, Nayan does not yet tell the supervisor. Planned for P1.
+- **Update/cancellation follow-up:** the prototype now reads SACHET Update and Cancel CAP entries, matches their exact references to alerts marked as shared in the local log, and offers a reviewable message plus a follow-up log entry. A cancellation is explicitly not described as an all-clear. Notices are retained in that browser after a successful feed refresh; Nayan cannot guarantee catching an item that disappears from SACHET's feed before a later refresh, and it does not send push notifications. Hindi and Telugu wording needs native-speaker review.
 - The Disaster Management Act's Section 54 is not used as a claim or a threat.
 
 ## 9. Metrics (defined, to be measured; nothing measured yet)

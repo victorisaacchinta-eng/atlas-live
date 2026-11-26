@@ -1,5 +1,5 @@
 import { HttpError } from './_nebius.js';
-import { fetchSachet, kindOf, SEVERITY_RANK, langName, type IndiaAlert } from './_sachet.js';
+import { fetchSachet, kindOf, SEVERITY_RANK, langName, type IndiaAlert, type AlertChange } from './_sachet.js';
 
 /**
  * Live signals on the globe. Two layers, both keyless public-domain feeds, plus weather on demand:
@@ -51,6 +51,7 @@ export interface LayerData {
   updated: string;       // when the source says the data was generated
   fetchedAt: string;     // when Nayan last read the source successfully
   signals: Signal[];
+  changes?: AlertChange[];
   stale?: boolean;       // the source failed just now; this is the last good copy
   error?: string;        // why the source failed, when stale
   listed?: number;       // India: items in SACHET's RSS index that were checked
@@ -108,9 +109,9 @@ export function toSignal(a: IndiaAlert): Signal {
   };
 }
 
-async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals' | 'listed'>> {
-  const { updated, alerts, listed } = await fetchSachet();
-  return { updated, listed, signals: alerts.map(toSignal) };
+async function fetchIndia(): Promise<Pick<LayerData, 'updated' | 'signals' | 'changes' | 'listed'>> {
+  const { updated, alerts, changes, listed } = await fetchSachet();
+  return { updated, listed, signals: alerts.map(toSignal), changes };
 }
 
 const KIND: Record<string, string> = { wildfires: 'wildfire', severeStorms: 'storm', seaLakeIce: 'ice', volcanoes: 'volcano', floods: 'flood', drought: 'drought', dustHaze: 'dust', landslides: 'landslide', snow: 'snow', tempExtremes: 'heat', waterColor: 'water', manmade: 'manmade', earthquakes: 'earthquake' };

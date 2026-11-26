@@ -48,6 +48,19 @@ export interface IndiaAlert {
   feedTitle: string;        // the RSS item title, often in the regional language
   url: string;              // the CAP document itself
 }
+export interface AlertChange {
+  id: string; msgType: 'Update' | 'Cancel'; references: string[]; sender: string; sent: string;
+  event: string; title: string; url: string;
+}
+
+const alertFamily = (id: string) => id.replace(/^IN-/, '').replace(/_\d+$/, '');
+/** CAP Cancel always removes its referenced alert family; an Update in the same family is a new version. */
+export function supersededAlertFamilies(alerts: Pick<IndiaAlert, 'id' | 'references'>[], changes: AlertChange[]) {
+  return new Set([
+    ...alerts.flatMap((a) => a.references.filter((r) => alertFamily(r) !== alertFamily(a.id)).map(alertFamily)),
+    ...changes.flatMap((c) => c.references.filter((r) => c.msgType === 'Cancel' || alertFamily(r) !== alertFamily(c.id)).map(alertFamily)),
+  ]);
+}
 
 const tag = (xml: string, name: string) => {
   const m = xml.match(new RegExp(`<(?:cap:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:cap:)?${name}>`));
@@ -184,10 +197,26 @@ export async function parseCap(xml: string, url: string, feedTitle = ''): Promis
   };
 }
 
+/** Extract an actionable Update/Cancel without geocoding or treating it as an active hazard. */
+export function parseChange(xml: string, url: string, feedTitle = ''): AlertChange | null {
+  if (tag(xml, 'status') !== 'Actual' || tag(xml, 'scope') !== 'Public') return null;
+  const msgType = tag(xml, 'msgType');
+  if (msgType !== 'Update' && msgType !== 'Cancel') return null;
+  const references = tag(xml, 'references').split(/\s+/).map((t) => t.split(',')[1]).filter(Boolean);
+  const infos = all(xml, 'info');
+  const en = infos.find((i) => /^en/i.test(tag(i, 'language'))) || infos[0] || xml;
+  if (!references.length) return null;
+  const event = tag(en, 'event') || 'Alert';
+  const area = all(en, 'area')[0] || all(xml, 'area')[0];
+  const place = area ? tag(area, 'areaDesc') : '';
+  const title = tag(en, 'headline') || `${event}${place ? ` · ${place}` : ''}` || decode(feedTitle).trim();
+  return { id: tag(xml, 'identifier'), msgType, references, sender: tag(xml, 'sender').replace(/[-_]/g, ' '), sent: tag(xml, 'sent'), event, title, url };
+}
+
 // SACHET's integration guide asks every consumer to cache each CAP document with its ETag and send
 // If-None-Match, using the cached copy on 304. A warm serverless instance keeps these between calls.
 // A document whose alert has expired is never fetched again: CAP messages do not change once expired.
-interface Cached { etag?: string; xml: string; alert: IndiaAlert | null; expires?: number; at: number }
+interface Cached { etag?: string; xml: string; alert: IndiaAlert | null; change?: AlertChange | null; expires?: number; at: number }
 const capCache = new Map<string, Cached>();
 let rssCache: { etag?: string; modified?: string; text: string } | null = null;
 
@@ -201,8 +230,8 @@ async function getCond(url: string, ms: number, etag?: string, modified?: string
   return { status: 200 as const, text: await r.text(), etag: r.headers.get('etag') || undefined, modified: r.headers.get('last-modified') || undefined };
 }
 
-/** Pull the RSS index and the CAP documents behind it. Expired, cancelled, superseded and duplicate alerts are dropped. */
-export async function fetchSachet(max = 150): Promise<{ updated: string; alerts: IndiaAlert[]; failed: number; listed: number; conditional: number }> {
+/** Pull the RSS index and CAP documents. Non-current alerts are excluded from `alerts`; Update/Cancel notices remain in `changes`. */
+export async function fetchSachet(max = 150): Promise<{ updated: string; alerts: IndiaAlert[]; changes: AlertChange[]; failed: number; listed: number; conditional: number }> {
   const got = await getCond(SACHET_RSS, 12000, rssCache?.etag, rssCache?.modified);
   if (got.status === 200) rssCache = { etag: got.etag, modified: got.modified, text: got.text! };
   const rss = rssCache?.text ?? '';
@@ -210,7 +239,7 @@ export async function fetchSachet(max = 150): Promise<{ updated: string; alerts:
     title: tag(it, 'title'), link: tag(it, 'link'), pub: tag(it, 'pubDate'), author: tag(it, 'author'),
   })).filter((x) => isSachetUrl(x.link)).slice(0, max);
   let failed = 0, conditional = 0;
-  const out: IndiaAlert[] = [];
+  const out: IndiaAlert[] = [], changes: AlertChange[] = [];
   const queue = [...items];
   const now = Date.now();
   // A cold server has no copies yet and must read every listed document once; 16 at a time keeps
@@ -218,29 +247,33 @@ export async function fetchSachet(max = 150): Promise<{ updated: string; alerts:
   await Promise.all(Array.from({ length: 16 }, async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
       const hit = capCache.get(it.link);
-      if (hit?.expires && hit.expires <= now) continue;
+      if (hit?.expires && hit.expires <= now) { if (hit.change) changes.push(hit.change); continue; }
       try {
         const r = await getCond(it.link, 6000, hit?.etag);
-        if (r.status === 304 && hit) { conditional++; if (hit.alert) out.push(hit.alert); continue; }
+        if (r.status === 304 && hit) { conditional++; if (hit.alert) out.push(hit.alert); if (hit.change) changes.push(hit.change); continue; }
         const xml = r.text ?? hit?.xml ?? '';
+        const change = parseChange(xml, it.link, it.title);
+        if (change) changes.push(change);
         // Expired documents are never placed on the map: placing can mean a rate-limited geocoder call.
         const exp = Date.parse(tag(xml, 'expires'));
-        if (Number.isFinite(exp) && exp <= now) { capCache.set(it.link, { etag: r.etag, xml, alert: null, expires: exp, at: now }); continue; }
+        if (Number.isFinite(exp) && exp <= now) { capCache.set(it.link, { etag: r.etag, xml, alert: null, change, expires: exp, at: now }); continue; }
+        // A cancellation is a notice about earlier IDs, not a hazard to map or explain.
+        if (change?.msgType === 'Cancel') { capCache.set(it.link, { etag: r.etag, xml, alert: null, change, at: now }); continue; }
         const a = await parseCap(xml, it.link, it.title);
-        capCache.set(it.link, { etag: r.etag, xml, alert: a, expires: a?.expires ? Date.parse(a.expires) : undefined, at: now });
+        capCache.set(it.link, { etag: r.etag, xml, alert: a, change, expires: a?.expires ? Date.parse(a.expires) : undefined, at: now });
         if (a) out.push(a);
       } catch {
         failed++;
         if (hit?.alert) out.push(hit.alert); // the last good copy of this document
+        if (hit?.change) changes.push(hit.change);
       }
     }
   }));
   const live = out.filter((a) => a.msgType !== 'Cancel' && (!a.expires || Date.parse(a.expires) > now));
   // A message that updates or cancels another removes the one it names. SACHET serves the newest
   // version of each alert at its own link, so updates usually name an earlier version of themselves.
-  const base = (id: string) => id.replace(/^IN-/, '').replace(/_\d+$/, '');
-  const replaced = new Set(out.flatMap((a) => a.references.filter((r) => base(r) !== base(a.id)).map(base)));
-  const current = live.filter((a) => !replaced.has(base(a.id)));
+  const replaced = supersededAlertFamilies(out, changes);
+  const current = live.filter((a) => !replaced.has(alertFamily(a.id)));
   // Same warning re-issued: keep the newest per sender, event and set of districts.
   const seen = new Map<string, IndiaAlert>();
   for (const a of current.sort((x, y) => Date.parse(y.sent) - Date.parse(x.sent))) {
@@ -248,7 +281,8 @@ export async function fetchSachet(max = 150): Promise<{ updated: string; alerts:
     if (!seen.has(k)) seen.set(k, a);
   }
   const newest = items.map((x) => Date.parse(x.pub)).filter(Number.isFinite).sort((a, b) => b - a)[0];
-  return { updated: new Date(newest || now).toISOString(), alerts: [...seen.values()], failed, listed: items.length, conditional };
+  const uniqueChanges = [...new Map(changes.filter((c) => c.id).map((c) => [c.id, c])).values()].sort((a, b) => Date.parse(b.sent) - Date.parse(a.sent));
+  return { updated: new Date(newest || now).toISOString(), alerts: [...seen.values()], changes: uniqueChanges, failed, listed: items.length, conditional };
 }
 
 /** The alert as a plain-text official record for the writer and the checker. */

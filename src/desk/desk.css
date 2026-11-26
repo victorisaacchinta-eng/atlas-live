@@ -223,6 +223,16 @@ html[data-theme="light"] .dk-out { background: #FFF; }
 .dk-told[open] summary { margin-bottom: 10px; }
 .dk-card-foot { padding: 14px 20px 0; }
 
+/* SACHET follow-ups stay separate from active hazard cards. */
+.dk-follow { display: grid; gap: 10px; margin: 12px 0 20px; padding: 14px; border: 1px solid rgba(255, 194, 74, .6); background: rgba(255, 194, 74, .06); }
+.dk-follow > * { margin-top: 0; margin-bottom: 0; }
+.dk-follow-item { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--dk-line); background: rgba(0, 0, 0, .12); }
+.dk-follow-item summary { cursor: pointer; color: var(--dk-text); }
+.dk-follow-item .dk-field { display: grid; gap: 5px; max-width: 320px; }
+.dk-follow-item select { min-height: 38px; padding: 6px 10px; color: var(--dk-text); background: var(--dk-bg, #171923); border: 1px solid var(--dk-line); font: 500 14px/1.3 var(--ui); }
+.dk-follow-item .dk-form { display: grid; gap: 10px; }
+.dk-follow-item .dk-out { font-size: 14px; }
+
 /* verify */
 .dk-try { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; color: var(--dk-mute); }
 .dk-result { display: grid; gap: 10px; }
