@@ -27,9 +27,10 @@ Full problem statement, sources and open questions: [`docs/problem-statement.md`
 4. **What to do.** NDMA's own Do's & Don'ts from SACHET, word for word, in Telugu, Hindi and English, marked as official guidance and not as part of the alert. Where an official Telugu line changes the meaning, Nayan flags it and shows the English beside it.
 5. **A message for your crew.** WhatsApp text, SMS (with the real segment count) and a read-aloud script. It stays locked until you tick that you checked it against the alert. Every message carries the source, the time and "Nayan does not issue warnings."
 6. **A log.** Mark an alert as told: when, in which language, how, to how many workers. Export it as CSV for your safety records.
-7. **Practice.** Eight real SACHET alerts saved on 24 Nov 2026, now expired, for drills when nothing is live.
-8. **Check a forward (experimental).** Paste a WhatsApp warning or a screenshot. Nayan answers only "matches", "partly matches", "no match in the sources checked" or "unable to verify", shows which sources it checked and when, and never calls anything fake.
-9. **Learn.** IMD's colour codes and the three CAP fields (severity, urgency, certainty), kept apart.
+7. **Alert follow-up.** When a SACHET Update or Cancel references an alert in your communication log, Nayan flags it for review. It gives you a checked-to-review message in English, Hindi or Telugu and lets you record how you followed up. A cancellation message explicitly does not say the site is safe.
+8. **Practice.** Eight real SACHET alerts saved on 24 Nov 2026, now expired, for drills when nothing is live.
+9. **Check a forward (experimental).** Paste a WhatsApp warning or a screenshot. Nayan answers only "matches", "partly matches", "no match in the sources checked" or "unable to verify", shows which sources it checked and when, and never calls anything fake.
+10. **Learn.** IMD's colour codes and the three CAP fields (severity, urgency, certainty), kept apart.
 
 The 3D globe behind the desk is an overview of the alerts in force. Everything works without it.
 
@@ -50,7 +51,7 @@ The 3D globe behind the desk is an overview of the alerts in force. Everything w
 - Not yet tested with supervisors or workers. Interviews, a comprehension test and native-speaker review come next.
 - Hindi and Telugu interface text and the glossary are drafts awaiting native-speaker review ([`data/REVIEW.md`](data/REVIEW.md)).
 - District names stay in English letters inside Hindi and Telugu messages.
-- If an alert is updated or cancelled after you shared it, Nayan does not yet tell you.
+- Follow-up notices are picked up from SACHET's RSS/CAP entries during a feed refresh and saved in this browser. Nayan cannot guarantee it will see a change that disappears from the feed before the next successful refresh; it does not send push notifications. Hindi and Telugu follow-up wording still needs native-speaker review.
 - Check a forward only knows alerts in force on SACHET; it cannot see district WhatsApp groups, local announcements or expired alerts.
 
 ## Run it

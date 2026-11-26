@@ -11,21 +11,22 @@
  */
 import '../console/nayan.css';
 import './desk.css';
-import type { Signal, LayerStatus } from '../signals';
+import type { Signal, LayerStatus, AlertChange } from '../signals';
 import { tr, LANG_NAMES, type DLang, type SKey } from './strings';
-import { getSite, saveSite, getLog, clearLog, toCSV, getLang, saveLang, findDistricts, PILOT, DISTRICTS, type Site } from './store';
+import { getSite, saveSite, getLog, getChanges, clearLog, toCSV, getLang, saveLang, findDistricts, PILOT, DISTRICTS, rememberChanges, type Site, addLog } from './store';
+import { originalAlertId, relatedChanges } from './changes';
 import { at, timeLeft, capTerm, summarise, clock } from './explain';
 import { mountCard, openCard, rerenderCard, cardSignal } from './card';
 import { mountVerify, renderVerify } from './verify';
 import { renderLearn } from './learn';
 
 export type View = 'site' | 'alerts' | 'log' | 'verify' | 'learn';
-export interface Feed { status: LayerStatus; alerts: Signal[]; fetchedAt?: string; stale?: boolean; error?: string; listed?: number }
+export interface Feed { status: LayerStatus; alerts: Signal[]; changes: AlertChange[]; fetchedAt?: string; stale?: boolean; error?: string; listed?: number }
 
 export const desk = {
   lang: getLang() as DLang,
   view: 'alerts' as View,
-  feed: { status: 'loading', alerts: [] } as Feed,
+  feed: { status: 'loading', alerts: [], changes: [] } as Feed,
   practice: false,
   practiceAlerts: [] as Signal[],
   practiceSaved: '',
@@ -63,10 +64,12 @@ export function initDesk() {
   render();
 
   window.addEventListener('nayan:signals', (e) => {
-    const d = (e as CustomEvent<{ india: { status: LayerStatus; error?: string; data?: { signals: Signal[]; fetchedAt: string; stale?: boolean; error?: string; listed?: number } } }>).detail.india;
-    desk.feed = { status: d.status, alerts: d.data?.signals ?? [], fetchedAt: d.data?.fetchedAt, stale: d.data?.stale, error: d.data?.error || d.error, listed: d.data?.listed };
+    const d = (e as CustomEvent<{ india: { status: LayerStatus; error?: string; data?: { signals: Signal[]; changes?: AlertChange[]; fetchedAt: string; stale?: boolean; error?: string; listed?: number } } }>).detail.india;
+    const changes = d.data?.changes ?? [];
+    if (changes.length) rememberChanges(changes);
+    desk.feed = { status: d.status, alerts: d.data?.signals ?? [], changes, fetchedAt: d.data?.fetchedAt, stale: d.data?.stale, error: d.data?.error || d.error, listed: d.data?.listed };
     paintLamp();
-    if (desk.view === 'site' || desk.view === 'alerts') render();
+    if (desk.view === 'site' || desk.view === 'alerts' || desk.view === 'log') render();
   });
   // A click on an alert on the globe opens the same card.
   window.addEventListener('nayan:alert', (e) => openCard((e as CustomEvent<Signal>).detail, { practice: false }));
@@ -189,6 +192,12 @@ export function covers(a: Signal, site: Site | null) {
   return (a.districts ?? []).includes(site.district);
 }
 export const siteAlerts = () => { const s = getSite(); return s ? activeAlerts().filter((a) => covers(a, s)) : []; };
+const pendingChanges = () => desk.practice ? [] : relatedChanges(getChanges(), getLog());
+const followText = (c: AlertChange, lang: DLang) => {
+  const site = getSite();
+  const key: SKey = c.msgType === 'Cancel' ? 'follow_message_cancel' : 'follow_message_update';
+  return tr(lang, key, { event: c.event || 'alert', district: site?.district || (lang === 'hi' ? 'आपके ज़िले' : lang === 'te' ? 'మీ జిల్లా' : 'your district'), url: c.url });
+};
 const sent = (a: Signal) => Date.parse(a.sent || a.time || '') || 0;
 
 // ---------------------------------------------------------------------------------------------
@@ -206,8 +215,57 @@ function render(force = false) {
   const html = view === 'site' ? siteView() : view === 'alerts' ? alertsView() : logView();
   panel.innerHTML = html;
   if (view === 'site') wireSite();
-  if (view === 'alerts') wireAlerts();
-  if (view === 'log') wireLog();
+  if (view === 'alerts') { wireAlerts(); wireFollowUps(); }
+  if (view === 'log') { wireLog(); wireFollowUps(); }
+}
+
+function followUpsHtml() {
+  const changes = pendingChanges();
+  return `<section class="dk-follow" aria-labelledby="dk-follow-h">
+    <h3 class="dk-h3" id="dk-follow-h">${esc(T('follow_title'))}</h3><p class="dk-muted">${esc(changes.length ? T('follow_lede') : T('follow_none'))}</p>
+    ${changes.map((c) => `<details class="dk-follow-item" data-follow-item="${esc(c.id)}">
+      <summary><b>${esc(c.msgType === 'Cancel' ? T('follow_cancel') : T('follow_update'))}</b> · ${esc(c.event || c.title)}</summary>
+      <p class="dk-muted">${esc(c.sender)} · ${esc(T('follow_id'))}: <span class="dk-mono">${esc(c.id)}</span><br/>${esc(T('follow_for'))}: <span class="dk-mono">${esc(originalAlertId(c, getChanges(), getLog()))}</span></p>
+      <p><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(T('record'))}</a></p>
+      <label class="dk-field"><span>${esc(T('follow_lang'))}</span><select data-follow-lang>${(['en', 'hi', 'te'] as DLang[]).map((l) => `<option value="${l}" ${desk.lang === l ? 'selected' : ''}>${LANG_NAMES[l].native}</option>`).join('')}</select></label>
+      <pre class="dk-out" data-follow-text lang="${desk.lang}">${esc(followText(c, desk.lang))}</pre>
+      <label class="dk-review"><input type="checkbox" data-follow-review/> <span>${esc(T('follow_review'))}</span></label>
+      <div class="dk-actions"><button type="button" class="dk-btn" data-follow-copy disabled>${esc(T('follow_copy'))}</button></div>
+      <form class="dk-form" data-follow-form>
+        <fieldset class="dk-checks"><legend>${esc(T('told_how'))}</legend><label><input type="checkbox" name="ch" value="in person" checked/> ${esc(T('ch_person'))}</label><label><input type="checkbox" name="ch" value="WhatsApp"/> ${esc(T('ch_wa'))}</label><label><input type="checkbox" name="ch" value="SMS"/> ${esc(T('ch_sms'))}</label></fieldset>
+        <div class="dk-two"><label class="dk-field"><span>${esc(T('told_count'))}</span><input name="count" type="number" min="1" inputmode="numeric" value="${esc(getSite()?.crew ?? '')}"/></label><label class="dk-field"><span>${esc(T('told_note'))}</span><input name="note"/></label></div>
+        <button type="submit" class="dk-btn is-solid" disabled>${esc(T('follow_save'))}</button><span class="dk-saved" role="status"></span>
+      </form>
+    </details>`).join('')}
+  </section>`;
+}
+
+function wireFollowUps() {
+  panel.querySelectorAll<HTMLElement>('[data-follow-item]').forEach((item) => {
+    const c = pendingChanges().find((x) => x.id === item.dataset.followItem);
+    if (!c) return;
+    const lang = item.querySelector<HTMLSelectElement>('[data-follow-lang]')!;
+    const text = item.querySelector<HTMLElement>('[data-follow-text]')!;
+    const review = item.querySelector<HTMLInputElement>('[data-follow-review]')!;
+    const copy = item.querySelector<HTMLButtonElement>('[data-follow-copy]')!;
+    const form = item.querySelector<HTMLFormElement>('[data-follow-form]')!;
+    const save = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    lang.addEventListener('change', () => { text.lang = lang.value; text.textContent = followText(c, lang.value as DLang); review.checked = false; copy.disabled = true; save.disabled = true; });
+    review.addEventListener('change', () => { copy.disabled = !review.checked; save.disabled = !review.checked; });
+    copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(text.textContent || ''); copy.textContent = T('follow_copied'); setTimeout(() => { copy.textContent = T('follow_copy'); }, 1600); } catch { /* text remains selectable */ } });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!review.checked) return;
+      const fd = new FormData(form), site = getSite(), count = Number(fd.get('count'));
+      const originalId = originalAlertId(c, getChanges(), getLog());
+      addLog({ at: new Date().toISOString(), reviewedAt: new Date().toISOString(), alertId: c.id, url: c.url, event: `${c.msgType}: ${c.event || c.title}`, sender: c.sender, severity: 'Unknown', expires: '', site: site?.name ?? '', district: site?.district ?? '', langs: [lang.value as DLang], channels: fd.getAll('ch').map(String), count: count > 0 ? count : null, supervisor: site?.supervisor ?? '', note: String(fd.get('note') || '').trim(), practice: false, followUpChangeId: c.id, followUpForAlertId: originalId, followUpType: c.msgType });
+      const saved = form.querySelector<HTMLElement>('.dk-saved');
+      if (saved) saved.textContent = T('follow_saved');
+      item.remove();
+      if (desk.view === 'log' || !pendingChanges().length) render();
+      refreshHeader();
+    });
+  });
 }
 
 function feedLine() {
@@ -351,6 +409,7 @@ function alertsView() {
   if (waiting()) return `<section class="dk-view" aria-labelledby="dk-h">${head}</section>`;
   return `<section class="dk-view" aria-labelledby="dk-h">
     ${head}
+    ${!desk.practice && pendingChanges().length ? followUpsHtml() : ''}
     ${site ? `<h3 class="dk-h3">${esc(T('for_d', { d: site.district }))}</h3>${unknown ? `<p class="dk-status is-err">${esc(T('status_unknown', { d: site.district }))}</p>` : mine.length ? `<ul class="dk-rows">${mine.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(desk.practice ? T('practice_none', { d: site.district }) : T('none_here', { d: site.district }))}</p>`}` : `<p class="dk-muted"><button type="button" class="dk-link" data-go="site">${esc(T('no_site'))}</button></p>`}
     <h3 class="dk-h3">${esc(T('elsewhere'))}</h3>
     ${unknown ? '' : rest.length ? `<ul class="dk-rows">${rest.map((a) => row(a, site)).join('')}</ul>` : `<p class="dk-muted">${esc(desk.practice ? '' : T('none_india'))}</p>`}
@@ -392,9 +451,10 @@ function logView() {
   const L = desk.lang;
   return `<section class="dk-view" aria-labelledby="dk-h">
     <header class="dk-head"><p class="dk-eyebrow">03 · ${esc(T('nav_log'))}</p><h2 id="dk-h" tabindex="-1">${esc(T('log_title'))}</h2><p class="dk-lede">${esc(T('log_lede'))}</p></header>
+    ${pendingChanges().length ? followUpsHtml() : ''}
     ${rows.length ? `<ol class="dk-log">${rows.map((r) => `<li${r.practice ? ' class="is-practice"' : ''}>
       <p class="dk-log-t"><time>${esc(at(r.at, L))}</time>${r.practice ? ` <span class="dk-tag">${esc(T('log_practice'))}</span>` : ''}</p>
-      <p><b>${esc(r.event)}</b> · ${esc(r.sender)} · ${esc(capTerm(L, 'severity', r.severity)[0])}</p>
+      <p><b>${esc(r.event)}</b>${r.followUpType ? ` · <span class="dk-tag">${esc(T(r.followUpType === 'Cancel' ? 'follow_cancel' : 'follow_update'))}</span>` : ''} · ${esc(r.sender)} · ${esc(capTerm(L, 'severity', r.severity)[0])}</p>
       <p class="dk-muted">${esc([r.site, r.district].filter(Boolean).join(', '))} · ${esc(r.langs.map((l) => LANG_NAMES[l].native).join(', '))} · ${esc(r.channels.join(', '))}${r.count ? ` · ${r.count}` : ''}${r.supervisor ? ` · ${esc(r.supervisor)}` : ''}</p>
       ${r.note ? `<p class="dk-muted">${esc(r.note)}</p>` : ''}
       <p class="dk-muted dk-mono">${esc(r.alertId)}</p></li>`).join('')}</ol>
